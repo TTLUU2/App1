@@ -529,6 +529,76 @@ export const POINT_HACKS_URLS: Record<string, string | null> = {
   'Virgin Money No Annual Fee': null,
 };
 
+// Hero card-art image URLs on plastic.pointhacks.com.au. Extracted by
+// fetching each Point Hacks guide page and picking the primary product
+// image. 28 of 34 cards have a clear image; the rest fall back to the
+// procedural tinted gradient in <CardArt>. Re-extract when seed changes
+// using the same approach as POINT_HACKS_URLS above.
+export const POINT_HACKS_ART_URLS: Record<string, string | null> = {
+  'American Express Platinum Card':
+    'https://plastic.pointhacks.com.au/api/files/q3s7m5x1/cjk2jnnoewycj09/amex_platinum_charge_2022_6xljjf9deh.jpg',
+  'American Express Explorer':
+    'https://plastic.pointhacks.com.au/api/files/q3s7m5x1/cjk2jqn6xwyk709/american_express_explorer_card_art_november_2024_arjvjbew8m.jpg',
+  'American Express Velocity Platinum':
+    'https://plastic.pointhacks.com.au/api/files/q3s7m5x1/cjk2k6qzhwzr009/american_express_velocity_platinum_card_art_2024_49yh3firx7.jpeg',
+  'Qantas American Express Ultimate':
+    'https://plastic.pointhacks.com.au/api/files/q3s7m5x1/cjk2fhvlxwpsq09/qantas_american_express_ultimate_card_art_2024_lw48ej3v5b.jpg',
+  'Qantas American Express Premium':
+    'https://plastic.pointhacks.com.au/api/files/q3s7m5x1/cjk2gbmvcwrc509/qantas_american_express_premium_card_art_2024_vaos32059g.jpg',
+  'American Express Velocity Business':
+    'https://plastic.pointhacks.com.au/api/files/q3s7m5x1/cjk2jtubywyte09/american_express_velocity_business_card_november_2024_8ywiovg8hz.jpg',
+  'American Express Business Platinum':
+    'https://plastic.pointhacks.com.au/api/files/q3s7m5x1/cjk2gkaw9wru109/amex_platinum_business_2022_600px_x465e2m7ws.jpg',
+  'American Express Business Explorer': null,
+  'American Express David Jones Platinum': null,
+  'ANZ Rewards Black':
+    'https://plastic.pointhacks.com.au/api/files/q3s7m5x1/cjknttt9jue8w09/anz_rewards_black_visa_s7rwnzufb8.jpg',
+  'ANZ Frequent Flyer Black':
+    'https://plastic.pointhacks.com.au/api/files/q3s7m5x1/cjknvh2xvugq509/anz_frequent_flyer_black_visa_6ibk1p3ynr.jpg',
+  'ANZ Rewards Platinum':
+    'https://plastic.pointhacks.com.au/api/files/q3s7m5x1/cjknt9di9uddp09/anz_rewards_platinum_600_px_wwlozabnnu.jpg',
+  'ANZ Frequent Flyer Platinum':
+    'https://plastic.pointhacks.com.au/api/files/q3s7m5x1/cjknv6hd1ug9p09/anz_ff_platinum_visa_600px_0538qyaam2.jpg',
+  'Westpac Altitude Qantas Black':
+    'https://plastic.pointhacks.com.au/api/files/q3s7m5x1/cka5ybmc8pu1h08/westpac_altitude_black_2023_fknlgqsd7s.jpg',
+  'Westpac Altitude Platinum':
+    'https://plastic.pointhacks.com.au/api/files/q3s7m5x1/cka5x0ssypqy908/altitude_platinum_2023_6vcc4gv533.jpg',
+  'Westpac Altitude Velocity Black':
+    'https://plastic.pointhacks.com.au/api/files/q3s7m5x1/cldie1bixep4y0b/westpac_altitude_velocity_black_2025_1radouosgy.jpeg',
+  'Westpac Altitude Velocity Platinum':
+    'https://plastic.pointhacks.com.au/api/files/q3s7m5x1/cldwl708u5s0c0a/westpac_altitude_velocity_platinum_2023_rlcx95salf.jpg',
+  'NAB Qantas Rewards Signature':
+    'https://plastic.pointhacks.com.au/api/files/q3s7m5x1/cjkw9fq7r1e9509/nab_qantas_signature_card_art_2028_qkoxmp0i2r.jpeg',
+  'NAB Qantas Rewards Premium':
+    'https://plastic.pointhacks.com.au/api/files/q3s7m5x1/cjkw98yry1dwy09/nab_qantas_platinum_card_art_2028_g72jpgc3df.jpeg',
+  'NAB Rewards Signature':
+    'https://plastic.pointhacks.com.au/api/files/q3s7m5x1/cjkwcchfg1j1y09/nab_rewards_signature_card_art_2028_xwhzqycmot.jpeg',
+  'NAB Rewards Platinum':
+    'https://plastic.pointhacks.com.au/api/files/q3s7m5x1/cjkwc7zwi1itw09/nab_rewards_platinum_card_art_2028_wmdsopry51.jpeg',
+  'Qantas Money Platinum':
+    'https://plastic.pointhacks.com.au/api/files/q3s7m5x1/cjm241rlwwy5v09/qantas_money_platinum_card_art_e9ebj2sysx.jpeg',
+  'Qantas Money Titanium':
+    'https://plastic.pointhacks.com.au/api/files/q3s7m5x1/cjs11tdtueo8308/qantas_money_titanium_card_art_srnuyrq74y.jpeg',
+  'Citi Prestige':
+    'https://plastic.pointhacks.com.au/api/files/q3s7m5x1/cjkts6qss3h5f09/citi_prestige_mastercard_1rfn5vguak.jpg',
+  'Citi Premier':
+    'https://plastic.pointhacks.com.au/api/files/q3s7m5x1/cjktsifed3hmp09/citi_premier_mastercard_ahmj98jr9q.jpg',
+  'Citi Rewards': null,
+  'HSBC Platinum Qantas': null,
+  'HSBC Star Alliance':
+    'https://plastic.pointhacks.com.au/api/files/q3s7m5x1/clb1tlke72a0y09/hsbc_star_alliance_card_4zj1t0xz3a.jpg',
+  'CommBank Ultimate Awards':
+    'https://plastic.pointhacks.com.au/api/files/q3s7m5x1/ckacezu3o4g0n08/commbank_ultimate_awards_card_5gyy7e875f.jpg',
+  'CommBank Smart Awards': null,
+  'CommBank Awards':
+    'https://plastic.pointhacks.com.au/api/files/q3s7m5x1/cjlr7gh4gbvds09/commbank_awards_8uxgzpjz8c.jpg',
+  'Virgin Money High Flyer':
+    'https://plastic.pointhacks.com.au/api/files/q3s7m5x1/cjkwdxxvs1lra09/virginmoney_high_flyer_visa_qemy3qd1yd.jpg',
+  'Virgin Money Flyer':
+    'https://plastic.pointhacks.com.au/api/files/q3s7m5x1/cjkwdjhj61l4l09/virgin_money_flyer_card_g3tiv493ck.jpg',
+  'Virgin Money No Annual Fee': null,
+};
+
 // ── Benefits (placeholder dataset, see Decisions doc) ─────────────────────
 //
 // Three tiers by annualFee:
@@ -598,6 +668,11 @@ function main(): void {
         `Card "${d.name}" has no entry in POINT_HACKS_URLS. Add it (set to null if no guide exists).`,
       );
     }
+    if (!(d.name in POINT_HACKS_ART_URLS)) {
+      throw new Error(
+        `Card "${d.name}" has no entry in POINT_HACKS_ART_URLS. Add it (null if no image found).`,
+      );
+    }
     return {
       id: uuidv5(d.name, CARD_NAMESPACE),
       issuerId,
@@ -608,6 +683,7 @@ function main(): void {
       annualFee: d.annualFee,
       rewardsProgram: d.rewardsProgram,
       pointHacksUrl: POINT_HACKS_URLS[d.name] ?? null,
+      cardArtUrl: POINT_HACKS_ART_URLS[d.name] ?? null,
     };
   });
 

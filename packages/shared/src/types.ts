@@ -43,6 +43,12 @@ export interface Card {
    * Null when no dedicated guide exists; the UI falls back to the index.
    */
   pointHacksUrl: string | null;
+  /**
+   * Hero card-art image URL on plastic.pointhacks.com.au. Null when no
+   * image is available — the UI falls back to a procedural tinted gradient.
+   * Extracted from Point Hacks card guide pages.
+   */
+  cardArtUrl: string | null;
 }
 
 export interface CardWithIssuer extends Card {

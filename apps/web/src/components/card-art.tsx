@@ -4,8 +4,11 @@ import { issuerVisual } from '@/lib/theme';
 import { formatPoints } from '@/lib/format';
 
 /**
- * Procedurally-rendered "card art" tinted by issuer brand colour.
- * Mirrors the prototype's visual (no real card images shipped in M1).
+ * Card art. Renders the real Point Hacks product image when `cardArtUrl`
+ * is set; falls back to a procedurally-tinted gradient otherwise. Plain
+ * <img> (not next/image) so no next.config.ts allow-list is needed —
+ * acceptable for an internal-testing prototype. Switch to next/image with
+ * remotePatterns when we move past internal testing.
  */
 export function CardArt({
   card,
@@ -19,6 +22,30 @@ export function CardArt({
   const visual = issuerVisual(card.issuer.shortName);
   const sizeClass = size === 'lg' ? 'h-32 w-52' : size === 'sm' ? 'h-14 w-24' : 'h-20 w-32';
 
+  // Real image branch.
+  if (card.cardArtUrl) {
+    return (
+      <div
+        role="img"
+        aria-label={`${card.issuer.name} ${card.name} card`}
+        className={clsx(
+          'relative overflow-hidden rounded-xl shadow-md ring-1 ring-black/5',
+          sizeClass,
+          greyed && 'grayscale opacity-70',
+        )}
+      >
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src={card.cardArtUrl}
+          alt=""
+          loading="lazy"
+          className="absolute inset-0 h-full w-full object-cover"
+        />
+      </div>
+    );
+  }
+
+  // Procedural fallback for cards without an upstream image.
   return (
     <div
       role="img"
