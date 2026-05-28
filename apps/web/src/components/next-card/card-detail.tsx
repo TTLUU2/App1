@@ -2,7 +2,8 @@
 
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
+import { CancelCardConfirm } from '@/components/cancel-card-confirm';
 import { ChevronLeft, BookOpen, CheckCircle2, X, Info, ExternalLink } from 'lucide-react';
 import type { CardWithIssuer } from '@ph/shared';
 import { catalogue, selectEligibilityForCard, useUserCardsStore } from '@/store/user-cards';
@@ -29,6 +30,8 @@ export function CardDetail({ card }: { card: CardWithIssuer }) {
     [userCards, loaded, card.id],
   );
 
+  const [confirmingCancel, setConfirmingCancel] = useState(false);
+
   if (!eligibility) {
     return (
       <main className="flex-1 p-4">
@@ -44,6 +47,7 @@ export function CardDetail({ card }: { card: CardWithIssuer }) {
   }
   async function handleMarkAsCancelled() {
     if (activeHeld) await updateCard(activeHeld.id, { cancellationDate: today() });
+    setConfirmingCancel(false);
   }
 
   return (
@@ -183,14 +187,23 @@ export function CardDetail({ card }: { card: CardWithIssuer }) {
             Mark as applied (today)
           </button>
         ) : (
-          <button
-            type="button"
-            onClick={handleMarkAsCancelled}
-            className="inline-flex items-center justify-center gap-2 rounded-full border border-zinc-300 bg-white px-4 py-2.5 text-sm font-medium text-zinc-700 transition-colors hover:border-rose-400 hover:text-rose-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-400 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-300"
-          >
-            <X className="h-4 w-4" aria-hidden />
-            Mark as cancelled (today)
-          </button>
+          <>
+            <button
+              type="button"
+              onClick={() => setConfirmingCancel(true)}
+              className="inline-flex items-center justify-center gap-2 rounded-full border border-zinc-300 bg-white px-4 py-2.5 text-sm font-medium text-zinc-700 transition-colors hover:border-rose-400 hover:text-rose-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-400 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-300"
+            >
+              <X className="h-4 w-4" aria-hidden />
+              Mark as cancelled (today)
+            </button>
+            {confirmingCancel && (
+              <CancelCardConfirm
+                cardName={card.name}
+                onConfirm={handleMarkAsCancelled}
+                onClose={() => setConfirmingCancel(false)}
+              />
+            )}
+          </>
         )}
         <Link
           href="/add-card"

@@ -2,36 +2,30 @@
 
 import * as Dialog from '@radix-ui/react-dialog';
 import Link from 'next/link';
-import { Camera, FilePen, Mic, Receipt, Sparkles, X } from 'lucide-react';
+import { CreditCard, Mic, Receipt, Sparkles, X } from 'lucide-react';
 import { useState, type ReactNode } from 'react';
 
 /**
- * FAB action sheet — the five core actions from PRD §11. All live as of M2.
+ * FAB action sheet — four actions. "Add a card" is now the unified
+ * photo-first conversational flow (scan + onboard + manual collapsed into
+ * one progressive screen at /add-card).
  */
 
 interface Action {
   id: string;
   label: string;
   description: string;
-  href?: string;
+  href: string;
   Icon: React.ComponentType<{ className?: string; 'aria-hidden'?: boolean }>;
-  comingSoon?: boolean;
 }
 
 const ACTIONS: Action[] = [
   {
-    id: 'scan',
-    label: 'Scan card',
-    description: 'Camera + AI extracts product, expiry, last 4. Voice/text Q&A fills the rest.',
-    href: '/scan',
-    Icon: Camera,
-  },
-  {
-    id: 'add-manual',
-    label: 'Add card to history',
-    description: 'Type details for a card you have or had — drives eligibility.',
+    id: 'add',
+    label: 'Add a card',
+    description: 'Photo, upload, or pick from the list. Then a short voice Q&A.',
     href: '/add-card',
-    Icon: FilePen,
+    Icon: CreditCard,
   },
   {
     id: 'spend',
@@ -95,51 +89,19 @@ export function FabSheet({ trigger }: { trigger: ReactNode }) {
 }
 
 function ActionRow({ action, onSelect }: { action: Action; onSelect: () => void }) {
-  const body = (
-    <div className="flex items-center gap-3">
-      <div
-        className={
-          action.comingSoon
-            ? 'grid h-10 w-10 place-items-center rounded-full bg-zinc-100 text-zinc-400 dark:bg-zinc-800'
-            : 'grid h-10 w-10 place-items-center rounded-full bg-[var(--color-ph-red)]/10 text-[var(--color-ph-red)]'
-        }
-      >
-        <action.Icon className="h-5 w-5" aria-hidden />
-      </div>
-      <div className="min-w-0 flex-1">
-        <div className="flex items-center gap-2">
-          <span className="text-sm font-medium">{action.label}</span>
-          {action.comingSoon && (
-            <span className="rounded-full bg-zinc-100 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-zinc-500 dark:bg-zinc-800">
-              Coming soon
-            </span>
-          )}
-        </div>
-        <p className="mt-0.5 text-xs text-zinc-500">{action.description}</p>
-      </div>
-    </div>
-  );
-
-  if (action.comingSoon || !action.href) {
-    return (
-      <button
-        type="button"
-        disabled
-        aria-disabled
-        className="flex w-full cursor-not-allowed items-center rounded-xl border border-transparent p-3 text-left opacity-70"
-      >
-        {body}
-      </button>
-    );
-  }
-
   return (
     <Link
       href={action.href}
       onClick={onSelect}
-      className="flex w-full items-center rounded-xl border border-transparent p-3 text-left transition-colors hover:bg-zinc-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-ph-red)] dark:hover:bg-zinc-800"
+      className="flex w-full items-center gap-3 rounded-xl border border-transparent p-3 text-left transition-colors hover:bg-zinc-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-ph-red)] dark:hover:bg-zinc-800"
     >
-      {body}
+      <div className="grid h-10 w-10 place-items-center rounded-full bg-[var(--color-ph-red)]/10 text-[var(--color-ph-red)]">
+        <action.Icon className="h-5 w-5" aria-hidden />
+      </div>
+      <div className="min-w-0 flex-1">
+        <span className="block text-sm font-medium">{action.label}</span>
+        <p className="mt-0.5 text-xs text-zinc-500">{action.description}</p>
+      </div>
     </Link>
   );
 }

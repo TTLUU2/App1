@@ -1,9 +1,9 @@
 # Point Hacks Copilot
 
-AU credit-card eligibility & optimisation. M0 + M1 + M2 milestones are a
-Next.js 16 web prototype for internal testing — native mobile (per PRD
-§22.1) is deferred. The shared eligibility engine ships as a workspace
-package so the future native build reuses it unchanged.
+AU credit-card eligibility & optimisation. M0 + M1 + M2 + M3 milestones
+are a Next.js 16 web prototype for internal testing — native mobile (per
+PRD §22.1) is deferred. The shared eligibility engine ships as a
+workspace package so the future native build reuses it unchanged.
 
 > **Why web first?** See `docs/DECISIONS.md`. Short version: we pivoted from
 > React Native / Expo to a web app to de-risk the card-OCR flow without
@@ -42,13 +42,14 @@ route takes ~2–5s; subsequent navigations are fast.
 ├── apps/
 │   └── web/                Next.js 16 App Router (React 19, Tailwind v4)
 │       ├── src/app/                    routes: / (Tab 4), /matching, /deals,
-│       │                               /optimisation, /add-card, /scan, /onboard,
+│       │                               /optimisation, /add-card (unified),
 │       │                               /spend, /benefits, /ask, /cards/[id],
-│       │                               /api/ocr/card, /api/parse/{spend,benefit},
+│       │                               /api/ocr/card, /api/match/card,
+│       │                               /api/parse/{spend,benefit,quick-update},
 │       │                               /api/ask, /api/onboard/parse
 │       ├── src/components/             tab-bar, fab-sheet, dev-menu, voice-input,
-│       │                               next-card/*, tab3/*, scan/*, add-card/*,
-│       │                               spend/*, benefits/*, ask/*, onboard/*
+│       │                               cancel-card-confirm, next-card/*, tab3/*,
+│       │                               add-card-v2/*, spend/*, benefits/*, ask/*
 │       ├── src/lib/                    db (Dexie v2), safety, theme, format, time,
 │       │                               speech, ai-client, ask-context, tab3-status,
 │       │                               dev-fixtures, match-card
@@ -109,18 +110,19 @@ CI runs `typecheck + lint + test` on every push to `main` and every PR.
 
 ---
 
-## What's working (M1 + M2)
+## What's working (M1 + M2 + M3)
 
 - ✅ 4-tab shell with persistent bottom bar: Card Matching, Deals & Alerts, **Card Optimisation (full)**, Next Card (full)
-- ✅ Central FAB sheet, **all five actions live**: Scan card, Add card to history, Update spend, Update benefits, Ask Copilot
+- ✅ Central FAB sheet, **4 actions all live**: Add a card (unified photo-first conversational flow), Update spend, Update benefits, Ask Copilot
 - ✅ **Tab 4 (Next Card)**: hero card, eligible-cards summary by FF program, upcoming list, collapsible grey-area + not-eligible sections, sort + filter
-- ✅ Per-card detail screen: status, confidence, reason, issuer rules, your history, mark-as-applied / mark-as-cancelled, "Read Point Hacks guide" deep-link (28/34 cards have direct URLs)
-- ✅ **Tab 3 (Card Optimisation)** per PRD §9: summary header (active / min-spend remaining / points pending / action-needed), per-card collapsed + expanded rows with editable spend + projected completion + benefit redemption + quick actions, 3-month-to-bonus CTA banner
-- ✅ Manual add-card form with all PRD §16.2 fields (activation, fee due, bonus tracking) and the PAN/CVV write-boundary validator
-- ✅ Camera capture + Claude Vision OCR → conversational onboarding (4-question voice/text Q&A) — needs `ANTHROPIC_API_KEY`
-- ✅ FAB **Update spend**: voice or text, Claude-driven parse, disambiguation, 30-second Undo (PRD §11.3)
+- ✅ Per-card detail screen: status, confidence, reason, issuer rules, your history, mark-as-applied / **voice-confirmable mark-as-cancelled**, "Read Point Hacks guide" deep-link (28/34 cards have direct URLs)
+- ✅ **Tab 3 (Card Optimisation)** per PRD §9: summary header, **inline Quick Update voice bar** (speak either a spend or a benefit phrase — the parser picks the right kind and applies it without leaving Tab 3), per-card collapsed + expanded rows with editable spend + projected completion + benefit redemption + voice-confirmable Cancel, 3-month-to-bonus CTA banner
+- ✅ **Unified Add a card flow** (PRD §11.2.1, revised): photo / upload / pick-manually → confirm-card chat prompt → one-question-per-screen conversational Q&A with running chat-bubble history. Voice is the primary input on every step; typing is the fallback. PAN/CVV never captured.
+- ✅ Camera capture + Claude Vision OCR → fuzzy match against catalogue → confirmed via voice or tap — needs `ANTHROPIC_API_KEY`
+- ✅ FAB **Update spend**: voice or text, Claude parse, disambiguation, 30-second Undo (PRD §11.3)
 - ✅ FAB **Update benefits**: voice or text, maps phrase to specific benefit on specific held card (PRD §11.4)
 - ✅ FAB **Ask Copilot**: voice in / voice out, Claude-grounded read-only Q&A over local data + catalogue (PRD §11.5)
+- ✅ **Voice everywhere mutating actions live**: Quick Update bar on Tab 3, Cancel card with voice confirmation, Add-card conversation, all FAB voice flows.
 - ✅ IndexedDB persistence (v2 schema: userCards + userBenefitRedemptions); cross-tab recompute under 1s
 - ✅ Dev menu seeder (triple-tap any page header) — 5 demo cards covering every status
 

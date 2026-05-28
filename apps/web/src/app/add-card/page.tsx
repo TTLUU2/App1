@@ -1,5 +1,5 @@
-import { AddCardForm } from '@/components/add-card/add-card-form';
+import { AddCardFlow } from '@/components/add-card-v2/add-card-flow';
 
 export default function AddCardPage() {
-  return <AddCardForm />;
+  return <AddCardFlow />;
 }

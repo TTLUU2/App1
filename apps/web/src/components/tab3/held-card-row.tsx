@@ -17,6 +17,8 @@ import {
 } from '@/lib/tab3-status';
 import { useUserCardsStore } from '@/store/user-cards';
 import { useUserBenefitsStore } from '@/store/user-benefits';
+import { CancelCardConfirm } from '@/components/cancel-card-confirm';
+import { todayIsoDate } from '@/lib/time';
 
 /**
  * Collapsed row (PRD §9.2.2) expands into the detail view (§9.2.3). Animated
@@ -99,6 +101,7 @@ function ExpandedDetails({
   const removeRedemption = useUserBenefitsStore((s) => s.removeRedemption);
   const [spendEdit, setSpendEdit] = useState<string>(String(uc.bonusSpentToDate ?? ''));
   const [editingSpend, setEditingSpend] = useState(false);
+  const [confirmingCancel, setConfirmingCancel] = useState(false);
 
   async function commitSpend() {
     const amount = Number(spendEdit);
@@ -277,15 +280,24 @@ function ExpandedDetails({
         {!uc.cancellationDate && (
           <button
             type="button"
-            onClick={() =>
-              void updateCard(uc.id, { cancellationDate: new Date().toISOString().slice(0, 10) })
-            }
+            onClick={() => setConfirmingCancel(true)}
             className="rounded-full border border-zinc-300 px-3 py-1 text-rose-700 hover:border-rose-400 dark:border-zinc-700 dark:text-rose-300"
           >
             Cancel card
           </button>
         )}
       </div>
+
+      {confirmingCancel && (
+        <CancelCardConfirm
+          cardName={uc.card.name}
+          onConfirm={async () => {
+            await updateCard(uc.id, { cancellationDate: todayIsoDate() });
+            setConfirmingCancel(false);
+          }}
+          onClose={() => setConfirmingCancel(false)}
+        />
+      )}
     </div>
   );
 }

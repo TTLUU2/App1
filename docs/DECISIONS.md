@@ -414,5 +414,84 @@ header).
 Every `/api/*/route.ts` that imports the AI SDK gets the same three
 validator hook complaints from §16 above. They're noted there;
 applies uniformly to `/api/ocr/card`, `/api/parse/spend`,
-`/api/parse/benefit`, `/api/ask`, `/api/onboard/parse`. No code
-changes — same reasoning each time.
+`/api/parse/benefit`, `/api/parse/quick-update`, `/api/ask`,
+`/api/onboard/parse`. No code changes — same reasoning each time.
+
+---
+
+# M3 additions (FAB + voice everywhere)
+
+## 28. Add Card flow unified — photo-first, conversational, voice-primary
+
+The M1/M2 flow split Add Card into two FAB actions (Scan + Add manually)
+plus a separate /onboard step. User feedback: "instead of selecting
+[scan vs manual] we should allow them to take photo or load photo of
+card. From there extract the details and verify with user but allow them
+to type or speak to dictate confirmations. Ask user one question at a
+time as well not everything on one modal. Voice is the primary flow."
+
+**We shipped:** a single `/add-card` route that runs a progressive
+chat-style flow:
+
+1. **Photo step**: 3 buttons — "Take photo" (file input with
+   `capture="environment"` — native camera on mobile, file picker on
+   desktop), "Upload from file", "I'll pick it manually".
+2. **Confirm card** (post-OCR): chat prompt asks "Is this the right
+   card — {name}?" with Yes/No buttons + VoiceInput. Voice "yes" /
+   "confirm" advances; voice "no" routes to manual picker.
+3. **Pick card** (manual / fallback): VoiceInput backed by
+   `/api/match/card` (Claude-free local fuzzy match — fast, no API key
+   needed), plus a collapsible catalogue browse.
+4. **Q&A steps** (activation date → fee due → bonus received → spend
+   target + deadline): one question per screen, VoiceInput on each,
+   each answer parsed by `/api/onboard/parse` (Claude — handles
+   "three weeks ago", "yep", "$3000 in 90 days"). SpeechSynthesis
+   reads each prompt aloud as it appears.
+5. **Review + Save**.
+
+The chat thread builds up as you go — previous Q+A render as chat
+bubbles above the current question. Back button walks one step at a
+time without losing earlier answers.
+
+Routes deleted: `/scan`, `/onboard`. FAB sheet shrinks from 5 → 4
+actions: **Add a card** (unified), Update spend, Update benefits,
+Ask Copilot. Old `apps/web/src/components/{scan,onboard,add-card}/`
+all removed.
+
+## 29. Tab 3 Quick Update voice bar
+
+User feedback: "when they click FAB nothing happens on Tab 3 and it
+should allow voice to text to update certain things".
+
+The FAB sheet stays consistent across all tabs (so the user always
+knows what's in it), but Tab 3 now has its own **inline voice
+affordance**: a "Quick update" VoiceInput at the top of the dashboard,
+above the held-card list. Speak either a spend OR a benefit phrase;
+`/api/parse/quick-update` decides which one the user meant and applies
+it inline. 30-second Undo toast like the FAB Update Spend flow.
+
+The parser endpoint returns a discriminated union — `kind: 'spend' |
+'benefit' | 'unknown'` — so the client knows which mutation to run
+without asking the user a follow-up category question.
+
+## 30. Voice confirmation on destructive Cancel
+
+"Cancel card" is the only destructive mutation. Tap **Cancel card**
+(in Tab 3 expanded row or Tab 4 detail page) now opens an inline
+confirm block with:
+
+- "Yes, cancel it" button (tap)
+- "Keep it" button (tap)
+- VoiceInput — "yes" / "confirm" / "cancel it" triggers; "no" /
+  "stop" closes.
+
+Non-destructive actions (Mark as applied, marking individual benefits
+used, updating spend) stay single-tap — adding a voice confirm step
+to them would slow down the high-frequency flows.
+
+**Not extended to voice-as-trigger globally:** the user's "voice-
+confirmable anywhere" answer covered destructive actions; turning
+Ask Copilot into a mutating voice command surface would contradict
+PRD §11.5.2 (read-only by design). Voice-as-trigger for non-
+destructive actions is already covered by the FAB voice flows
+(Update spend / Update benefits) and the Tab 3 Quick Update bar.
