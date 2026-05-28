@@ -1,9 +1,9 @@
 # Point Hacks Copilot
 
-AU credit-card eligibility & optimisation. M0 + M1 milestone is a Next.js 16
-web prototype intended for internal testing — native mobile (per PRD §22.1)
-is deferred. The shared eligibility engine ships as a workspace package so
-the future native build reuses it unchanged.
+AU credit-card eligibility & optimisation. M0 + M1 + M2 milestones are a
+Next.js 16 web prototype for internal testing — native mobile (per PRD
+§22.1) is deferred. The shared eligibility engine ships as a workspace
+package so the future native build reuses it unchanged.
 
 > **Why web first?** See `docs/DECISIONS.md`. Short version: we pivoted from
 > React Native / Expo to a web app to de-risk the card-OCR flow without
@@ -42,13 +42,17 @@ route takes ~2–5s; subsequent navigations are fast.
 ├── apps/
 │   └── web/                Next.js 16 App Router (React 19, Tailwind v4)
 │       ├── src/app/                    routes: / (Tab 4), /matching, /deals,
-│       │                               /optimisation, /add-card, /scan,
-│       │                               /cards/[id], /api/ocr/card
-│       ├── src/components/             tab-bar, fab-sheet, dev-menu,
-│       │                               next-card/*, scan/*, add-card/*
-│       ├── src/lib/                    db (Dexie), safety (PAN/CVV validator),
-│       │                               theme, format, dev-fixtures, match-card
-│       └── src/store/                  Zustand store + derived selectors
+│       │                               /optimisation, /add-card, /scan, /onboard,
+│       │                               /spend, /benefits, /ask, /cards/[id],
+│       │                               /api/ocr/card, /api/parse/{spend,benefit},
+│       │                               /api/ask, /api/onboard/parse
+│       ├── src/components/             tab-bar, fab-sheet, dev-menu, voice-input,
+│       │                               next-card/*, tab3/*, scan/*, add-card/*,
+│       │                               spend/*, benefits/*, ask/*, onboard/*
+│       ├── src/lib/                    db (Dexie v2), safety, theme, format, time,
+│       │                               speech, ai-client, ask-context, tab3-status,
+│       │                               dev-fixtures, match-card
+│       └── src/store/                  Zustand stores (user-cards + user-benefits)
 ├── packages/
 │   └── shared/             @ph/shared — engine port + types + bundled
 │                           catalogue. Pure TS, zero UI deps. 27 Vitest specs.
@@ -105,24 +109,27 @@ CI runs `typecheck + lint + test` on every push to `main` and every PR.
 
 ---
 
-## What's working in M1
+## What's working (M1 + M2)
 
-- ✅ 4-tab shell (Card Matching / Deals & Alerts / Card Optimisation / Next Card) with persistent bottom bar
-- ✅ Central FAB opens a Radix bottom sheet with 4 action rows (Add card live, Scan card live, Update spend + Ask Copilot show "Coming soon")
-- ✅ Tab 4 (Next Card) full: hero card, eligible-cards summary by FF program, upcoming list, collapsible grey-area + not-eligible sections, sort + filter controls
-- ✅ Per-card detail screen: status, confidence, reason, issuer rules, your history, mark-as-applied / mark-as-cancelled, **"Read guide" deep-links to the canonical Point Hacks article per card** (28 of 34 have a direct link; the other 6 fall back to the index)
-- ✅ Manual add-card form with PAN/CVV write-boundary validator
-- ✅ Camera capture + Claude Vision OCR (pulled forward from M3) — needs `ANTHROPIC_API_KEY`
-- ✅ Dev menu seeder (triple-tap any page header) — populates 5 demo cards that surface every Tab 4 status
-- ✅ IndexedDB persistence via Dexie; cross-tab recompute under 1s
+- ✅ 4-tab shell with persistent bottom bar: Card Matching, Deals & Alerts, **Card Optimisation (full)**, Next Card (full)
+- ✅ Central FAB sheet, **all five actions live**: Scan card, Add card to history, Update spend, Update benefits, Ask Copilot
+- ✅ **Tab 4 (Next Card)**: hero card, eligible-cards summary by FF program, upcoming list, collapsible grey-area + not-eligible sections, sort + filter
+- ✅ Per-card detail screen: status, confidence, reason, issuer rules, your history, mark-as-applied / mark-as-cancelled, "Read Point Hacks guide" deep-link (28/34 cards have direct URLs)
+- ✅ **Tab 3 (Card Optimisation)** per PRD §9: summary header (active / min-spend remaining / points pending / action-needed), per-card collapsed + expanded rows with editable spend + projected completion + benefit redemption + quick actions, 3-month-to-bonus CTA banner
+- ✅ Manual add-card form with all PRD §16.2 fields (activation, fee due, bonus tracking) and the PAN/CVV write-boundary validator
+- ✅ Camera capture + Claude Vision OCR → conversational onboarding (4-question voice/text Q&A) — needs `ANTHROPIC_API_KEY`
+- ✅ FAB **Update spend**: voice or text, Claude-driven parse, disambiguation, 30-second Undo (PRD §11.3)
+- ✅ FAB **Update benefits**: voice or text, maps phrase to specific benefit on specific held card (PRD §11.4)
+- ✅ FAB **Ask Copilot**: voice in / voice out, Claude-grounded read-only Q&A over local data + catalogue (PRD §11.5)
+- ✅ IndexedDB persistence (v2 schema: userCards + userBenefitRedemptions); cross-tab recompute under 1s
+- ✅ Dev menu seeder (triple-tap any page header) — 5 demo cards covering every status
 
-## What's deferred (PRD scope, not built in M1)
+## What's deferred
 
-- Tabs 1, 2 (placeholders only — PRD §7, §8)
-- Tab 3 (Card Optimisation) full build — placeholder only (PRD §9)
-- Update spend / benefit voice flow (PRD §11.3, §11.4)
-- Ask Copilot voice assistant (PRD §11.5)
-- Card Alert Centre + local notifications (PRD §15)
-- Frequent flyer account linking (PRD §14)
-- Encryption-at-rest on the DB (waived for internal testing — see Decisions)
-- Vercel deployment (deferred per user request — local dev only for now)
+- Tabs 1, 2 (placeholders — PRD §7, §8)
+- Card Alert Centre + local notifications (PRD §15 / M4)
+- Frequent flyer account linking (PRD §14 / M5)
+- PostHog / Amplitude / Mixpanel analytics wiring (PRD §20 / M5)
+- Encryption-at-rest on the DB (waived for internal testing — see Decisions §2)
+- Vercel deployment (deferred per user request — local dev only)
+- Native React Native / Expo build (post-prototype validation)

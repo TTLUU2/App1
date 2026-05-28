@@ -280,12 +280,10 @@ Built deliberately as placeholders only:
 
 - Tab 1 Card Matching
 - Tab 2 Deals & Alerts
-- Tab 3 Card Optimisation
 
-Built as "Coming soon" rows in the FAB sheet:
-
-- Update spend / benefit voice flow (M2)
-- Ask Copilot (M3)
+Tab 3 (Card Optimisation) was a placeholder in M1 and is **now full per
+PRD §9** (see §21 below). FAB Update spend / Update benefits / Ask
+Copilot were "Coming soon" in M1 and are **now all live** (see §22–§24).
 
 Not started at all:
 
@@ -309,3 +307,112 @@ Not started at all:
   IndexedDB may need a manual `Clear all data` from the dev menu.
 - **Pre-commit hook only runs Prettier**, not ESLint (see Decision #5).
   CI catches lint failures.
+
+---
+
+# M2 additions
+
+## 21. Tab 3 Card Optimisation — built per PRD §9
+
+Full build, not the placeholder from M1. Summary header (active cards,
+min-spend remaining, points pending, action-needed count), collapsed
+rows with status chip + one-line headline, expanded rows with editable
+spend + projected completion + benefits + quick actions, and the 3-
+month-to-bonus CTA banner at the top.
+
+Status math + projections live in `lib/tab3-status.ts` as pure
+functions — they're testable without React or a DB if/when we add
+Vitest specs for them. PRD §9.5's "no spinners, no network, fully
+offline" requirement is met because every value derives from the
+in-memory Zustand stores.
+
+## 22. Placeholder benefits dataset
+
+`trackableBenefits[]` was an open item at the M2 kickoff (the original
+prompt called it out). Since editorial benefit metadata isn't ready,
+we ship a coarse tier-based placeholder in
+`packages/shared/scripts/generate-catalogue.ts`:
+
+- **Premium** (annualFee ≥ $350): Annual travel credit ($400) + Hotel
+  credit ($200)
+- **Mid-tier** (annualFee ≥ $100): Annual statement credit ($100)
+- **Basic** (annualFee < $100): no benefits
+
+44 benefits across the 34 cards. The schema is the right shape; swap
+the templates for real per-card metadata in a one-line code change
+and re-run `pnpm --filter @ph/shared generate-catalogue`.
+
+## 23. Voice input — Web Speech API
+
+`SpeechRecognition` (vendor-prefixed) wrapped in `lib/speech.ts` +
+`<VoiceInput>`. en-AU locale. Renders a fallback hint on browsers
+without support — that's just Firefox today; Chrome / Edge / Safari /
+mobile Safari all work. SpeechSynthesis is wrapped too (Ask Copilot's
+TTS output).
+
+Whisper deferred — the user picked Web Speech API for speed-to-
+prototype. If accuracy bites later, swap by adding an
+`/api/transcribe` endpoint and toggling between the two in
+`<VoiceInput>`; the public component API doesn't need to change.
+
+## 24. Natural-language parsing — Claude over hand-rolled
+
+PRD §11.3.2 requires numeric parsing for "plain ('250'), dollar
+('$250'), spoken ('two fifty', 'four thirty', 'twelve hundred'), and
+decimal ('1,234.56')" plus disambiguation across the user's held
+cards by product fragments / issuer fragments / nicknames. Building
+all that by hand would be a maintenance hole.
+
+Instead, every voice flow routes the utterance through Claude with
+a tight Zod schema:
+
+- `/api/parse/spend` → `{ amount, cardId, confidence }`
+- `/api/parse/benefit` → `{ userCardId, benefitId, confidence }`
+- `/api/onboard/parse` → `date | yesno | spend_target` (one endpoint,
+  three schemas)
+- `/api/ask` → `{ answer, inScope }`
+
+Pattern centralised in `lib/ai-client.ts` (`generateStructuredObject`)
+so each route is small and the model id is one-line-swappable.
+
+Cost stays bounded: each call is a single short prompt with structured
+output (~100–500 tokens) on Claude Sonnet 4.6. Internal testing volume
+won't break a hobby key.
+
+## 25. Conversational post-OCR onboarding
+
+After `/scan` extracts product/last4/expiry, the flow now lands on
+`/onboard` (not `/add-card`). Four-question state machine:
+
+1. When did you activate this card? → date parse
+2. When is the annual fee next due? → date parse, skippable
+3. Have you received the sign-up bonus? → yes/no parse
+4. Min-spend target + deadline? → combined parse, skippable
+
+Each question is voice-or-text via `<VoiceInput>` and speaks the
+prompt aloud via SpeechSynthesis (if available + supported). State
+machine is client-side, no per-step persistence — the final review
+step is the only commit point. Manual `/add-card` form is still
+available for users who skip OCR.
+
+## 26. Ask Copilot grounding strategy
+
+`lib/ask-context.ts` builds a tight markdown context block from the
+user's local stores (held + cancelled cards, top 8 recommendations,
+benefit statuses with current-period redemption state). Sent verbatim
+with each question; Claude is instructed to answer ONLY from this
+block, refuse out-of-scope politely, cite the data, and explicitly
+NOT claim to mutate state (read-only per PRD §11.5.2).
+
+No chat history persisted — each turn is fully ephemeral per
+PRD §11.5.2. The user can speak or type the question; the answer
+renders as text and optionally plays back via TTS (toggle in the
+header).
+
+## 27. Validator hook still flags the same 3 things on every Claude route
+
+Every `/api/*/route.ts` that imports the AI SDK gets the same three
+validator hook complaints from §16 above. They're noted there;
+applies uniformly to `/api/ocr/card`, `/api/parse/spend`,
+`/api/parse/benefit`, `/api/ask`, `/api/onboard/parse`. No code
+changes — same reasoning each time.
