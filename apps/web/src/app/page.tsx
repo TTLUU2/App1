@@ -1,27 +1,18 @@
-import { getCardsWithIssuer, getIssuers } from '@ph/shared';
+// Tab 4 — Next Card. Real implementation arrives in Task #6. For Task #4 this
+// is a stub so the tab shell + FAB are testable end-to-end.
 
-export default function Home() {
-  const issuers = getIssuers();
-  const cards = getCardsWithIssuer();
+import { Sparkles } from 'lucide-react';
 
+export default function NextCardPage() {
   return (
-    <main className="mx-auto max-w-md p-6">
-      <h1 className="text-2xl font-semibold tracking-tight">Point Hacks Copilot</h1>
+    <main className="flex-1 px-4 py-6">
+      <header className="flex items-center gap-2">
+        <Sparkles className="h-5 w-5 text-[var(--color-ph-red)]" aria-hidden />
+        <h1 className="text-lg font-semibold tracking-tight">Next Card</h1>
+      </header>
       <p className="mt-2 text-sm text-zinc-600 dark:text-zinc-400">
-        M0+M1 scaffold smoke test. The shared workspace is linked and the catalogue loaded.
-      </p>
-      <dl className="mt-6 grid grid-cols-2 gap-3 text-center text-sm">
-        <div className="rounded-lg bg-white p-4 shadow-sm ring-1 ring-zinc-200 dark:bg-zinc-900 dark:ring-zinc-800">
-          <dt className="text-xs uppercase tracking-wide text-zinc-500">Issuers</dt>
-          <dd className="mt-1 text-2xl font-semibold">{issuers.length}</dd>
-        </div>
-        <div className="rounded-lg bg-white p-4 shadow-sm ring-1 ring-zinc-200 dark:bg-zinc-900 dark:ring-zinc-800">
-          <dt className="text-xs uppercase tracking-wide text-zinc-500">Cards</dt>
-          <dd className="mt-1 text-2xl font-semibold">{cards.length}</dd>
-        </div>
-      </dl>
-      <p className="mt-6 text-xs text-zinc-500">
-        Tab shell, Tab 4 UI, FAB add-card flow, and camera + OCR ship in later commits.
+        Tab 4 home is wired in the next commit — hero card, eligible-cards summary, upcoming list,
+        grey-area & not-eligible collapsibles. Tap the red + below to open the action sheet.
       </p>
     </main>
   );
