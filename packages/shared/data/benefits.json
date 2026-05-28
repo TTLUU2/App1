@@ -1,0 +1,398 @@
+[
+  {
+    "id": "c91e809b-6d89-5342-bd3a-0be8ae184d28",
+    "cardId": "f1deea23-69ff-54f7-b59f-2293e9934f2d",
+    "name": "Annual travel credit",
+    "description": "Statement credit for eligible travel bookings, refreshed each card year.",
+    "valueAud": 400,
+    "category": "travel_credit",
+    "period": "annual"
+  },
+  {
+    "id": "8de93b3c-0813-5e86-b690-a935901f6cdb",
+    "cardId": "f1deea23-69ff-54f7-b59f-2293e9934f2d",
+    "name": "Hotel credit",
+    "description": "Credit on eligible hotel bookings each card year.",
+    "valueAud": 200,
+    "category": "hotel_credit",
+    "period": "annual"
+  },
+  {
+    "id": "971ed02b-dbf3-5bd0-bf58-b50f7a402ef4",
+    "cardId": "3b4ebbd4-af18-5f7e-8e78-78c07bc91fd9",
+    "name": "Annual travel credit",
+    "description": "Statement credit for eligible travel bookings, refreshed each card year.",
+    "valueAud": 400,
+    "category": "travel_credit",
+    "period": "annual"
+  },
+  {
+    "id": "f1416871-f590-514e-b872-b99e0af275a4",
+    "cardId": "3b4ebbd4-af18-5f7e-8e78-78c07bc91fd9",
+    "name": "Hotel credit",
+    "description": "Credit on eligible hotel bookings each card year.",
+    "valueAud": 200,
+    "category": "hotel_credit",
+    "period": "annual"
+  },
+  {
+    "id": "c0e47dff-59d7-5bde-b959-33bceb79c2a5",
+    "cardId": "25647c5a-da76-5323-bb73-16749973ef9a",
+    "name": "Annual travel credit",
+    "description": "Statement credit for eligible travel bookings, refreshed each card year.",
+    "valueAud": 400,
+    "category": "travel_credit",
+    "period": "annual"
+  },
+  {
+    "id": "25db4227-105a-5ab3-9666-b77cfb702abb",
+    "cardId": "25647c5a-da76-5323-bb73-16749973ef9a",
+    "name": "Hotel credit",
+    "description": "Credit on eligible hotel bookings each card year.",
+    "valueAud": 200,
+    "category": "hotel_credit",
+    "period": "annual"
+  },
+  {
+    "id": "a1d80fe5-29a3-5a5d-aa0c-8294435ab25d",
+    "cardId": "a6ba6bbb-cbf9-5f18-8f30-6f2b2b5c2c4d",
+    "name": "Annual travel credit",
+    "description": "Statement credit for eligible travel bookings, refreshed each card year.",
+    "valueAud": 400,
+    "category": "travel_credit",
+    "period": "annual"
+  },
+  {
+    "id": "a4ebb444-4fcf-5a34-91a4-b83d07c3d4f5",
+    "cardId": "a6ba6bbb-cbf9-5f18-8f30-6f2b2b5c2c4d",
+    "name": "Hotel credit",
+    "description": "Credit on eligible hotel bookings each card year.",
+    "valueAud": 200,
+    "category": "hotel_credit",
+    "period": "annual"
+  },
+  {
+    "id": "fe4a3997-4366-524f-90b0-add1caa44bd2",
+    "cardId": "c9bb9fb2-0463-5161-941d-f29c9c6859d1",
+    "name": "Annual statement credit",
+    "description": "Annual statement credit, refreshed each card year.",
+    "valueAud": 100,
+    "category": "statement_credit",
+    "period": "annual"
+  },
+  {
+    "id": "fac4b183-0592-51de-808c-e1b0822d8725",
+    "cardId": "dbc11c74-c173-5a8b-8576-4ed1fc660c3e",
+    "name": "Annual travel credit",
+    "description": "Statement credit for eligible travel bookings, refreshed each card year.",
+    "valueAud": 400,
+    "category": "travel_credit",
+    "period": "annual"
+  },
+  {
+    "id": "a88a9f6a-81cb-5068-9f6a-a07e7386affb",
+    "cardId": "dbc11c74-c173-5a8b-8576-4ed1fc660c3e",
+    "name": "Hotel credit",
+    "description": "Credit on eligible hotel bookings each card year.",
+    "valueAud": 200,
+    "category": "hotel_credit",
+    "period": "annual"
+  },
+  {
+    "id": "f2bacde9-68c2-5970-91db-e4d58e5304a4",
+    "cardId": "beefeee3-c4ac-5507-961c-2fa81eb5cdb2",
+    "name": "Annual travel credit",
+    "description": "Statement credit for eligible travel bookings, refreshed each card year.",
+    "valueAud": 400,
+    "category": "travel_credit",
+    "period": "annual"
+  },
+  {
+    "id": "3e6a0ea5-e677-5f3a-959e-56768f8f2a5b",
+    "cardId": "beefeee3-c4ac-5507-961c-2fa81eb5cdb2",
+    "name": "Hotel credit",
+    "description": "Credit on eligible hotel bookings each card year.",
+    "valueAud": 200,
+    "category": "hotel_credit",
+    "period": "annual"
+  },
+  {
+    "id": "38f8d57e-f960-5812-aefe-7107e81d0f00",
+    "cardId": "72cc6f92-0058-5ca5-8467-5ab6d726db3d",
+    "name": "Annual statement credit",
+    "description": "Annual statement credit, refreshed each card year.",
+    "valueAud": 100,
+    "category": "statement_credit",
+    "period": "annual"
+  },
+  {
+    "id": "f90cf514-5c6c-5165-9a51-7234292855dd",
+    "cardId": "18b040ff-44e7-51ff-a9e1-75dfd494b226",
+    "name": "Annual statement credit",
+    "description": "Annual statement credit, refreshed each card year.",
+    "valueAud": 100,
+    "category": "statement_credit",
+    "period": "annual"
+  },
+  {
+    "id": "af02e189-5b8f-5467-948f-2d5ba18c5397",
+    "cardId": "f03943cf-1590-5fff-b22c-dcbbfaa8703e",
+    "name": "Annual travel credit",
+    "description": "Statement credit for eligible travel bookings, refreshed each card year.",
+    "valueAud": 400,
+    "category": "travel_credit",
+    "period": "annual"
+  },
+  {
+    "id": "12fe74e2-bb12-5340-b69b-71537eda9c79",
+    "cardId": "f03943cf-1590-5fff-b22c-dcbbfaa8703e",
+    "name": "Hotel credit",
+    "description": "Credit on eligible hotel bookings each card year.",
+    "valueAud": 200,
+    "category": "hotel_credit",
+    "period": "annual"
+  },
+  {
+    "id": "a3f47b5f-287e-5c3f-acbe-8fdd49b5e625",
+    "cardId": "9207c194-46e1-5d50-bb04-601bb6594e40",
+    "name": "Annual travel credit",
+    "description": "Statement credit for eligible travel bookings, refreshed each card year.",
+    "valueAud": 400,
+    "category": "travel_credit",
+    "period": "annual"
+  },
+  {
+    "id": "5a0effac-4970-5a50-a603-0a138e8e39a6",
+    "cardId": "9207c194-46e1-5d50-bb04-601bb6594e40",
+    "name": "Hotel credit",
+    "description": "Credit on eligible hotel bookings each card year.",
+    "valueAud": 200,
+    "category": "hotel_credit",
+    "period": "annual"
+  },
+  {
+    "id": "f1d69c3c-f0ac-56d3-8f03-6504577c1446",
+    "cardId": "e05f8ed8-9922-5083-bcc1-60fe547914a8",
+    "name": "Annual statement credit",
+    "description": "Annual statement credit, refreshed each card year.",
+    "valueAud": 100,
+    "category": "statement_credit",
+    "period": "annual"
+  },
+  {
+    "id": "03503d5e-6f1a-5327-98e5-032c11082da8",
+    "cardId": "dba7d258-93cf-5cdf-a86c-a9b6f1eeeed9",
+    "name": "Annual statement credit",
+    "description": "Annual statement credit, refreshed each card year.",
+    "valueAud": 100,
+    "category": "statement_credit",
+    "period": "annual"
+  },
+  {
+    "id": "b793a0f1-68d8-5051-9d76-2f6638c087d1",
+    "cardId": "4c007e58-8917-51f1-8d47-baa0a8a95ba3",
+    "name": "Annual travel credit",
+    "description": "Statement credit for eligible travel bookings, refreshed each card year.",
+    "valueAud": 400,
+    "category": "travel_credit",
+    "period": "annual"
+  },
+  {
+    "id": "ad7b2b2a-8093-57a8-8586-9779986f0cc9",
+    "cardId": "4c007e58-8917-51f1-8d47-baa0a8a95ba3",
+    "name": "Hotel credit",
+    "description": "Credit on eligible hotel bookings each card year.",
+    "valueAud": 200,
+    "category": "hotel_credit",
+    "period": "annual"
+  },
+  {
+    "id": "e946b223-609d-5f5b-81a1-68ab74030598",
+    "cardId": "715b5b1a-1e7d-5714-94cb-ebeba79b233f",
+    "name": "Annual statement credit",
+    "description": "Annual statement credit, refreshed each card year.",
+    "valueAud": 100,
+    "category": "statement_credit",
+    "period": "annual"
+  },
+  {
+    "id": "118cdf10-4006-5304-8d2c-c02831c1de6a",
+    "cardId": "0fcb21c3-818f-5fdd-bcd3-75908fd84268",
+    "name": "Annual statement credit",
+    "description": "Annual statement credit, refreshed each card year.",
+    "valueAud": 100,
+    "category": "statement_credit",
+    "period": "annual"
+  },
+  {
+    "id": "b7856fd0-61ae-5e93-968f-2dcad8e689fd",
+    "cardId": "22176ce6-68d4-5527-b5a9-e039a2d55cff",
+    "name": "Annual statement credit",
+    "description": "Annual statement credit, refreshed each card year.",
+    "valueAud": 100,
+    "category": "statement_credit",
+    "period": "annual"
+  },
+  {
+    "id": "2a1da30f-d5c2-5951-9ba5-1d96f92fc64d",
+    "cardId": "ae4e020e-110e-58d9-890d-2138d79aa258",
+    "name": "Annual travel credit",
+    "description": "Statement credit for eligible travel bookings, refreshed each card year.",
+    "valueAud": 400,
+    "category": "travel_credit",
+    "period": "annual"
+  },
+  {
+    "id": "87504441-cf6e-5636-9246-44dc35b843f6",
+    "cardId": "ae4e020e-110e-58d9-890d-2138d79aa258",
+    "name": "Hotel credit",
+    "description": "Credit on eligible hotel bookings each card year.",
+    "valueAud": 200,
+    "category": "hotel_credit",
+    "period": "annual"
+  },
+  {
+    "id": "89d816fa-34d2-5ebe-b0d0-05bc4d61de9b",
+    "cardId": "ea810f86-ccc4-5529-8cbc-fd13e77234ca",
+    "name": "Annual statement credit",
+    "description": "Annual statement credit, refreshed each card year.",
+    "valueAud": 100,
+    "category": "statement_credit",
+    "period": "annual"
+  },
+  {
+    "id": "90aa8f38-e2ed-5d6c-ac5d-e45022f90f89",
+    "cardId": "07e255d2-4c19-580b-bcfc-4d7e56586583",
+    "name": "Annual statement credit",
+    "description": "Annual statement credit, refreshed each card year.",
+    "valueAud": 100,
+    "category": "statement_credit",
+    "period": "annual"
+  },
+  {
+    "id": "29256548-858c-5460-b0fe-847116e1250f",
+    "cardId": "d775bf3f-1530-53de-ade4-249067d17115",
+    "name": "Annual travel credit",
+    "description": "Statement credit for eligible travel bookings, refreshed each card year.",
+    "valueAud": 400,
+    "category": "travel_credit",
+    "period": "annual"
+  },
+  {
+    "id": "008724e1-4691-5145-920a-3ac954fd8ee7",
+    "cardId": "d775bf3f-1530-53de-ade4-249067d17115",
+    "name": "Hotel credit",
+    "description": "Credit on eligible hotel bookings each card year.",
+    "valueAud": 200,
+    "category": "hotel_credit",
+    "period": "annual"
+  },
+  {
+    "id": "e837663c-546b-54b3-87f7-15a265f10a36",
+    "cardId": "2bf37782-dc21-5991-aef2-b71f3de92c79",
+    "name": "Annual travel credit",
+    "description": "Statement credit for eligible travel bookings, refreshed each card year.",
+    "valueAud": 400,
+    "category": "travel_credit",
+    "period": "annual"
+  },
+  {
+    "id": "8d8132a2-6ca5-51f0-988d-2bb50fdbf03a",
+    "cardId": "2bf37782-dc21-5991-aef2-b71f3de92c79",
+    "name": "Hotel credit",
+    "description": "Credit on eligible hotel bookings each card year.",
+    "valueAud": 200,
+    "category": "hotel_credit",
+    "period": "annual"
+  },
+  {
+    "id": "7082fe60-8565-5342-8505-35d80ff038d6",
+    "cardId": "79d6aee6-22b5-5900-8e20-6a84e0c391ce",
+    "name": "Annual travel credit",
+    "description": "Statement credit for eligible travel bookings, refreshed each card year.",
+    "valueAud": 400,
+    "category": "travel_credit",
+    "period": "annual"
+  },
+  {
+    "id": "40f549ed-dacf-5c88-b1e2-f8e54b99026f",
+    "cardId": "79d6aee6-22b5-5900-8e20-6a84e0c391ce",
+    "name": "Hotel credit",
+    "description": "Credit on eligible hotel bookings each card year.",
+    "valueAud": 200,
+    "category": "hotel_credit",
+    "period": "annual"
+  },
+  {
+    "id": "3cb1b8af-2ffc-55ff-b4e2-febc4cb8bdb1",
+    "cardId": "e32ac90c-31d6-599c-8d19-ef67990375ee",
+    "name": "Annual statement credit",
+    "description": "Annual statement credit, refreshed each card year.",
+    "valueAud": 100,
+    "category": "statement_credit",
+    "period": "annual"
+  },
+  {
+    "id": "add018f1-55f2-5e10-8295-c1062b25d8fd",
+    "cardId": "4e0a548a-fbe7-5a76-87bf-e035640b9e51",
+    "name": "Annual statement credit",
+    "description": "Annual statement credit, refreshed each card year.",
+    "valueAud": 100,
+    "category": "statement_credit",
+    "period": "annual"
+  },
+  {
+    "id": "5d92fcc4-5f45-5aa6-a0d5-4431047ec37d",
+    "cardId": "d6f6fde9-f71f-55fb-8f36-fa3fd3a45f5d",
+    "name": "Annual statement credit",
+    "description": "Annual statement credit, refreshed each card year.",
+    "valueAud": 100,
+    "category": "statement_credit",
+    "period": "annual"
+  },
+  {
+    "id": "4313928d-b137-510b-8435-98c05ec500cf",
+    "cardId": "58f6b234-1cb9-591e-a560-c480689999ef",
+    "name": "Annual statement credit",
+    "description": "Annual statement credit, refreshed each card year.",
+    "valueAud": 100,
+    "category": "statement_credit",
+    "period": "annual"
+  },
+  {
+    "id": "085dfadf-e1a8-5818-a317-3958a048c0be",
+    "cardId": "648ce135-0a2a-5ecb-93b3-4af69c20cdba",
+    "name": "Annual statement credit",
+    "description": "Annual statement credit, refreshed each card year.",
+    "valueAud": 100,
+    "category": "statement_credit",
+    "period": "annual"
+  },
+  {
+    "id": "d2a16110-e327-5473-bc03-76339b1272a5",
+    "cardId": "d7454e49-7141-5572-948f-3048690eb94c",
+    "name": "Annual statement credit",
+    "description": "Annual statement credit, refreshed each card year.",
+    "valueAud": 100,
+    "category": "statement_credit",
+    "period": "annual"
+  },
+  {
+    "id": "54f9afdb-4ecc-542d-8ebc-8ad16778926c",
+    "cardId": "1830d4b7-a4eb-5c54-80bd-1c6100530927",
+    "name": "Annual statement credit",
+    "description": "Annual statement credit, refreshed each card year.",
+    "valueAud": 100,
+    "category": "statement_credit",
+    "period": "annual"
+  },
+  {
+    "id": "71714af6-d5a5-5aad-b6ef-3a4adb902dc1",
+    "cardId": "b2f49765-bdf7-5277-bf83-d147ecf34726",
+    "name": "Annual statement credit",
+    "description": "Annual statement credit, refreshed each card year.",
+    "valueAud": 100,
+    "category": "statement_credit",
+    "period": "annual"
+  }
+]

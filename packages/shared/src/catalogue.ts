@@ -3,7 +3,8 @@
 
 import issuersJson from '../data/issuers.json' with { type: 'json' };
 import cardsJson from '../data/cards.json' with { type: 'json' };
-import type { Card, CardWithIssuer, Issuer } from './types';
+import benefitsJson from '../data/benefits.json' with { type: 'json' };
+import type { Benefit, Card, CardWithIssuer, Issuer } from './types';
 
 export function getIssuers(): Issuer[] {
   return issuersJson as Issuer[];
@@ -27,4 +28,12 @@ export function getCardsWithIssuer(): CardWithIssuer[] {
 
 export function getCardWithIssuer(cardId: string): CardWithIssuer | undefined {
   return getCardsWithIssuer().find((c) => c.id === cardId);
+}
+
+export function getAllBenefits(): Benefit[] {
+  return benefitsJson as Benefit[];
+}
+
+export function getBenefitsForCard(cardId: string): Benefit[] {
+  return getAllBenefits().filter((b) => b.cardId === cardId);
 }

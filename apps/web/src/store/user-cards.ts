@@ -37,6 +37,13 @@ export interface NewUserCardInput {
   nickname?: string | null;
   last4?: string | null;
   expiryMonthYear?: string | null;
+  // Card onboarding extensions (M2 — populated by the manual form's "More
+  // details" panel or the post-OCR conversational onboarding flow).
+  activationDate?: string | null;
+  annualFeeNextDueDate?: string | null;
+  bonusTarget?: number | null;
+  bonusSpentToDate?: number | null;
+  bonusSpendWindowEndDate?: string | null;
 }
 
 interface UserCardsState {
@@ -83,11 +90,11 @@ export const useUserCardsStore = create<UserCardsState>((set, get) => ({
       nickname: input.nickname ?? null,
       last4: input.last4 ?? null,
       expiryMonthYear: input.expiryMonthYear ?? null,
-      activationDate: null,
-      annualFeeNextDueDate: null,
-      bonusTarget: null,
-      bonusSpentToDate: null,
-      bonusSpendWindowEndDate: null,
+      activationDate: input.activationDate ?? null,
+      annualFeeNextDueDate: input.annualFeeNextDueDate ?? null,
+      bonusTarget: input.bonusTarget ?? null,
+      bonusSpentToDate: input.bonusSpentToDate ?? null,
+      bonusSpendWindowEndDate: input.bonusSpendWindowEndDate ?? null,
     };
     await getDb().userCards.add(record);
     set({ userCards: [...get().userCards, record] });

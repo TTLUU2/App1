@@ -49,6 +49,41 @@ export interface CardWithIssuer extends Card {
   issuer: Issuer;
 }
 
+// Trackable benefits attached to a card. The seed currently ships coarse
+// placeholders by card tier (premium → travel + hotel credits; mid → annual
+// statement credit; basic → none). Replace with real per-card metadata when
+// editorial data lands — the schema is stable.
+export type BenefitCategory =
+  | 'travel_credit'
+  | 'hotel_credit'
+  | 'statement_credit'
+  | 'dining_credit'
+  | 'insurance';
+
+export type BenefitPeriod = 'annual' | 'biannual' | 'quarterly' | 'monthly' | 'one_off';
+
+export interface Benefit {
+  id: string;
+  cardId: string;
+  name: string;
+  description: string;
+  valueAud: number;
+  category: BenefitCategory;
+  period: BenefitPeriod;
+}
+
+// Per-user redemption record (PRD §16.2). For a recurring benefit (annual,
+// quarterly, etc.), one row per period the user has marked it Used.
+export interface UserBenefitRedemption {
+  id: string;
+  userCardId: string;
+  benefitId: string;
+  periodStartDate: string; // yyyy-MM-dd
+  periodEndDate: string; // yyyy-MM-dd
+  redeemedAt: string; // ISO
+  redeemedAmount: number | null;
+}
+
 // Mutable user-owned record. Full PRD §16.2 fieldset; M1's manual-add form
 // captures a subset and leaves the rest null/undefined for M2/M3 to populate.
 export interface UserCard {

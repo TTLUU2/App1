@@ -66,6 +66,13 @@ export function AddCardForm({ prefill }: { prefill?: AddCardPrefill }) {
   const [bonusReceived, setBonusReceived] = useState(false);
   const [notes, setNotes] = useState('');
 
+  // M2 onboarding extensions (PRD §16.2). Optional in the form — populated
+  // either here or by the post-OCR conversational flow.
+  const [activationDate, setActivationDate] = useState<string>('');
+  const [annualFeeNextDueDate, setAnnualFeeNextDueDate] = useState<string>('');
+  const [bonusTarget, setBonusTarget] = useState<string>('');
+  const [bonusSpendWindowEndDate, setBonusSpendWindowEndDate] = useState<string>('');
+
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -86,6 +93,10 @@ export function AddCardForm({ prefill }: { prefill?: AddCardPrefill }) {
         nickname: nickname || null,
         last4: last4 || null,
         expiryMonthYear: expiryMonthYear || null,
+        activationDate: activationDate || null,
+        annualFeeNextDueDate: annualFeeNextDueDate || null,
+        bonusTarget: bonusTarget ? Number(bonusTarget) : null,
+        bonusSpendWindowEndDate: bonusSpendWindowEndDate || null,
       });
       router.push('/');
     } catch (err) {
@@ -235,6 +246,56 @@ export function AddCardForm({ prefill }: { prefill?: AddCardPrefill }) {
                 className="w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-900"
               />
             </Field>
+
+            {/* Card-onboarding fields — power Tab 3 (Card Optimisation). */}
+            <div className="grid grid-cols-2 gap-3">
+              <Field label="Activation date" htmlFor="activationDate">
+                <input
+                  id="activationDate"
+                  type="date"
+                  value={activationDate}
+                  onChange={(e) => setActivationDate(e.target.value)}
+                  className="w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-900"
+                />
+              </Field>
+              <Field label="Annual fee next due" htmlFor="annualFeeNextDueDate">
+                <input
+                  id="annualFeeNextDueDate"
+                  type="date"
+                  value={annualFeeNextDueDate}
+                  onChange={(e) => setAnnualFeeNextDueDate(e.target.value)}
+                  className="w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-900"
+                />
+              </Field>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <Field
+                label="Min-spend target (AUD)"
+                htmlFor="bonusTarget"
+                hint="For sign-up bonus tracking"
+              >
+                <input
+                  id="bonusTarget"
+                  type="number"
+                  inputMode="numeric"
+                  min="0"
+                  step="100"
+                  placeholder="3000"
+                  value={bonusTarget}
+                  onChange={(e) => setBonusTarget(e.target.value)}
+                  className="w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-900"
+                />
+              </Field>
+              <Field label="Spend by" htmlFor="bonusSpendWindowEndDate">
+                <input
+                  id="bonusSpendWindowEndDate"
+                  type="date"
+                  value={bonusSpendWindowEndDate}
+                  onChange={(e) => setBonusSpendWindowEndDate(e.target.value)}
+                  className="w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-900"
+                />
+              </Field>
+            </div>
           </div>
         </details>
 

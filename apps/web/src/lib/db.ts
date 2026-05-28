@@ -1,6 +1,11 @@
 // Browser-only IndexedDB persistence via Dexie.
-// Single mutable entity in M1: UserCard. The bundled catalogue (issuers/cards)
-// ships with @ph/shared and is not persisted.
+//
+// Two mutable tables in M2:
+//   - userCards: the user's card history (added M1)
+//   - userBenefitRedemptions: per-period benefit usage records (added M2)
+//
+// The bundled catalogue (issuers/cards/benefits) ships with @ph/shared and
+// is not persisted.
 //
 // Encryption-at-rest is deferred for v1 internal testing per kickoff
 // agreement (see docs/DECISIONS.md). Browser IndexedDB stores card history
@@ -9,16 +14,22 @@
 // other than the dedicated last4 (which must be exactly 4 digits).
 
 import Dexie, { type EntityTable } from 'dexie';
-import type { UserCard } from '@ph/shared';
+import type { UserCard, UserBenefitRedemption } from '@ph/shared';
 
 class PhDatabase extends Dexie {
   userCards!: EntityTable<UserCard, 'id'>;
+  userBenefitRedemptions!: EntityTable<UserBenefitRedemption, 'id'>;
 
   constructor() {
     super('ph-copilot');
+    // v1: userCards only. v2 adds userBenefitRedemptions. Dexie applies
+    // migrations in order on open(); existing v1 databases keep their data.
     this.version(1).stores({
-      // Primary key first; the rest are indexes for filtering.
       userCards: 'id, cardId, applicationDate, cancellationDate, createdAt',
+    });
+    this.version(2).stores({
+      userCards: 'id, cardId, applicationDate, cancellationDate, createdAt',
+      userBenefitRedemptions: 'id, userCardId, benefitId, periodEndDate, redeemedAt',
     });
   }
 }
@@ -36,8 +47,11 @@ export function getDb(): PhDatabase {
   return dbInstance;
 }
 
-/** Test-only: wipe the database. Used by the dev-menu seeder. */
+/** Test-only: wipe both tables. Used by the dev-menu seeder. */
 export async function resetDb(): Promise<void> {
   const db = getDb();
-  await db.userCards.clear();
+  await db.transaction('rw', db.userCards, db.userBenefitRedemptions, async () => {
+    await db.userCards.clear();
+    await db.userBenefitRedemptions.clear();
+  });
 }

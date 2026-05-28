@@ -1,0 +1,187 @@
+'use client';
+
+// Reusable voice-or-text input. Tap the mic to dictate, or just type in the
+// field. Used by Update Spend, Update Benefits, Ask Copilot, and the
+// post-OCR conversational onboarding.
+//
+// Streaming behaviour: interim transcripts update the visible text live;
+// the final transcript fires `onSubmit` when the user taps "Send" (or hits
+// Enter). The component does NOT auto-submit on end-of-speech — the user
+// confirms, so a misheard phrase can be corrected in place.
+
+import { useEffect, useRef, useState } from 'react';
+import { Mic, MicOff, Send, AlertCircle } from 'lucide-react';
+import {
+  getSpeechRecognitionCtor,
+  isSpeechRecognitionAvailable,
+  type SpeechRecognitionInstance,
+} from '@/lib/speech';
+
+export interface VoiceInputProps {
+  placeholder?: string;
+  ariaLabel: string;
+  initialValue?: string;
+  onSubmit: (text: string) => void;
+  disabled?: boolean;
+  /** Optional: render an extra hint below the input (e.g. examples). */
+  hint?: React.ReactNode;
+  /** Optional autoFocus the text input on mount. */
+  autoFocus?: boolean;
+}
+
+type Status = 'idle' | 'listening' | 'error';
+
+export function VoiceInput({
+  placeholder,
+  ariaLabel,
+  initialValue = '',
+  onSubmit,
+  disabled,
+  hint,
+  autoFocus,
+}: VoiceInputProps) {
+  const [text, setText] = useState(initialValue);
+  const [status, setStatus] = useState<Status>('idle');
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const recognitionRef = useRef<SpeechRecognitionInstance | null>(null);
+  const supported = isSpeechRecognitionAvailable();
+
+  useEffect(() => {
+    return () => {
+      try {
+        recognitionRef.current?.abort();
+      } catch {
+        /* ignore */
+      }
+    };
+  }, []);
+
+  function startListening() {
+    const Ctor = getSpeechRecognitionCtor();
+    if (!Ctor) {
+      setStatus('error');
+      setErrorMessage('Voice input isn’t supported in this browser. Type instead.');
+      return;
+    }
+    try {
+      const recognition = new Ctor();
+      recognition.lang = 'en-AU';
+      recognition.interimResults = true;
+      recognition.continuous = false;
+      recognition.maxAlternatives = 1;
+
+      let finalText = '';
+      recognition.onresult = (event) => {
+        let interim = '';
+        for (let i = event.resultIndex; i < event.results.length; i++) {
+          const result = event.results[i];
+          if (!result) continue;
+          const alt = result[0];
+          if (!alt) continue;
+          if (result.isFinal) finalText += alt.transcript;
+          else interim += alt.transcript;
+        }
+        setText((finalText + interim).trim());
+      };
+      recognition.onerror = (event) => {
+        setStatus('error');
+        const code = event.error ?? 'unknown';
+        setErrorMessage(
+          code === 'not-allowed'
+            ? 'Microphone permission denied. Tap the lock icon in the address bar to allow.'
+            : `Voice input error: ${code}`,
+        );
+      };
+      recognition.onend = () => {
+        setStatus((s) => (s === 'listening' ? 'idle' : s));
+      };
+
+      recognitionRef.current = recognition;
+      recognition.start();
+      setStatus('listening');
+      setErrorMessage(null);
+    } catch (err) {
+      setStatus('error');
+      setErrorMessage(err instanceof Error ? err.message : String(err));
+    }
+  }
+
+  function stopListening() {
+    try {
+      recognitionRef.current?.stop();
+    } catch {
+      /* ignore */
+    }
+    setStatus('idle');
+  }
+
+  function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    const trimmed = text.trim();
+    if (!trimmed || disabled) return;
+    onSubmit(trimmed);
+    setText('');
+  }
+
+  return (
+    <form onSubmit={handleSubmit} className="w-full">
+      <div className="flex items-center gap-2 rounded-2xl border border-zinc-300 bg-white px-2 py-1.5 focus-within:ring-2 focus-within:ring-[var(--color-ph-red)] dark:border-zinc-700 dark:bg-zinc-900">
+        {supported && (
+          <button
+            type="button"
+            onClick={status === 'listening' ? stopListening : startListening}
+            disabled={disabled}
+            aria-label={status === 'listening' ? 'Stop voice input' : 'Start voice input'}
+            aria-pressed={status === 'listening'}
+            className={`grid h-9 w-9 flex-none place-items-center rounded-full transition-colors ${
+              status === 'listening'
+                ? 'animate-pulse bg-[var(--color-ph-red)] text-white'
+                : 'text-zinc-600 hover:bg-zinc-100 dark:text-zinc-300 dark:hover:bg-zinc-800'
+            }`}
+          >
+            {status === 'listening' ? (
+              <MicOff className="h-4 w-4" aria-hidden />
+            ) : (
+              <Mic className="h-4 w-4" aria-hidden />
+            )}
+          </button>
+        )}
+        <input
+          type="text"
+          value={text}
+          onChange={(e) => setText(e.target.value)}
+          placeholder={placeholder}
+          aria-label={ariaLabel}
+          disabled={disabled}
+          autoFocus={autoFocus}
+          className="min-w-0 flex-1 bg-transparent px-1 py-2 text-sm outline-none"
+        />
+        <button
+          type="submit"
+          disabled={!text.trim() || disabled}
+          aria-label="Send"
+          className="grid h-9 w-9 flex-none place-items-center rounded-full bg-[var(--color-ph-red)] text-white disabled:cursor-not-allowed disabled:opacity-40"
+        >
+          <Send className="h-4 w-4" aria-hidden />
+        </button>
+      </div>
+      {!supported && (
+        <p className="mt-2 flex items-start gap-1.5 text-[11px] text-zinc-500">
+          <AlertCircle className="mt-0.5 h-3 w-3 flex-none" aria-hidden />
+          Voice input isn’t supported in this browser. Type instead. Chrome, Edge, and Safari
+          support voice.
+        </p>
+      )}
+      {errorMessage && (
+        <p
+          role="alert"
+          className="mt-2 flex items-start gap-1.5 rounded-lg bg-rose-50 px-2 py-1.5 text-[11px] text-rose-800 dark:bg-rose-950/40 dark:text-rose-200"
+        >
+          <AlertCircle className="mt-0.5 h-3 w-3 flex-none" aria-hidden />
+          {errorMessage}
+        </p>
+      )}
+      {hint && <div className="mt-2 text-[11px] text-zinc-500">{hint}</div>}
+    </form>
+  );
+}

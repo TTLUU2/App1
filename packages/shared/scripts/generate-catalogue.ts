@@ -11,18 +11,22 @@ import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 import { v5 as uuidv5 } from 'uuid';
 import type {
+  Benefit,
+  BenefitCategory,
+  BenefitPeriod,
+  Card,
   CardType,
   ConfidenceLevel,
   EligibilityScope,
   EligibilityType,
   Issuer,
-  Card,
   RewardsProgram,
 } from '../src/types';
 
 // Fixed namespace UUIDs so catalogue ids stay deterministic across regenerations.
 const ISSUER_NAMESPACE = '7c1f4e9a-6d3b-4c0a-9f0e-3a8a2b6d1f01';
 const CARD_NAMESPACE = '7c1f4e9a-6d3b-4c0a-9f0e-3a8a2b6d1f02';
+const BENEFIT_NAMESPACE = '7c1f4e9a-6d3b-4c0a-9f0e-3a8a2b6d1f03';
 
 interface SeedIssuer {
   name: string;
@@ -525,6 +529,57 @@ export const POINT_HACKS_URLS: Record<string, string | null> = {
   'Virgin Money No Annual Fee': null,
 };
 
+// ── Benefits (placeholder dataset, see Decisions doc) ─────────────────────
+//
+// Three tiers by annualFee:
+//   - Premium (>= $350): travel credit + hotel credit
+//   - Mid    ($100–349): annual statement credit
+//   - Basic  (< $100):   no benefits
+//
+// Values are realistic AU defaults derived from common card-tier benefits as
+// of early 2026. Swap in real per-card metadata when editorial provides it.
+
+interface BenefitTemplate {
+  name: string;
+  description: string;
+  valueAud: number;
+  category: BenefitCategory;
+  period: BenefitPeriod;
+}
+
+const PREMIUM_BENEFITS: BenefitTemplate[] = [
+  {
+    name: 'Annual travel credit',
+    description: 'Statement credit for eligible travel bookings, refreshed each card year.',
+    valueAud: 400,
+    category: 'travel_credit',
+    period: 'annual',
+  },
+  {
+    name: 'Hotel credit',
+    description: 'Credit on eligible hotel bookings each card year.',
+    valueAud: 200,
+    category: 'hotel_credit',
+    period: 'annual',
+  },
+];
+
+const MID_BENEFITS: BenefitTemplate[] = [
+  {
+    name: 'Annual statement credit',
+    description: 'Annual statement credit, refreshed each card year.',
+    valueAud: 100,
+    category: 'statement_credit',
+    period: 'annual',
+  },
+];
+
+function benefitsForCard(card: SeedCard): BenefitTemplate[] {
+  if (card.annualFee >= 350) return PREMIUM_BENEFITS;
+  if (card.annualFee >= 100) return MID_BENEFITS;
+  return [];
+}
+
 function main(): void {
   const issuers: Issuer[] = issuerData.map((d) => ({
     id: uuidv5(d.shortName, ISSUER_NAMESPACE),
@@ -556,11 +611,32 @@ function main(): void {
     };
   });
 
+  // Generate per-card placeholder benefits.
+  const benefits: Benefit[] = [];
+  for (const seed of cardData) {
+    const card = cards.find((c) => c.name === seed.name);
+    if (!card) continue;
+    for (const tpl of benefitsForCard(seed)) {
+      benefits.push({
+        id: uuidv5(`${card.id}:${tpl.name}`, BENEFIT_NAMESPACE),
+        cardId: card.id,
+        name: tpl.name,
+        description: tpl.description,
+        valueAud: tpl.valueAud,
+        category: tpl.category,
+        period: tpl.period,
+      });
+    }
+  }
+
   const dataDir = join(dirname(fileURLToPath(import.meta.url)), '..', 'data');
   writeFileSync(join(dataDir, 'issuers.json'), JSON.stringify(issuers, null, 2) + '\n');
   writeFileSync(join(dataDir, 'cards.json'), JSON.stringify(cards, null, 2) + '\n');
+  writeFileSync(join(dataDir, 'benefits.json'), JSON.stringify(benefits, null, 2) + '\n');
 
-  console.log(`Wrote ${issuers.length} issuers and ${cards.length} cards.`);
+  console.log(
+    `Wrote ${issuers.length} issuers, ${cards.length} cards, ${benefits.length} benefits.`,
+  );
 }
 
 main();
