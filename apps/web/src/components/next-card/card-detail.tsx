@@ -267,7 +267,10 @@ export function CardNotFound() {
       <p className="mt-2 text-sm text-zinc-600 dark:text-zinc-400">
         The catalogue doesn&apos;t contain this card id.
       </p>
-      <Link href="/" className="mt-4 inline-block text-sm text-[var(--color-ph-red)] underline">
+      <Link
+        href="/next-card"
+        className="mt-4 inline-block text-sm text-[var(--color-ph-red)] underline"
+      >
         Back to Next Card
       </Link>
     </main>
