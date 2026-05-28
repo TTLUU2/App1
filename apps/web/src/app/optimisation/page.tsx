@@ -13,7 +13,7 @@ import { benefitStatusFor, computeSummary, threeMonthCtaCards } from '@/lib/tab3
 import { SummaryHeader } from '@/components/tab3/summary-header';
 import { ThreeMonthCta } from '@/components/tab3/three-month-cta';
 import { HeldCardRow } from '@/components/tab3/held-card-row';
-import { QuickUpdateBar } from '@/components/tab3/quick-update-bar';
+import { CardUpdateCard } from '@/components/tab3/card-update-card';
 import { TripleTapHeader } from '@/components/triple-tap-header';
 import Link from 'next/link';
 
@@ -75,11 +75,11 @@ export default function OptimisationPage() {
             <SummaryHeader stats={summary} />
           </div>
 
-          {/* Voice update for held cards — speak a spend or benefit phrase
-              and have it applied inline without leaving the dashboard. */}
+          {/* Card Update — big mic primary, text fallback. Voice-first inline
+              update for held cards (spend OR benefit, parser decides). */}
           {heldCards.length > 0 && (
             <div className="mt-4">
-              <QuickUpdateBar />
+              <CardUpdateCard />
             </div>
           )}
 

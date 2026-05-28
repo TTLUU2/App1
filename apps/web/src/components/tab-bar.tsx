@@ -56,9 +56,12 @@ export function TabBar() {
           );
         })}
 
-        {/* Centre FAB: absolutely positioned over the divider between tab 2 and tab 3 */}
+        {/* Centre FAB: absolutely positioned over the divider between tab 2 and tab 3.
+            Explicit z-40 (one level above the tab bar's z-30) so no scrolling content
+            ever ends up obscuring it. Pointer-events: only the inner div is interactive
+            so the LI doesn't intercept clicks meant for the tabs beneath it. */}
         <li
-          className="pointer-events-none absolute inset-x-0 -top-6 flex justify-center"
+          className="pointer-events-none absolute inset-x-0 -top-6 z-40 flex justify-center"
           role="presentation"
         >
           <div className="pointer-events-auto">

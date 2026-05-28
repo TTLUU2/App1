@@ -34,7 +34,10 @@ export function HeldCardRow({
   benefits: Benefit[];
   redemptions: UserBenefitRedemption[];
 }) {
-  const [open, setOpen] = useState(false);
+  // Default-expanded per UX call — most useful info (spend progress + benefits
+  // + quick actions) is in the expanded view, so users shouldn't have to
+  // open every row to see it.
+  const [open, setOpen] = useState(true);
   const cardBenefits = benefits.filter((b) => b.cardId === uc.cardId);
   const benefitStatuses = cardBenefits.map((b) => benefitStatusFor(b, uc, redemptions));
   const status = computeCardStatus(uc, benefitStatuses);

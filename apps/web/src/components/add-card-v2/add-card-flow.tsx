@@ -47,7 +47,17 @@ interface ParseSpendResp {
   skip: boolean;
 }
 
-export function AddCardFlow() {
+interface AddCardFlowProps {
+  /** Called instead of router.push('/') after a successful save. The modal
+   *  wrapper uses this to show its own success/Add-another view without
+   *  bouncing the user out of the current tab. */
+  onSaved?: (savedCardId: string) => void;
+  /** Called when the user dismisses via the back affordance. The default
+   *  navigates to '/'; the modal wrapper passes its own close-dialog handler. */
+  onClose?: () => void;
+}
+
+export function AddCardFlow({ onSaved, onClose }: AddCardFlowProps = {}) {
   const router = useRouter();
   const addCard = useUserCardsStore((s) => s.addCard);
   const cards = useMemo(() => catalogue.allCards(), []);
@@ -249,7 +259,14 @@ export function AddCardFlow() {
         bonusTarget: collected.bonusTarget,
         bonusSpendWindowEndDate: collected.bonusSpendWindowEndDate,
       });
-      router.push('/');
+      if (onSaved) {
+        onSaved(collected.cardId);
+        // The modal wrapper takes over from here — clear local state in
+        // case it remounts us for an "Add another" cycle.
+        setPending(false);
+      } else {
+        router.push('/');
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
       setPending(false);
@@ -282,13 +299,24 @@ export function AddCardFlow() {
   return (
     <main className="flex-1 px-4 pb-6 pt-2">
       <div className="flex items-center">
-        <Link
-          href="/"
-          aria-label="Back to Next Card"
-          className="grid h-9 w-9 place-items-center rounded-full text-zinc-600 hover:bg-zinc-100 dark:text-zinc-300 dark:hover:bg-zinc-800"
-        >
-          <ChevronLeft className="h-5 w-5" aria-hidden />
-        </Link>
+        {onClose ? (
+          <button
+            type="button"
+            onClick={onClose}
+            aria-label="Close add card"
+            className="grid h-9 w-9 place-items-center rounded-full text-zinc-600 hover:bg-zinc-100 dark:text-zinc-300 dark:hover:bg-zinc-800"
+          >
+            <ChevronLeft className="h-5 w-5" aria-hidden />
+          </button>
+        ) : (
+          <Link
+            href="/"
+            aria-label="Back to Next Card"
+            className="grid h-9 w-9 place-items-center rounded-full text-zinc-600 hover:bg-zinc-100 dark:text-zinc-300 dark:hover:bg-zinc-800"
+          >
+            <ChevronLeft className="h-5 w-5" aria-hidden />
+          </Link>
+        )}
       </div>
       <header className="mt-2 flex items-center gap-2">
         <Sparkles className="h-5 w-5 text-[var(--color-ph-red)]" aria-hidden />
