@@ -1,5 +1,11 @@
 @import 'tailwindcss';
 
+/* Class-based dark mode (Tailwind v4 syntax). The `dark:` variant fires
+ * when the .dark class is anywhere on the ancestor tree. An inline script
+ * in app/layout.tsx sets that class before paint based on the persisted
+ * preference in localStorage, eliminating the flash-of-wrong-theme. */
+@custom-variant dark (&:where(.dark, .dark *));
+
 /* Point Hacks brand palette (placeholder hex pending official spec). */
 @theme {
   --color-ph-red: #d62828;

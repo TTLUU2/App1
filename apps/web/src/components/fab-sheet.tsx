@@ -3,12 +3,18 @@
 import * as Dialog from '@radix-ui/react-dialog';
 import Link from 'next/link';
 import { CreditCard, Mic, Receipt, Sparkles, X } from 'lucide-react';
-import { useState, type ReactNode } from 'react';
 import { AddCardModal } from './add-card-v2/add-card-modal';
 
 /**
- * FAB action sheet — four actions. "Add a card" opens an in-place modal
- * (no route change); the other three link to dedicated voice flows.
+ * Controlled FAB action sheet. Owned by whoever renders the FAB button; the
+ * trigger lives elsewhere as a plain <button onClick> — this component just
+ * renders the dialog when `open` is true.
+ *
+ * Previous version used Radix's Dialog.Trigger asChild + Slot pattern to
+ * wire the FAB button to the dialog. asChild silently failed for the user
+ * (visual press registered, dialog never opened) — likely Slot prop-merging
+ * losing the onClick. Plain onClick on the button + controlled Dialog is
+ * dead-simple and works regardless of layout context.
  */
 
 interface NavAction {
@@ -43,21 +49,26 @@ const NAV_ACTIONS: NavAction[] = [
   },
 ];
 
-export function FabSheet({ trigger }: { trigger: ReactNode }) {
-  const [sheetOpen, setSheetOpen] = useState(false);
-  const [addCardOpen, setAddCardOpen] = useState(false);
-
+export function FabSheet({
+  open,
+  onOpenChange,
+  addCardOpen,
+  onAddCardOpenChange,
+}: {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  addCardOpen: boolean;
+  onAddCardOpenChange: (open: boolean) => void;
+}) {
   function openAddCard() {
-    setSheetOpen(false);
-    // tiny delay so the sheet's close animation doesn't fight the modal's open
-    // animation visually. Both use the same z-stack; sheet at z-50 → modal at z-50.
-    setTimeout(() => setAddCardOpen(true), 80);
+    onOpenChange(false);
+    // Slight delay so the sheet close animation doesn't fight the modal open
+    setTimeout(() => onAddCardOpenChange(true), 80);
   }
 
   return (
     <>
-      <Dialog.Root open={sheetOpen} onOpenChange={setSheetOpen}>
-        <Dialog.Trigger asChild>{trigger}</Dialog.Trigger>
+      <Dialog.Root open={open} onOpenChange={onOpenChange}>
         <Dialog.Portal>
           <Dialog.Overlay className="fixed inset-0 z-40 bg-black/40 backdrop-blur-sm data-[state=open]:animate-in data-[state=open]:fade-in" />
           <Dialog.Content
@@ -92,7 +103,7 @@ export function FabSheet({ trigger }: { trigger: ReactNode }) {
               </li>
               {NAV_ACTIONS.map((action) => (
                 <li key={action.id}>
-                  <LinkRow action={action} onSelect={() => setSheetOpen(false)} />
+                  <LinkRow action={action} onSelect={() => onOpenChange(false)} />
                 </li>
               ))}
             </ul>
@@ -100,7 +111,7 @@ export function FabSheet({ trigger }: { trigger: ReactNode }) {
         </Dialog.Portal>
       </Dialog.Root>
 
-      <AddCardModal open={addCardOpen} onOpenChange={setAddCardOpen} />
+      <AddCardModal open={addCardOpen} onOpenChange={onAddCardOpenChange} />
     </>
   );
 }

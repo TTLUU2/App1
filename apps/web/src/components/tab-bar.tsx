@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { useState } from 'react';
 import { CreditCard, Gift, TrendingUp, Sparkles, Plus } from 'lucide-react';
 import clsx from 'clsx';
 import { FabSheet } from './fab-sheet';
@@ -9,11 +10,12 @@ import { FabSheet } from './fab-sheet';
 /**
  * Persistent four-tab bottom bar plus a centre FAB.
  *
- * Tab order is fixed per PRD §6.1. The FAB is rendered as a SIBLING of the
- * nav (not a child) — this puts it in its own stacking context above the
- * nav (nav z-30 → FAB z-50), so no scrolling content or future overlay can
- * accidentally cover it. Previous nested-li implementation suffered from
- * its z-index being clamped inside the nav's stacking context.
+ * Tab order is fixed per PRD §6.1. The FAB is a sibling of the nav (not a
+ * child) so its stacking context is independent of the nav (nav z-30 →
+ * FAB z-50). FAB is a plain <button onClick={...}> — TabBar owns the
+ * open state and passes it down to the controlled FabSheet. The previous
+ * Dialog.Trigger asChild pattern silently failed to attach the click
+ * handler in some renders.
  */
 
 const TABS = [
@@ -25,6 +27,8 @@ const TABS = [
 
 export function TabBar() {
   const pathname = usePathname();
+  const [sheetOpen, setSheetOpen] = useState(false);
+  const [addCardOpen, setAddCardOpen] = useState(false);
 
   return (
     <>
@@ -61,28 +65,27 @@ export function TabBar() {
         </ul>
       </nav>
 
-      {/* FAB — standalone fixed element outside the nav so its z-index is
-          unaffected by the nav's stacking context. Positioned so the FAB
-          centre sits on the tab bar's top edge (classic FAB-on-bar look). */}
-      <div
-        className="fixed left-1/2 z-50 -translate-x-1/2"
+      {/* FAB — plain button at z-50, outside the nav's stacking context.
+          Tapping it just flips the controlled FabSheet state below. */}
+      <button
+        type="button"
+        onClick={() => setSheetOpen(true)}
+        aria-label="Open actions"
+        aria-haspopup="dialog"
+        aria-expanded={sheetOpen}
+        className="fixed left-1/2 z-50 grid h-14 w-14 -translate-x-1/2 place-items-center rounded-full bg-[var(--color-ph-red)] text-white shadow-lg ring-4 ring-white transition-transform hover:scale-105 focus-visible:scale-105 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[var(--color-ph-red)]/40 active:scale-95 dark:ring-zinc-950"
         style={{ bottom: 'calc(2.25rem + env(safe-area-inset-bottom))' }}
       >
-        <FabSheet trigger={<FabButton />} />
-      </div>
-    </>
-  );
-}
+        <Plus className="h-7 w-7" aria-hidden />
+      </button>
 
-function FabButton() {
-  return (
-    <button
-      type="button"
-      aria-label="Open actions"
-      className="grid h-14 w-14 place-items-center rounded-full bg-[var(--color-ph-red)] text-white shadow-lg ring-4 ring-white transition-transform hover:scale-105 focus-visible:scale-105 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[var(--color-ph-red)]/40 active:scale-95 dark:ring-zinc-950"
-    >
-      <Plus className="h-7 w-7" aria-hidden />
-    </button>
+      <FabSheet
+        open={sheetOpen}
+        onOpenChange={setSheetOpen}
+        addCardOpen={addCardOpen}
+        onAddCardOpenChange={setAddCardOpen}
+      />
+    </>
   );
 }
 

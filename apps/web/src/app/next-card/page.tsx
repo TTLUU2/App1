@@ -15,6 +15,7 @@ import {
   applySortFilter,
   type SortFilterValue,
 } from '@/components/next-card/sort-filter-bar';
+import { ProgramPills } from '@/components/next-card/program-pills';
 import { TripleTapHeader } from '@/components/triple-tap-header';
 
 /**
@@ -72,8 +73,12 @@ export default function NextCardPage() {
             <EligibleSummary recommendations={recommendations} />
           </div>
 
-          <div className="mt-6">
+          <div className="mt-6 space-y-2">
             <SortFilterBar value={sortFilter} onChange={setSortFilter} />
+            <ProgramPills
+              value={sortFilter.filter}
+              onChange={(next) => setSortFilter({ ...sortFilter, filter: next })}
+            />
           </div>
 
           {sortFilter.filter === 'all' ? (
