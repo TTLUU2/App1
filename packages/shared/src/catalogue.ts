@@ -3,7 +3,7 @@
 
 import issuersJson from '../data/issuers.json' with { type: 'json' };
 import cardsJson from '../data/cards.json' with { type: 'json' };
-import type { Card, CardWithIssuer, Issuer } from './types.js';
+import type { Card, CardWithIssuer, Issuer } from './types';
 
 export function getIssuers(): Issuer[] {
   return issuersJson as Issuer[];

@@ -11,7 +11,7 @@ import type {
   EligibilityResult,
   Issuer,
   Recommendation,
-} from './types.js';
+} from './types';
 
 export function calculateEligibility(
   targetCard: CardWithIssuer,

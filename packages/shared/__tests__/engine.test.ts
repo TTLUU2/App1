@@ -5,9 +5,9 @@
 // at the time the tests were authored) so countdowns are deterministic.
 
 import { describe, it, expect, beforeAll, afterAll, vi } from 'vitest';
-import { calculateEligibility, generateRecommendations } from '../src/engine.js';
-import { getIssuers, getCardsWithIssuer } from '../src/catalogue.js';
-import type { CardWithIssuer, UserCard, UserCardWithDetails } from '../src/types.js';
+import { calculateEligibility, generateRecommendations } from '../src/engine';
+import { getIssuers, getCardsWithIssuer } from '../src/catalogue';
+import type { CardWithIssuer, UserCard, UserCardWithDetails } from '../src/types';
 
 const NOW = new Date('2026-05-28T00:00:00.000Z');
 

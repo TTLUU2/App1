@@ -18,7 +18,7 @@ import type {
   Issuer,
   Card,
   RewardsProgram,
-} from '../src/types.js';
+} from '../src/types';
 
 // Fixed namespace UUIDs so catalogue ids stay deterministic across regenerations.
 const ISSUER_NAMESPACE = '7c1f4e9a-6d3b-4c0a-9f0e-3a8a2b6d1f01';

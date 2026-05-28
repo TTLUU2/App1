@@ -1,0 +1,7 @@
+@import 'tailwindcss';
+
+/* Point Hacks brand palette (placeholder hex pending official spec). */
+@theme {
+  --color-ph-red: #d62828;
+  --color-ph-red-dark: #a51d1d;
+}

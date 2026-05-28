@@ -19,14 +19,11 @@
   },
   "packageManager": "pnpm@10.33.1",
   "lint-staged": {
-    "{apps,packages}/**/*.{ts,tsx,js,jsx}": [
-      "prettier --write",
-      "eslint --fix"
-    ],
     "*.{ts,tsx,js,jsx,json,md,yml,yaml,css}": [
       "prettier --write"
     ]
   },
+  "_comment_lint-staged": "ESLint deliberately not in the pre-commit hook: workspaces use incompatible ESLint majors (root v10, apps/web v9 pinned by eslint-config-next). CI runs `pnpm lint` per-workspace which resolves the right binary. Re-add when eslint-config-next supports v10.",
   "devDependencies": {
     "@eslint/js": "^10.0.1",
     "@types/node": "^25.9.1",

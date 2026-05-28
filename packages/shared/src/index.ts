@@ -1,3 +1,3 @@
-export * from './types.js';
-export { calculateEligibility, generateRecommendations } from './engine.js';
-export { getIssuers, getCards, getCardsWithIssuer, getCardWithIssuer } from './catalogue.js';
+export * from './types';
+export { calculateEligibility, generateRecommendations } from './engine';
+export { getIssuers, getCards, getCardsWithIssuer, getCardWithIssuer } from './catalogue';
