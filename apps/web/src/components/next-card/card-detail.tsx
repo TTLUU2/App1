@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useMemo } from 'react';
-import { ChevronLeft, BookOpen, CheckCircle2, X, Info } from 'lucide-react';
+import { ChevronLeft, BookOpen, CheckCircle2, X, Info, ExternalLink } from 'lucide-react';
 import type { CardWithIssuer } from '@ph/shared';
 import { catalogue, selectEligibilityForCard, useUserCardsStore } from '@/store/user-cards';
 import { CardArt } from '@/components/card-art';
@@ -198,20 +198,35 @@ export function CardDetail({ card }: { card: CardWithIssuer }) {
         >
           Add a different date / details
         </Link>
-        <button
-          type="button"
-          disabled
-          aria-disabled
-          className="inline-flex cursor-not-allowed items-center justify-center gap-2 rounded-full border border-dashed border-zinc-300 px-4 py-2.5 text-sm font-medium text-zinc-500 dark:border-zinc-700"
-        >
-          <BookOpen className="h-4 w-4" aria-hidden />
-          Read Point Hacks guide
-          <span className="ml-1 rounded-full bg-zinc-100 px-1.5 py-0.5 text-[10px] uppercase tracking-wide dark:bg-zinc-800">
-            Soon
-          </span>
-        </button>
+        <ReadGuideButton card={card} />
       </div>
     </main>
+  );
+}
+
+// Per PRD §10.3 (updated): deep-links to the canonical Point Hacks guide
+// for this card. Falls back to the credit-cards index when the catalogue
+// has no per-card URL (6 of 34 cards as of this commit — see the
+// POINT_HACKS_URLS map in packages/shared/scripts/generate-catalogue.ts).
+function ReadGuideButton({ card }: { card: CardWithIssuer }) {
+  const url = card.pointHacksUrl ?? 'https://www.pointhacks.com.au/credit-cards/';
+  const isFallback = card.pointHacksUrl == null;
+  return (
+    <a
+      href={url}
+      target="_blank"
+      rel="noopener noreferrer"
+      aria-label={
+        isFallback
+          ? 'Browse Point Hacks credit-card guides (opens in a new tab)'
+          : `Read the Point Hacks guide for ${card.name} (opens in a new tab)`
+      }
+      className="inline-flex items-center justify-center gap-2 rounded-full border border-zinc-300 px-4 py-2.5 text-sm font-medium text-zinc-700 transition-colors hover:border-[var(--color-ph-red)] hover:text-[var(--color-ph-red)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-ph-red)] dark:border-zinc-700 dark:text-zinc-300"
+    >
+      <BookOpen className="h-4 w-4" aria-hidden />
+      {isFallback ? 'Browse Point Hacks guides' : 'Read Point Hacks guide'}
+      <ExternalLink className="h-3.5 w-3.5 opacity-60" aria-hidden />
+    </a>
   );
 }
 

@@ -110,7 +110,7 @@ CI runs `typecheck + lint + test` on every push to `main` and every PR.
 - ✅ 4-tab shell (Card Matching / Deals & Alerts / Card Optimisation / Next Card) with persistent bottom bar
 - ✅ Central FAB opens a Radix bottom sheet with 4 action rows (Add card live, Scan card live, Update spend + Ask Copilot show "Coming soon")
 - ✅ Tab 4 (Next Card) full: hero card, eligible-cards summary by FF program, upcoming list, collapsible grey-area + not-eligible sections, sort + filter controls
-- ✅ Per-card detail screen: status, confidence, reason, issuer rules, your history, mark-as-applied / mark-as-cancelled
+- ✅ Per-card detail screen: status, confidence, reason, issuer rules, your history, mark-as-applied / mark-as-cancelled, **"Read guide" deep-links to the canonical Point Hacks article per card** (28 of 34 have a direct link; the other 6 fall back to the index)
 - ✅ Manual add-card form with PAN/CVV write-boundary validator
 - ✅ Camera capture + Claude Vision OCR (pulled forward from M3) — needs `ANTHROPIC_API_KEY`
 - ✅ Dev menu seeder (triple-tap any page header) — populates 5 demo cards that surface every Tab 4 status

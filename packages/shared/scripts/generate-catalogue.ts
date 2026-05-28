@@ -457,6 +457,74 @@ const cardData: SeedCard[] = [
   },
 ];
 
+// Per-card guide URLs from the canonical upstream at
+// https://www.pointhacks.com.au/credit-cards/ — extracted via the site's
+// sitemap (cardguide-sitemap.xml), which carries more entries than the
+// public index. Cards without a dedicated guide map to null; the UI falls
+// back to the index URL in that case.
+//
+// Re-extract when seed.ts adds/renames cards: WebFetch the sitemap, then
+// match each catalogue name to the closest -guide slug. Sitemap is the
+// source of truth; the public index page paginates and may hide cards.
+export const POINT_HACKS_URLS: Record<string, string | null> = {
+  'American Express Platinum Card':
+    'https://www.pointhacks.com.au/credit-cards/american-express-platinum-guide/',
+  'American Express Explorer':
+    'https://www.pointhacks.com.au/credit-cards/american-express-explorer-guide/',
+  'American Express Velocity Platinum':
+    'https://www.pointhacks.com.au/credit-cards/american-express-velocity-platinum-guide/',
+  'Qantas American Express Ultimate':
+    'https://www.pointhacks.com.au/credit-cards/qantas-american-express-ultimate-guide/',
+  'Qantas American Express Premium':
+    'https://www.pointhacks.com.au/credit-cards/qantas-american-express-premium-guide/',
+  'American Express Velocity Business':
+    'https://www.pointhacks.com.au/credit-cards/american-express-velocity-business-guide/',
+  'American Express Business Platinum':
+    'https://www.pointhacks.com.au/credit-cards/american-express-platinum-business-guide/',
+  'American Express Business Explorer': null,
+  'American Express David Jones Platinum': null,
+  'ANZ Rewards Black': 'https://www.pointhacks.com.au/credit-cards/anz-rewards-black-guide/',
+  'ANZ Frequent Flyer Black':
+    'https://www.pointhacks.com.au/credit-cards/anz-frequent-flyer-black-guide/',
+  'ANZ Rewards Platinum': 'https://www.pointhacks.com.au/credit-cards/anz-rewards-platinum-guide/',
+  'ANZ Frequent Flyer Platinum':
+    'https://www.pointhacks.com.au/credit-cards/anz-frequent-flyer-platinum-guide/',
+  'Westpac Altitude Qantas Black':
+    'https://www.pointhacks.com.au/credit-cards/westpac-altitude-qantas-black-guide/',
+  // Westpac Altitude Platinum: catalogue name lacks a program qualifier;
+  // mapped to the Rewards (non-FF) Platinum guide — confirm with editorial.
+  'Westpac Altitude Platinum':
+    'https://www.pointhacks.com.au/credit-cards/westpac-altitude-rewards-platinum-guide/',
+  'Westpac Altitude Velocity Black':
+    'https://www.pointhacks.com.au/credit-cards/westpac-altitude-velocity-black-guide/',
+  'Westpac Altitude Velocity Platinum':
+    'https://www.pointhacks.com.au/credit-cards/westpac-altitude-velocity-platinum-guide/',
+  'NAB Qantas Rewards Signature':
+    'https://www.pointhacks.com.au/credit-cards/nab-qantas-rewards-signature-guide/',
+  'NAB Qantas Rewards Premium':
+    'https://www.pointhacks.com.au/credit-cards/nab-qantas-rewards-premium-guide/',
+  'NAB Rewards Signature':
+    'https://www.pointhacks.com.au/credit-cards/nab-rewards-signature-guide/',
+  'NAB Rewards Platinum': 'https://www.pointhacks.com.au/credit-cards/nab-rewards-platinum-guide/',
+  'Qantas Money Platinum':
+    'https://www.pointhacks.com.au/credit-cards/qantas-premier-platinum-card-guide/',
+  'Qantas Money Titanium':
+    'https://www.pointhacks.com.au/credit-cards/qantas-premier-titanium-card-guide/',
+  'Citi Prestige': 'https://www.pointhacks.com.au/credit-cards/citi-prestige-card-guide/',
+  'Citi Premier': 'https://www.pointhacks.com.au/credit-cards/citi-premier-card-guide/',
+  'Citi Rewards': null,
+  'HSBC Platinum Qantas': 'https://www.pointhacks.com.au/credit-cards/hsbc-platinum-qantas-guide/',
+  'HSBC Star Alliance': 'https://www.pointhacks.com.au/credit-cards/hsbc-star-alliance-card-guide/',
+  'CommBank Ultimate Awards':
+    'https://www.pointhacks.com.au/credit-cards/commbank-ultimate-awards-card-guide/',
+  'CommBank Smart Awards': null,
+  'CommBank Awards': null,
+  'Virgin Money High Flyer':
+    'https://www.pointhacks.com.au/credit-cards/virgin-money-high-flyer-visa-guide/',
+  'Virgin Money Flyer': 'https://www.pointhacks.com.au/credit-cards/virgin-money-flyer-visa-guide/',
+  'Virgin Money No Annual Fee': null,
+};
+
 function main(): void {
   const issuers: Issuer[] = issuerData.map((d) => ({
     id: uuidv5(d.shortName, ISSUER_NAMESPACE),
@@ -470,6 +538,11 @@ function main(): void {
     if (!issuerId) {
       throw new Error(`Unknown issuer shortName "${d.issuerShort}" referenced by card "${d.name}"`);
     }
+    if (!(d.name in POINT_HACKS_URLS)) {
+      throw new Error(
+        `Card "${d.name}" has no entry in POINT_HACKS_URLS. Add it (set to null if no guide exists).`,
+      );
+    }
     return {
       id: uuidv5(d.name, CARD_NAMESPACE),
       issuerId,
@@ -479,6 +552,7 @@ function main(): void {
       bonusPoints: d.bonusPoints,
       annualFee: d.annualFee,
       rewardsProgram: d.rewardsProgram,
+      pointHacksUrl: POINT_HACKS_URLS[d.name] ?? null,
     };
   });
 

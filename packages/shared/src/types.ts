@@ -36,6 +36,13 @@ export interface Card {
   bonusPoints: number | null;
   annualFee: number;
   rewardsProgram: RewardsProgram;
+  /**
+   * Direct deep-link to the per-card Point Hacks guide at
+   * https://www.pointhacks.com.au/credit-cards/ — the canonical upstream
+   * for AU card offers, art, and editorial content per the updated PRD §10.3.
+   * Null when no dedicated guide exists; the UI falls back to the index.
+   */
+  pointHacksUrl: string | null;
 }
 
 export interface CardWithIssuer extends Card {

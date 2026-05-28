@@ -204,12 +204,38 @@ between; deferred to M2 when there are ≥2 actions.
 
 ---
 
-## 15. Per-card "Read guide" link is a disabled stub
+## 15. Per-card "Read guide" link — wired to upstream
 
-PRD §10.3 calls for a deep-link to the Point Hacks article for each card.
-seed.ts has no per-card URLs. Rendered as a disabled button with a "Soon"
-chip so the visual hierarchy is right; add when card data gets a
-`pointHacksUrl` field.
+**Resolved (post-M1, follow-up commit).** PRD §10.3 deep-links to the
+canonical Point Hacks guide for each card on https://www.pointhacks.com.au/credit-cards/
+
+- New `pointHacksUrl: string | null` field on `Card` in `@ph/shared/types`.
+- 28 of 34 cards have a dedicated guide; 6 are null (Amex Business
+  Explorer, Amex David Jones Platinum, Citi Rewards, CommBank Smart
+  Awards, CommBank Awards, Virgin Money No Annual Fee — checked against
+  the upstream `cardguide-sitemap.xml`, none have a current guide).
+- "Read guide" button uses the URL when present; falls back to the
+  index URL when null with label "Browse Point Hacks guides" so the
+  affordance never disappears.
+- Re-extraction recipe in the comment above `POINT_HACKS_URLS` in
+  `packages/shared/scripts/generate-catalogue.ts` for when seed.ts
+  changes.
+
+**Open follow-ups** that the updated PRD §10.3 implies but aren't in
+this commit:
+
+- **Real card art** — upstream serves images at
+  `plastic.pointhacks.com.au/api/files/...`. Currently we render
+  procedural Tailwind-gradient art (see Decision §12). Fetching, caching,
+  and serving real art is a small but distinct task — likely a
+  build-time script that downloads each image and serves it via
+  `next/image` (no client-side hot-link). Best done alongside a
+  catalogue-refresh script.
+- **Offer refresh** — bonusPoints / annualFee values are snapshotted
+  from the early Feb 2026 seed. Upstream is now canonical, so we need
+  a periodic refresh pipeline (manual cadence for M1 is fine; semi-
+  automated parse of the index is the M5/M6 polish move). Without a
+  refresh, our recommendations gradually go stale.
 
 ---
 

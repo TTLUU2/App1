@@ -7,7 +7,8 @@
     "cardFamily": "Platinum",
     "bonusPoints": 200000,
     "annualFee": 1450,
-    "rewardsProgram": "flexible"
+    "rewardsProgram": "flexible",
+    "pointHacksUrl": "https://www.pointhacks.com.au/credit-cards/american-express-platinum-guide/"
   },
   {
     "id": "3b4ebbd4-af18-5f7e-8e78-78c07bc91fd9",
@@ -17,7 +18,8 @@
     "cardFamily": "Explorer",
     "bonusPoints": 100000,
     "annualFee": 399,
-    "rewardsProgram": "flexible"
+    "rewardsProgram": "flexible",
+    "pointHacksUrl": "https://www.pointhacks.com.au/credit-cards/american-express-explorer-guide/"
   },
   {
     "id": "25647c5a-da76-5323-bb73-16749973ef9a",
@@ -27,7 +29,8 @@
     "cardFamily": "Velocity",
     "bonusPoints": 100000,
     "annualFee": 450,
-    "rewardsProgram": "velocity"
+    "rewardsProgram": "velocity",
+    "pointHacksUrl": "https://www.pointhacks.com.au/credit-cards/american-express-velocity-platinum-guide/"
   },
   {
     "id": "a6ba6bbb-cbf9-5f18-8f30-6f2b2b5c2c4d",
@@ -37,7 +40,8 @@
     "cardFamily": "Qantas",
     "bonusPoints": 100000,
     "annualFee": 450,
-    "rewardsProgram": "qantas"
+    "rewardsProgram": "qantas",
+    "pointHacksUrl": "https://www.pointhacks.com.au/credit-cards/qantas-american-express-ultimate-guide/"
   },
   {
     "id": "c9bb9fb2-0463-5161-941d-f29c9c6859d1",
@@ -47,7 +51,8 @@
     "cardFamily": "Qantas",
     "bonusPoints": 55000,
     "annualFee": 249,
-    "rewardsProgram": "qantas"
+    "rewardsProgram": "qantas",
+    "pointHacksUrl": "https://www.pointhacks.com.au/credit-cards/qantas-american-express-premium-guide/"
   },
   {
     "id": "dbc11c74-c173-5a8b-8576-4ed1fc660c3e",
@@ -57,7 +62,8 @@
     "cardFamily": "Business Velocity",
     "bonusPoints": 100000,
     "annualFee": 450,
-    "rewardsProgram": "velocity"
+    "rewardsProgram": "velocity",
+    "pointHacksUrl": "https://www.pointhacks.com.au/credit-cards/american-express-velocity-business-guide/"
   },
   {
     "id": "beefeee3-c4ac-5507-961c-2fa81eb5cdb2",
@@ -67,7 +73,8 @@
     "cardFamily": "Business Platinum",
     "bonusPoints": 150000,
     "annualFee": 1750,
-    "rewardsProgram": "flexible"
+    "rewardsProgram": "flexible",
+    "pointHacksUrl": "https://www.pointhacks.com.au/credit-cards/american-express-platinum-business-guide/"
   },
   {
     "id": "72cc6f92-0058-5ca5-8467-5ab6d726db3d",
@@ -77,7 +84,8 @@
     "cardFamily": "Business Explorer",
     "bonusPoints": 100000,
     "annualFee": 149,
-    "rewardsProgram": "flexible"
+    "rewardsProgram": "flexible",
+    "pointHacksUrl": null
   },
   {
     "id": "18b040ff-44e7-51ff-a9e1-75dfd494b226",
@@ -87,7 +95,8 @@
     "cardFamily": "David Jones",
     "bonusPoints": 50000,
     "annualFee": 295,
-    "rewardsProgram": "flexible"
+    "rewardsProgram": "flexible",
+    "pointHacksUrl": null
   },
   {
     "id": "f03943cf-1590-5fff-b22c-dcbbfaa8703e",
@@ -97,7 +106,8 @@
     "cardFamily": "Rewards",
     "bonusPoints": 120000,
     "annualFee": 375,
-    "rewardsProgram": "flexible"
+    "rewardsProgram": "flexible",
+    "pointHacksUrl": "https://www.pointhacks.com.au/credit-cards/anz-rewards-black-guide/"
   },
   {
     "id": "9207c194-46e1-5d50-bb04-601bb6594e40",
@@ -107,7 +117,8 @@
     "cardFamily": "FF",
     "bonusPoints": 100000,
     "annualFee": 425,
-    "rewardsProgram": "qantas"
+    "rewardsProgram": "qantas",
+    "pointHacksUrl": "https://www.pointhacks.com.au/credit-cards/anz-frequent-flyer-black-guide/"
   },
   {
     "id": "e05f8ed8-9922-5083-bcc1-60fe547914a8",
@@ -117,7 +128,8 @@
     "cardFamily": "Rewards",
     "bonusPoints": 60000,
     "annualFee": 150,
-    "rewardsProgram": "flexible"
+    "rewardsProgram": "flexible",
+    "pointHacksUrl": "https://www.pointhacks.com.au/credit-cards/anz-rewards-platinum-guide/"
   },
   {
     "id": "dba7d258-93cf-5cdf-a86c-a9b6f1eeeed9",
@@ -127,7 +139,8 @@
     "cardFamily": "FF",
     "bonusPoints": 75000,
     "annualFee": 295,
-    "rewardsProgram": "qantas"
+    "rewardsProgram": "qantas",
+    "pointHacksUrl": "https://www.pointhacks.com.au/credit-cards/anz-frequent-flyer-platinum-guide/"
   },
   {
     "id": "4c007e58-8917-51f1-8d47-baa0a8a95ba3",
@@ -137,7 +150,8 @@
     "cardFamily": "Altitude",
     "bonusPoints": 150000,
     "annualFee": 370,
-    "rewardsProgram": "qantas"
+    "rewardsProgram": "qantas",
+    "pointHacksUrl": "https://www.pointhacks.com.au/credit-cards/westpac-altitude-qantas-black-guide/"
   },
   {
     "id": "715b5b1a-1e7d-5714-94cb-ebeba79b233f",
@@ -147,7 +161,8 @@
     "cardFamily": "Altitude",
     "bonusPoints": 50000,
     "annualFee": 150,
-    "rewardsProgram": "qantas"
+    "rewardsProgram": "qantas",
+    "pointHacksUrl": "https://www.pointhacks.com.au/credit-cards/westpac-altitude-rewards-platinum-guide/"
   },
   {
     "id": "0fcb21c3-818f-5fdd-bcd3-75908fd84268",
@@ -157,7 +172,8 @@
     "cardFamily": "Altitude",
     "bonusPoints": 75000,
     "annualFee": 250,
-    "rewardsProgram": "velocity"
+    "rewardsProgram": "velocity",
+    "pointHacksUrl": "https://www.pointhacks.com.au/credit-cards/westpac-altitude-velocity-black-guide/"
   },
   {
     "id": "22176ce6-68d4-5527-b5a9-e039a2d55cff",
@@ -167,7 +183,8 @@
     "cardFamily": "Altitude",
     "bonusPoints": 40000,
     "annualFee": 150,
-    "rewardsProgram": "velocity"
+    "rewardsProgram": "velocity",
+    "pointHacksUrl": "https://www.pointhacks.com.au/credit-cards/westpac-altitude-velocity-platinum-guide/"
   },
   {
     "id": "ae4e020e-110e-58d9-890d-2138d79aa258",
@@ -177,7 +194,8 @@
     "cardFamily": "NAB Qantas",
     "bonusPoints": 130000,
     "annualFee": 420,
-    "rewardsProgram": "qantas"
+    "rewardsProgram": "qantas",
+    "pointHacksUrl": "https://www.pointhacks.com.au/credit-cards/nab-qantas-rewards-signature-guide/"
   },
   {
     "id": "ea810f86-ccc4-5529-8cbc-fd13e77234ca",
@@ -187,7 +205,8 @@
     "cardFamily": "NAB Qantas",
     "bonusPoints": 60000,
     "annualFee": 199,
-    "rewardsProgram": "qantas"
+    "rewardsProgram": "qantas",
+    "pointHacksUrl": "https://www.pointhacks.com.au/credit-cards/nab-qantas-rewards-premium-guide/"
   },
   {
     "id": "07e255d2-4c19-580b-bcfc-4d7e56586583",
@@ -197,7 +216,8 @@
     "cardFamily": "NAB Rewards",
     "bonusPoints": 80000,
     "annualFee": 195,
-    "rewardsProgram": "flexible"
+    "rewardsProgram": "flexible",
+    "pointHacksUrl": "https://www.pointhacks.com.au/credit-cards/nab-rewards-signature-guide/"
   },
   {
     "id": "fe455cac-3567-51be-93cd-4eac9c90b872",
@@ -207,7 +227,8 @@
     "cardFamily": "NAB Rewards",
     "bonusPoints": 40000,
     "annualFee": 95,
-    "rewardsProgram": "flexible"
+    "rewardsProgram": "flexible",
+    "pointHacksUrl": "https://www.pointhacks.com.au/credit-cards/nab-rewards-platinum-guide/"
   },
   {
     "id": "d775bf3f-1530-53de-ade4-249067d17115",
@@ -217,7 +238,8 @@
     "cardFamily": "Qantas Money",
     "bonusPoints": 100000,
     "annualFee": 399,
-    "rewardsProgram": "qantas"
+    "rewardsProgram": "qantas",
+    "pointHacksUrl": "https://www.pointhacks.com.au/credit-cards/qantas-premier-platinum-card-guide/"
   },
   {
     "id": "2bf37782-dc21-5991-aef2-b71f3de92c79",
@@ -227,7 +249,8 @@
     "cardFamily": "Qantas Money",
     "bonusPoints": 120000,
     "annualFee": 449,
-    "rewardsProgram": "qantas"
+    "rewardsProgram": "qantas",
+    "pointHacksUrl": "https://www.pointhacks.com.au/credit-cards/qantas-premier-titanium-card-guide/"
   },
   {
     "id": "79d6aee6-22b5-5900-8e20-6a84e0c391ce",
@@ -237,7 +260,8 @@
     "cardFamily": "Prestige",
     "bonusPoints": 100000,
     "annualFee": 700,
-    "rewardsProgram": "flexible"
+    "rewardsProgram": "flexible",
+    "pointHacksUrl": "https://www.pointhacks.com.au/credit-cards/citi-prestige-card-guide/"
   },
   {
     "id": "e32ac90c-31d6-599c-8d19-ef67990375ee",
@@ -247,7 +271,8 @@
     "cardFamily": "Premier",
     "bonusPoints": 75000,
     "annualFee": 199,
-    "rewardsProgram": "flexible"
+    "rewardsProgram": "flexible",
+    "pointHacksUrl": "https://www.pointhacks.com.au/credit-cards/citi-premier-card-guide/"
   },
   {
     "id": "4e0a548a-fbe7-5a76-87bf-e035640b9e51",
@@ -257,7 +282,8 @@
     "cardFamily": "Rewards",
     "bonusPoints": 50000,
     "annualFee": 149,
-    "rewardsProgram": "flexible"
+    "rewardsProgram": "flexible",
+    "pointHacksUrl": null
   },
   {
     "id": "d6f6fde9-f71f-55fb-8f36-fa3fd3a45f5d",
@@ -267,7 +293,8 @@
     "cardFamily": "Platinum",
     "bonusPoints": 100000,
     "annualFee": 199,
-    "rewardsProgram": "qantas"
+    "rewardsProgram": "qantas",
+    "pointHacksUrl": "https://www.pointhacks.com.au/credit-cards/hsbc-platinum-qantas-guide/"
   },
   {
     "id": "58f6b234-1cb9-591e-a560-c480689999ef",
@@ -277,7 +304,8 @@
     "cardFamily": "Star Alliance",
     "bonusPoints": 60000,
     "annualFee": 199,
-    "rewardsProgram": "flexible"
+    "rewardsProgram": "flexible",
+    "pointHacksUrl": "https://www.pointhacks.com.au/credit-cards/hsbc-star-alliance-card-guide/"
   },
   {
     "id": "648ce135-0a2a-5ecb-93b3-4af69c20cdba",
@@ -287,7 +315,8 @@
     "cardFamily": "Ultimate",
     "bonusPoints": 80000,
     "annualFee": 349,
-    "rewardsProgram": "flexible"
+    "rewardsProgram": "flexible",
+    "pointHacksUrl": "https://www.pointhacks.com.au/credit-cards/commbank-ultimate-awards-card-guide/"
   },
   {
     "id": "d7454e49-7141-5572-948f-3048690eb94c",
@@ -297,7 +326,8 @@
     "cardFamily": "Smart",
     "bonusPoints": 40000,
     "annualFee": 119,
-    "rewardsProgram": "flexible"
+    "rewardsProgram": "flexible",
+    "pointHacksUrl": null
   },
   {
     "id": "9ac036f5-743c-5344-99d4-202c11207141",
@@ -307,7 +337,8 @@
     "cardFamily": "Awards",
     "bonusPoints": 30000,
     "annualFee": 89,
-    "rewardsProgram": "flexible"
+    "rewardsProgram": "flexible",
+    "pointHacksUrl": null
   },
   {
     "id": "1830d4b7-a4eb-5c54-80bd-1c6100530927",
@@ -317,7 +348,8 @@
     "cardFamily": "High Flyer",
     "bonusPoints": 75000,
     "annualFee": 289,
-    "rewardsProgram": "velocity"
+    "rewardsProgram": "velocity",
+    "pointHacksUrl": "https://www.pointhacks.com.au/credit-cards/virgin-money-high-flyer-visa-guide/"
   },
   {
     "id": "b2f49765-bdf7-5277-bf83-d147ecf34726",
@@ -327,7 +359,8 @@
     "cardFamily": "Flyer",
     "bonusPoints": 40000,
     "annualFee": 129,
-    "rewardsProgram": "velocity"
+    "rewardsProgram": "velocity",
+    "pointHacksUrl": "https://www.pointhacks.com.au/credit-cards/virgin-money-flyer-visa-guide/"
   },
   {
     "id": "61c69824-195b-540f-b0c9-c6c2b64a6f5b",
@@ -337,6 +370,7 @@
     "cardFamily": "No Fee",
     "bonusPoints": 10000,
     "annualFee": 0,
-    "rewardsProgram": "velocity"
+    "rewardsProgram": "velocity",
+    "pointHacksUrl": null
   }
 ]
