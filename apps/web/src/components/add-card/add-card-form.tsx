@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { readPendingPrefill } from '@/components/scan/scan-flow';
 import Link from 'next/link';
 import { ChevronLeft, CreditCard as CreditCardIcon } from 'lucide-react';
 import type { CardWithIssuer } from '@ph/shared';
@@ -39,13 +40,27 @@ export function AddCardForm({ prefill }: { prefill?: AddCardPrefill }) {
     return [...map.entries()].sort(([a], [b]) => a.localeCompare(b));
   }, [cards]);
 
-  const [cardId, setCardId] = useState(prefill?.cardId ?? '');
+  // Drain any OCR prefill stashed by /scan in sessionStorage. Done as a lazy
+  // useState initializer (not useEffect) so React 19's strict effect rules
+  // don't trip. `readPendingPrefill()` is safe on the server (it returns
+  // null when `window` is undefined). The first browser render after hydration
+  // will re-run this initializer with the real sessionStorage value.
+  const stashed = useMemo(() => (prefill ? null : readPendingPrefill()), [prefill]);
+
+  const [cardId, setCardId] = useState(prefill?.cardId ?? stashed?.cardId ?? '');
   const [applicationDate, setApplicationDate] = useState<string>(
     new Date().toISOString().slice(0, 10),
   );
   const [nickname, setNickname] = useState('');
-  const [last4, setLast4] = useState(prefill?.last4 ?? '');
-  const [expiryMonthYear, setExpiryMonthYear] = useState(prefill?.expiryMonthYear ?? '');
+  const [last4, setLast4] = useState(prefill?.last4 ?? stashed?.last4 ?? '');
+  const [expiryMonthYear, setExpiryMonthYear] = useState(
+    prefill?.expiryMonthYear ?? stashed?.expiryMonthYear ?? '',
+  );
+  const prefillBanner = stashed
+    ? stashed.cardId
+      ? 'Prefilled from scan — please confirm the card and application date.'
+      : 'Partial prefill from scan — we couldn’t match the card; please pick it from the list.'
+    : null;
   const [cancelled, setCancelled] = useState(false);
   const [cancellationDate, setCancellationDate] = useState<string>('');
   const [bonusReceived, setBonusReceived] = useState(false);
@@ -102,6 +117,12 @@ export function AddCardForm({ prefill }: { prefill?: AddCardPrefill }) {
       <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">
         Track a card you have or had so the eligibility engine can see your full picture.
       </p>
+
+      {prefillBanner && (
+        <div className="mt-3 rounded-lg bg-emerald-50 px-3 py-2 text-xs text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-200">
+          {prefillBanner}
+        </div>
+      )}
 
       <form onSubmit={handleSubmit} className="mt-5 space-y-5">
         <Field label="Card" required htmlFor="card">
