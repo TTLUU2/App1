@@ -1,0 +1,342 @@
+[
+  {
+    "id": "f1deea23-69ff-54f7-b59f-2293e9934f2d",
+    "issuerId": "2771de84-1121-5c84-b0d4-8b2260ec7188",
+    "name": "American Express Platinum Card",
+    "cardType": "personal",
+    "cardFamily": "Platinum",
+    "bonusPoints": 200000,
+    "annualFee": 1450,
+    "rewardsProgram": "flexible"
+  },
+  {
+    "id": "3b4ebbd4-af18-5f7e-8e78-78c07bc91fd9",
+    "issuerId": "2771de84-1121-5c84-b0d4-8b2260ec7188",
+    "name": "American Express Explorer",
+    "cardType": "personal",
+    "cardFamily": "Explorer",
+    "bonusPoints": 100000,
+    "annualFee": 399,
+    "rewardsProgram": "flexible"
+  },
+  {
+    "id": "25647c5a-da76-5323-bb73-16749973ef9a",
+    "issuerId": "2771de84-1121-5c84-b0d4-8b2260ec7188",
+    "name": "American Express Velocity Platinum",
+    "cardType": "personal",
+    "cardFamily": "Velocity",
+    "bonusPoints": 100000,
+    "annualFee": 450,
+    "rewardsProgram": "velocity"
+  },
+  {
+    "id": "a6ba6bbb-cbf9-5f18-8f30-6f2b2b5c2c4d",
+    "issuerId": "2771de84-1121-5c84-b0d4-8b2260ec7188",
+    "name": "Qantas American Express Ultimate",
+    "cardType": "personal",
+    "cardFamily": "Qantas",
+    "bonusPoints": 100000,
+    "annualFee": 450,
+    "rewardsProgram": "qantas"
+  },
+  {
+    "id": "c9bb9fb2-0463-5161-941d-f29c9c6859d1",
+    "issuerId": "2771de84-1121-5c84-b0d4-8b2260ec7188",
+    "name": "Qantas American Express Premium",
+    "cardType": "personal",
+    "cardFamily": "Qantas",
+    "bonusPoints": 55000,
+    "annualFee": 249,
+    "rewardsProgram": "qantas"
+  },
+  {
+    "id": "dbc11c74-c173-5a8b-8576-4ed1fc660c3e",
+    "issuerId": "2771de84-1121-5c84-b0d4-8b2260ec7188",
+    "name": "American Express Velocity Business",
+    "cardType": "business",
+    "cardFamily": "Business Velocity",
+    "bonusPoints": 100000,
+    "annualFee": 450,
+    "rewardsProgram": "velocity"
+  },
+  {
+    "id": "beefeee3-c4ac-5507-961c-2fa81eb5cdb2",
+    "issuerId": "2771de84-1121-5c84-b0d4-8b2260ec7188",
+    "name": "American Express Business Platinum",
+    "cardType": "business",
+    "cardFamily": "Business Platinum",
+    "bonusPoints": 150000,
+    "annualFee": 1750,
+    "rewardsProgram": "flexible"
+  },
+  {
+    "id": "72cc6f92-0058-5ca5-8467-5ab6d726db3d",
+    "issuerId": "2771de84-1121-5c84-b0d4-8b2260ec7188",
+    "name": "American Express Business Explorer",
+    "cardType": "business",
+    "cardFamily": "Business Explorer",
+    "bonusPoints": 100000,
+    "annualFee": 149,
+    "rewardsProgram": "flexible"
+  },
+  {
+    "id": "18b040ff-44e7-51ff-a9e1-75dfd494b226",
+    "issuerId": "2771de84-1121-5c84-b0d4-8b2260ec7188",
+    "name": "American Express David Jones Platinum",
+    "cardType": "personal",
+    "cardFamily": "David Jones",
+    "bonusPoints": 50000,
+    "annualFee": 295,
+    "rewardsProgram": "flexible"
+  },
+  {
+    "id": "f03943cf-1590-5fff-b22c-dcbbfaa8703e",
+    "issuerId": "6b2194da-577d-5805-8c0e-39b5b1b5b4c9",
+    "name": "ANZ Rewards Black",
+    "cardType": "personal",
+    "cardFamily": "Rewards",
+    "bonusPoints": 120000,
+    "annualFee": 375,
+    "rewardsProgram": "flexible"
+  },
+  {
+    "id": "9207c194-46e1-5d50-bb04-601bb6594e40",
+    "issuerId": "6b2194da-577d-5805-8c0e-39b5b1b5b4c9",
+    "name": "ANZ Frequent Flyer Black",
+    "cardType": "personal",
+    "cardFamily": "FF",
+    "bonusPoints": 100000,
+    "annualFee": 425,
+    "rewardsProgram": "qantas"
+  },
+  {
+    "id": "e05f8ed8-9922-5083-bcc1-60fe547914a8",
+    "issuerId": "6b2194da-577d-5805-8c0e-39b5b1b5b4c9",
+    "name": "ANZ Rewards Platinum",
+    "cardType": "personal",
+    "cardFamily": "Rewards",
+    "bonusPoints": 60000,
+    "annualFee": 150,
+    "rewardsProgram": "flexible"
+  },
+  {
+    "id": "dba7d258-93cf-5cdf-a86c-a9b6f1eeeed9",
+    "issuerId": "6b2194da-577d-5805-8c0e-39b5b1b5b4c9",
+    "name": "ANZ Frequent Flyer Platinum",
+    "cardType": "personal",
+    "cardFamily": "FF",
+    "bonusPoints": 75000,
+    "annualFee": 295,
+    "rewardsProgram": "qantas"
+  },
+  {
+    "id": "4c007e58-8917-51f1-8d47-baa0a8a95ba3",
+    "issuerId": "07998e1e-14c4-5206-91ea-e3e556c06c14",
+    "name": "Westpac Altitude Qantas Black",
+    "cardType": "personal",
+    "cardFamily": "Altitude",
+    "bonusPoints": 150000,
+    "annualFee": 370,
+    "rewardsProgram": "qantas"
+  },
+  {
+    "id": "715b5b1a-1e7d-5714-94cb-ebeba79b233f",
+    "issuerId": "07998e1e-14c4-5206-91ea-e3e556c06c14",
+    "name": "Westpac Altitude Platinum",
+    "cardType": "personal",
+    "cardFamily": "Altitude",
+    "bonusPoints": 50000,
+    "annualFee": 150,
+    "rewardsProgram": "qantas"
+  },
+  {
+    "id": "0fcb21c3-818f-5fdd-bcd3-75908fd84268",
+    "issuerId": "07998e1e-14c4-5206-91ea-e3e556c06c14",
+    "name": "Westpac Altitude Velocity Black",
+    "cardType": "personal",
+    "cardFamily": "Altitude",
+    "bonusPoints": 75000,
+    "annualFee": 250,
+    "rewardsProgram": "velocity"
+  },
+  {
+    "id": "22176ce6-68d4-5527-b5a9-e039a2d55cff",
+    "issuerId": "07998e1e-14c4-5206-91ea-e3e556c06c14",
+    "name": "Westpac Altitude Velocity Platinum",
+    "cardType": "personal",
+    "cardFamily": "Altitude",
+    "bonusPoints": 40000,
+    "annualFee": 150,
+    "rewardsProgram": "velocity"
+  },
+  {
+    "id": "ae4e020e-110e-58d9-890d-2138d79aa258",
+    "issuerId": "6ef8bcbf-952a-55e7-accb-23962e612fd3",
+    "name": "NAB Qantas Rewards Signature",
+    "cardType": "personal",
+    "cardFamily": "NAB Qantas",
+    "bonusPoints": 130000,
+    "annualFee": 420,
+    "rewardsProgram": "qantas"
+  },
+  {
+    "id": "ea810f86-ccc4-5529-8cbc-fd13e77234ca",
+    "issuerId": "6ef8bcbf-952a-55e7-accb-23962e612fd3",
+    "name": "NAB Qantas Rewards Premium",
+    "cardType": "personal",
+    "cardFamily": "NAB Qantas",
+    "bonusPoints": 60000,
+    "annualFee": 199,
+    "rewardsProgram": "qantas"
+  },
+  {
+    "id": "07e255d2-4c19-580b-bcfc-4d7e56586583",
+    "issuerId": "6ef8bcbf-952a-55e7-accb-23962e612fd3",
+    "name": "NAB Rewards Signature",
+    "cardType": "personal",
+    "cardFamily": "NAB Rewards",
+    "bonusPoints": 80000,
+    "annualFee": 195,
+    "rewardsProgram": "flexible"
+  },
+  {
+    "id": "fe455cac-3567-51be-93cd-4eac9c90b872",
+    "issuerId": "6ef8bcbf-952a-55e7-accb-23962e612fd3",
+    "name": "NAB Rewards Platinum",
+    "cardType": "personal",
+    "cardFamily": "NAB Rewards",
+    "bonusPoints": 40000,
+    "annualFee": 95,
+    "rewardsProgram": "flexible"
+  },
+  {
+    "id": "d775bf3f-1530-53de-ade4-249067d17115",
+    "issuerId": "48fb20d3-b79d-568f-9b0e-cdd6c1d0f90b",
+    "name": "Qantas Money Platinum",
+    "cardType": "personal",
+    "cardFamily": "Qantas Money",
+    "bonusPoints": 100000,
+    "annualFee": 399,
+    "rewardsProgram": "qantas"
+  },
+  {
+    "id": "2bf37782-dc21-5991-aef2-b71f3de92c79",
+    "issuerId": "48fb20d3-b79d-568f-9b0e-cdd6c1d0f90b",
+    "name": "Qantas Money Titanium",
+    "cardType": "personal",
+    "cardFamily": "Qantas Money",
+    "bonusPoints": 120000,
+    "annualFee": 449,
+    "rewardsProgram": "qantas"
+  },
+  {
+    "id": "79d6aee6-22b5-5900-8e20-6a84e0c391ce",
+    "issuerId": "07b0651f-940f-56f2-b651-357e77300028",
+    "name": "Citi Prestige",
+    "cardType": "personal",
+    "cardFamily": "Prestige",
+    "bonusPoints": 100000,
+    "annualFee": 700,
+    "rewardsProgram": "flexible"
+  },
+  {
+    "id": "e32ac90c-31d6-599c-8d19-ef67990375ee",
+    "issuerId": "07b0651f-940f-56f2-b651-357e77300028",
+    "name": "Citi Premier",
+    "cardType": "personal",
+    "cardFamily": "Premier",
+    "bonusPoints": 75000,
+    "annualFee": 199,
+    "rewardsProgram": "flexible"
+  },
+  {
+    "id": "4e0a548a-fbe7-5a76-87bf-e035640b9e51",
+    "issuerId": "07b0651f-940f-56f2-b651-357e77300028",
+    "name": "Citi Rewards",
+    "cardType": "personal",
+    "cardFamily": "Rewards",
+    "bonusPoints": 50000,
+    "annualFee": 149,
+    "rewardsProgram": "flexible"
+  },
+  {
+    "id": "d6f6fde9-f71f-55fb-8f36-fa3fd3a45f5d",
+    "issuerId": "1610d4ab-9b64-5944-9485-b47c147aa3ab",
+    "name": "HSBC Platinum Qantas",
+    "cardType": "personal",
+    "cardFamily": "Platinum",
+    "bonusPoints": 100000,
+    "annualFee": 199,
+    "rewardsProgram": "qantas"
+  },
+  {
+    "id": "58f6b234-1cb9-591e-a560-c480689999ef",
+    "issuerId": "1610d4ab-9b64-5944-9485-b47c147aa3ab",
+    "name": "HSBC Star Alliance",
+    "cardType": "personal",
+    "cardFamily": "Star Alliance",
+    "bonusPoints": 60000,
+    "annualFee": 199,
+    "rewardsProgram": "flexible"
+  },
+  {
+    "id": "648ce135-0a2a-5ecb-93b3-4af69c20cdba",
+    "issuerId": "9bb9fea0-7559-501c-a96d-bf95b3304cf8",
+    "name": "CommBank Ultimate Awards",
+    "cardType": "personal",
+    "cardFamily": "Ultimate",
+    "bonusPoints": 80000,
+    "annualFee": 349,
+    "rewardsProgram": "flexible"
+  },
+  {
+    "id": "d7454e49-7141-5572-948f-3048690eb94c",
+    "issuerId": "9bb9fea0-7559-501c-a96d-bf95b3304cf8",
+    "name": "CommBank Smart Awards",
+    "cardType": "personal",
+    "cardFamily": "Smart",
+    "bonusPoints": 40000,
+    "annualFee": 119,
+    "rewardsProgram": "flexible"
+  },
+  {
+    "id": "9ac036f5-743c-5344-99d4-202c11207141",
+    "issuerId": "9bb9fea0-7559-501c-a96d-bf95b3304cf8",
+    "name": "CommBank Awards",
+    "cardType": "personal",
+    "cardFamily": "Awards",
+    "bonusPoints": 30000,
+    "annualFee": 89,
+    "rewardsProgram": "flexible"
+  },
+  {
+    "id": "1830d4b7-a4eb-5c54-80bd-1c6100530927",
+    "issuerId": "21f21aa1-39f5-58dd-bdd6-95a111f5efdd",
+    "name": "Virgin Money High Flyer",
+    "cardType": "personal",
+    "cardFamily": "High Flyer",
+    "bonusPoints": 75000,
+    "annualFee": 289,
+    "rewardsProgram": "velocity"
+  },
+  {
+    "id": "b2f49765-bdf7-5277-bf83-d147ecf34726",
+    "issuerId": "21f21aa1-39f5-58dd-bdd6-95a111f5efdd",
+    "name": "Virgin Money Flyer",
+    "cardType": "personal",
+    "cardFamily": "Flyer",
+    "bonusPoints": 40000,
+    "annualFee": 129,
+    "rewardsProgram": "velocity"
+  },
+  {
+    "id": "61c69824-195b-540f-b0c9-c6c2b64a6f5b",
+    "issuerId": "21f21aa1-39f5-58dd-bdd6-95a111f5efdd",
+    "name": "Virgin Money No Annual Fee",
+    "cardType": "personal",
+    "cardFamily": "No Fee",
+    "bonusPoints": 10000,
+    "annualFee": 0,
+    "rewardsProgram": "velocity"
+  }
+]

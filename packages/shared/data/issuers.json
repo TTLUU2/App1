@@ -1,0 +1,92 @@
+[
+  {
+    "id": "2771de84-1121-5c84-b0d4-8b2260ec7188",
+    "name": "American Express",
+    "shortName": "Amex",
+    "eligibilityType": "once_per_card",
+    "exclusionPeriodMonths": null,
+    "scope": "card_family",
+    "confidenceLevel": "medium",
+    "notes": "Lifetime-style rules for most cards. Targeted offers may bypass. Business cards have separate pool from personal."
+  },
+  {
+    "id": "6b2194da-577d-5805-8c0e-39b5b1b5b4c9",
+    "name": "ANZ",
+    "shortName": "ANZ",
+    "eligibilityType": "time_based",
+    "exclusionPeriodMonths": 24,
+    "scope": "issuer_wide",
+    "confidenceLevel": "high",
+    "notes": "24 month issuer-wide waiting. FF and Rewards programs block each other."
+  },
+  {
+    "id": "07998e1e-14c4-5206-91ea-e3e556c06c14",
+    "name": "Westpac",
+    "shortName": "Westpac",
+    "eligibilityType": "time_based",
+    "exclusionPeriodMonths": 24,
+    "scope": "card_family",
+    "confidenceLevel": "medium",
+    "notes": "24 month family-wide waiting for Altitude cards. QF/Rewards/Velocity considered same family."
+  },
+  {
+    "id": "6ef8bcbf-952a-55e7-accb-23962e612fd3",
+    "name": "NAB",
+    "shortName": "NAB",
+    "eligibilityType": "time_based",
+    "exclusionPeriodMonths": 18,
+    "scope": "card_family",
+    "confidenceLevel": "medium",
+    "notes": "NAB Rewards has 18 month family-wide wait. NAB Qantas has different family. Check specific card terms."
+  },
+  {
+    "id": "48fb20d3-b79d-568f-9b0e-cdd6c1d0f90b",
+    "name": "Qantas Money",
+    "shortName": "Qantas",
+    "eligibilityType": "time_based",
+    "exclusionPeriodMonths": 12,
+    "scope": "card_family",
+    "confidenceLevel": "medium",
+    "notes": "12 month within family. Possible 24 month QFF first-time overlay for some offers."
+  },
+  {
+    "id": "07b0651f-940f-56f2-b651-357e77300028",
+    "name": "Citi",
+    "shortName": "Citi",
+    "eligibilityType": "new_to_bank",
+    "exclusionPeriodMonths": null,
+    "scope": "issuer_wide",
+    "confidenceLevel": "medium",
+    "notes": "If you currently hold another Citi card, not eligible. Otherwise no waiting period."
+  },
+  {
+    "id": "1610d4ab-9b64-5944-9485-b47c147aa3ab",
+    "name": "HSBC",
+    "shortName": "HSBC",
+    "eligibilityType": "first_time_only",
+    "exclusionPeriodMonths": null,
+    "scope": "issuer_wide",
+    "confidenceLevel": "low",
+    "notes": "Offer-specific blackout. Often no fixed waiting period. Check current terms carefully."
+  },
+  {
+    "id": "9bb9fea0-7559-501c-a96d-bf95b3304cf8",
+    "name": "CommBank",
+    "shortName": "CBA",
+    "eligibilityType": "time_based",
+    "exclusionPeriodMonths": 12,
+    "scope": "same_card",
+    "confidenceLevel": "medium",
+    "notes": "12 month same-card wait. Soft enforcement historically."
+  },
+  {
+    "id": "21f21aa1-39f5-58dd-bdd6-95a111f5efdd",
+    "name": "Virgin Money",
+    "shortName": "Virgin",
+    "eligibilityType": "time_based",
+    "exclusionPeriodMonths": 12,
+    "scope": "same_card",
+    "confidenceLevel": "medium",
+    "notes": "12 month same-card wait. Program changes may affect eligibility."
+  }
+]

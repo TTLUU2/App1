@@ -1,0 +1,35 @@
+{
+  "name": "@ph/shared",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Point Hacks Copilot — shared eligibility engine, types, and bundled AU card catalogue. Zero UI dependencies.",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts",
+    "./engine": "./src/engine.ts",
+    "./types": "./src/types.ts",
+    "./catalogue": "./src/catalogue.ts"
+  },
+  "files": [
+    "src",
+    "data"
+  ],
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint src __tests__ scripts",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "generate-catalogue": "tsx scripts/generate-catalogue.ts"
+  },
+  "dependencies": {
+    "date-fns": "^4.1.0",
+    "uuid": "^11.0.5"
+  },
+  "devDependencies": {
+    "@types/uuid": "^10.0.0",
+    "tsx": "^4.20.0",
+    "vitest": "^3.0.0"
+  }
+}
