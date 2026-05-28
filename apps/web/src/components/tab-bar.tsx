@@ -5,17 +5,15 @@ import { usePathname } from 'next/navigation';
 import { useState } from 'react';
 import { CreditCard, Gift, TrendingUp, Sparkles, Plus } from 'lucide-react';
 import clsx from 'clsx';
-import { FabSheet } from './fab-sheet';
+import { FanActions, type FanActionId } from './fan-actions';
+import { AddCardModal } from './add-card-v2/add-card-modal';
 
 /**
  * Persistent four-tab bottom bar plus a centre FAB.
  *
- * Tab order is fixed per PRD §6.1. The FAB is a sibling of the nav (not a
- * child) so its stacking context is independent of the nav (nav z-30 →
- * FAB z-50). FAB is a plain <button onClick={...}> — TabBar owns the
- * open state and passes it down to the controlled FabSheet. The previous
- * Dialog.Trigger asChild pattern silently failed to attach the click
- * handler in some renders.
+ * Tab order is fixed per PRD §6.1. FAB sits centred at z-50, outside the
+ * nav's stacking context. Tapping the FAB opens a radial fan of 4 action
+ * buttons (PRD §6.2 "radial menu"), with the + icon rotating to ×.
  */
 
 const TABS = [
@@ -27,8 +25,17 @@ const TABS = [
 
 export function TabBar() {
   const pathname = usePathname();
-  const [sheetOpen, setSheetOpen] = useState(false);
+  const [fanOpen, setFanOpen] = useState(false);
   const [addCardOpen, setAddCardOpen] = useState(false);
+
+  function handleFanPick(id: FanActionId) {
+    setFanOpen(false);
+    if (id === 'add') {
+      // Tiny delay so the fan-close animation doesn't overlap the modal-open
+      setTimeout(() => setAddCardOpen(true), 60);
+    }
+    // 'spend' / 'benefits' / 'ask' route via <Link> inside FanActions, no JS needed
+  }
 
   return (
     <>
@@ -46,6 +53,9 @@ export function TabBar() {
                   role="tab"
                   aria-current={active ? 'page' : undefined}
                   aria-label={tab.longLabel}
+                  // Close the fan when navigating via a tab (so the fan
+                  // doesn't linger on the destination route).
+                  onClick={() => setFanOpen(false)}
                   className={clsx(
                     'flex h-16 flex-col items-center justify-center gap-1 text-xs font-medium transition-colors',
                     active
@@ -65,33 +75,32 @@ export function TabBar() {
         </ul>
       </nav>
 
-      {/* FAB — plain button at z-50, outside the nav's stacking context.
-          Tapping it just flips the controlled FabSheet state below. */}
+      <FanActions open={fanOpen} onClose={() => setFanOpen(false)} onPick={handleFanPick} />
+
+      {/* FAB — plain button at z-50. Always on top of the fan backdrop so
+          tapping it again closes the fan. + icon rotates to × when open. */}
       <button
         type="button"
-        onClick={() => setSheetOpen(true)}
-        aria-label="Open actions"
-        aria-haspopup="dialog"
-        aria-expanded={sheetOpen}
-        className="fixed left-1/2 z-50 grid h-14 w-14 -translate-x-1/2 place-items-center rounded-full bg-[var(--color-ph-red)] text-white shadow-lg ring-4 ring-white transition-transform hover:scale-105 focus-visible:scale-105 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[var(--color-ph-red)]/40 active:scale-95 dark:ring-zinc-950"
+        onClick={() => setFanOpen((o) => !o)}
+        aria-label={fanOpen ? 'Close actions' : 'Open actions'}
+        aria-haspopup="menu"
+        aria-expanded={fanOpen}
+        className={clsx(
+          'fixed left-1/2 z-50 grid h-14 w-14 -translate-x-1/2 place-items-center rounded-full bg-[var(--color-ph-red)] text-white shadow-lg ring-4 ring-white transition-transform duration-200 ease-out hover:scale-105 focus-visible:scale-105 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[var(--color-ph-red)]/40 active:scale-95 dark:ring-zinc-950',
+          fanOpen && 'rotate-45',
+        )}
         style={{ bottom: 'calc(2.25rem + env(safe-area-inset-bottom))' }}
       >
         <Plus className="h-7 w-7" aria-hidden />
       </button>
 
-      <FabSheet
-        open={sheetOpen}
-        onOpenChange={setSheetOpen}
-        addCardOpen={addCardOpen}
-        onAddCardOpenChange={setAddCardOpen}
-      />
+      <AddCardModal open={addCardOpen} onOpenChange={setAddCardOpen} />
     </>
   );
 }
 
 function isActive(pathname: string, href: string): boolean {
   if (href === '/next-card') {
-    // Tab 4 "Next Card" owns the per-card detail screens too.
     return pathname === '/next-card' || pathname.startsWith('/cards');
   }
   return pathname === href || pathname.startsWith(href + '/');
