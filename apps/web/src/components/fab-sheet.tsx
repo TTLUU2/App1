@@ -2,13 +2,11 @@
 
 import * as Dialog from '@radix-ui/react-dialog';
 import Link from 'next/link';
-import { Camera, FilePen, Mic, Receipt, X } from 'lucide-react';
+import { Camera, FilePen, Mic, Receipt, Sparkles, X } from 'lucide-react';
 import { useState, type ReactNode } from 'react';
 
 /**
- * FAB action sheet — the four core actions from PRD §11. In M1 only "Add card
- * (manual)" routes to a real screen; the other three render as disabled
- * "Coming soon" rows so the affordance is visible without misleading the user.
+ * FAB action sheet — the five core actions from PRD §11. All live as of M2.
  */
 
 interface Action {
@@ -22,32 +20,39 @@ interface Action {
 
 const ACTIONS: Action[] = [
   {
-    id: 'add-manual',
-    label: 'Add card to history',
-    description: 'Track a card you have or had to see eligibility.',
-    href: '/add-card',
-    Icon: FilePen,
-  },
-  {
     id: 'scan',
     label: 'Scan card',
-    description: 'Use your camera to capture the card and prefill the form.',
+    description: 'Camera + AI extracts product, expiry, last 4. Voice/text Q&A fills the rest.',
     href: '/scan',
     Icon: Camera,
   },
   {
+    id: 'add-manual',
+    label: 'Add card to history',
+    description: 'Type details for a card you have or had — drives eligibility.',
+    href: '/add-card',
+    Icon: FilePen,
+  },
+  {
     id: 'spend',
     label: 'Update spend',
-    description: 'Voice or text. Log spend against a held card.',
+    description: 'Voice or text. "Add 250 to my Amex Plat".',
+    href: '/spend',
     Icon: Receipt,
-    comingSoon: true,
+  },
+  {
+    id: 'benefits',
+    label: 'Update benefits',
+    description: 'Voice or text. "Used my Amex hotel credit".',
+    href: '/benefits',
+    Icon: Sparkles,
   },
   {
     id: 'ask',
     label: 'Ask Copilot',
-    description: 'Voice or text. Ask read-only questions about your data.',
+    description: 'Voice in / voice out. Read-only Q&A about your cards.',
+    href: '/ask',
     Icon: Mic,
-    comingSoon: true,
   },
 ];
 

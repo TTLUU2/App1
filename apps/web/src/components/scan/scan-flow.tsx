@@ -94,9 +94,12 @@ export function ScanFlow() {
             : 'OCR request failed';
         throw new Error(errMsg);
       }
-      // Stash the prefill — the add-card form reads it on mount.
+      // Stash the prefill — the onboarding flow reads it on mount and walks
+      // the user through a short voice/text Q&A to fill the remaining
+      // fields. /add-card is still available as the fallback for typed
+      // entry without OCR.
       sessionStorage.setItem(PREFILL_KEY, JSON.stringify(json));
-      router.push('/add-card?from=scan');
+      router.push('/onboard');
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
       setPhase('error');
