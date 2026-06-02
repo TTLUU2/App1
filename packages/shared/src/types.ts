@@ -49,6 +49,13 @@ export interface Card {
    * Extracted from Point Hacks card guide pages.
    */
   cardArtUrl: string | null;
+  /**
+   * Headline earn rate in the card's native rewards currency, points per
+   * $1 AUD spent on standard everyday purchases. Null when unknown.
+   * Tiered / category-specific rates (e.g. lower on government spend) are
+   * not modelled here — this is the rate the issuer markets.
+   */
+  earnRatePer1Aud: number | null;
 }
 
 export interface CardWithIssuer extends Card {
@@ -107,6 +114,11 @@ export interface UserCard {
   expiryMonthYear?: string | null; // 'MM/YY'
 
   // Reserved for M2 (Tab 3 / spend & benefit tracking). Nullable in M1 rows.
+  //
+  // NOTE: the UI labels `activationDate` as "Approval date" — the date the
+  // issuer approved the application (often the same as activation/dispatch,
+  // sometimes slightly earlier). Schema field name kept as `activationDate`
+  // to avoid an IndexedDB migration.
   activationDate?: string | null;
   annualFeeNextDueDate?: string | null;
   bonusTarget?: number | null;

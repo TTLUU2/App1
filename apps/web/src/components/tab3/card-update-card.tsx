@@ -21,6 +21,7 @@ import {
 } from '@/lib/speech';
 import { formatCurrency } from '@/lib/format';
 import { nowMs } from '@/lib/time';
+import { SpendGovCheck } from '@/components/spend/spend-gov-check';
 
 interface LastSpend {
   kind: 'spend';
@@ -36,7 +37,13 @@ interface LastBenefit {
 }
 type LastApplied = LastSpend | LastBenefit;
 
-type Phase = 'idle' | 'listening' | 'transcribed' | 'parsing' | 'done' | 'error';
+type Phase = 'idle' | 'listening' | 'transcribed' | 'parsing' | 'gov_check' | 'done' | 'error';
+
+interface PendingSpend {
+  userCardId: string;
+  amount: number;
+  cardName: string;
+}
 
 export function CardUpdateCard() {
   const userCards = useUserCardsStore((s) => s.userCards);
@@ -75,6 +82,7 @@ export function CardUpdateCard() {
   const [error, setError] = useState<string | null>(null);
   const [lastApplied, setLastApplied] = useState<LastApplied | null>(null);
   const [undoExpiresAt, setUndoExpiresAt] = useState<number>(0);
+  const [pendingSpend, setPendingSpend] = useState<PendingSpend | null>(null);
 
   useEffect(() => {
     return () => {
@@ -195,18 +203,14 @@ export function CardUpdateCard() {
           setPhase('error');
           return;
         }
-        const prevSpent = uc.bonusSpentToDate ?? 0;
-        await updateCard(uc.id, { bonusSpentToDate: prevSpent + json.amount });
-        setLastApplied({
-          kind: 'spend',
+        // Don't write yet — drop into the gov-check step so the user can
+        // exclude any direct gov payments before we commit the amount.
+        setPendingSpend({
           userCardId: uc.id,
-          prevSpent,
           amount: json.amount,
-          label: `Added ${formatCurrency(json.amount)} to ${uc.card.name}`,
+          cardName: uc.card.name,
         });
-        setUndoExpiresAt(nowMs() + 30_000);
-        setTranscript('');
-        setPhase('done');
+        setPhase('gov_check');
       } else if (json.kind === 'benefit' && json.benefitUserCardId && json.benefitId) {
         const uc = heldCards.find((c) => c.id === json.benefitUserCardId);
         const benefit = getAllBenefits().find((b) => b.id === json.benefitId);
@@ -238,6 +242,29 @@ export function CardUpdateCard() {
       setError(err instanceof Error ? err.message : String(err));
       setPhase('error');
     }
+  }
+
+  async function applySpend(adjustedAmount: number) {
+    if (!pendingSpend) return;
+    const uc = heldCards.find((c) => c.id === pendingSpend.userCardId);
+    if (!uc) {
+      setError('Card disappeared between parse and confirm. Try again.');
+      setPhase('error');
+      return;
+    }
+    const prevSpent = uc.bonusSpentToDate ?? 0;
+    await updateCard(uc.id, { bonusSpentToDate: prevSpent + adjustedAmount });
+    setLastApplied({
+      kind: 'spend',
+      userCardId: uc.id,
+      prevSpent,
+      amount: adjustedAmount,
+      label: `Added ${formatCurrency(adjustedAmount)} to ${uc.card.name}`,
+    });
+    setUndoExpiresAt(nowMs() + 30_000);
+    setPendingSpend(null);
+    setTranscript('');
+    setPhase('done');
   }
 
   async function undoLast() {
@@ -321,6 +348,24 @@ export function CardUpdateCard() {
             &ldquo;{transcript}&rdquo;
           </div>
         )}
+
+      {/* Gov-check step: only fires when the parser identified a SPEND
+          update. Asks the user whether any of the amount was a direct
+          government payment (which doesn't count toward min-spend), then
+          applies the adjusted amount. */}
+      {phase === 'gov_check' && pendingSpend && (
+        <div className="mt-3">
+          <SpendGovCheck
+            amount={pendingSpend.amount}
+            cardName={pendingSpend.cardName}
+            onConfirm={(adjusted) => applySpend(adjusted)}
+            onCancel={() => {
+              setPendingSpend(null);
+              setPhase('idle');
+            }}
+          />
+        </div>
+      )}
 
       {/* Submit / Edit when we have a transcript */}
       {phase === 'transcribed' && (

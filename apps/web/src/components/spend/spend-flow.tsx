@@ -5,9 +5,9 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { ChevronLeft, Receipt, Undo2, CheckCircle2, AlertTriangle } from 'lucide-react';
 import { VoiceInput } from '@/components/voice-input';
+import { SpendGovCheck } from '@/components/spend/spend-gov-check';
 import { selectUserCardsWithDetails, useUserCardsStore } from '@/store/user-cards';
-import { formatCurrency, formatPoints } from '@/lib/format';
-import { projectBonusCompletion } from '@/lib/tab3-status';
+import { formatCurrency } from '@/lib/format';
 import { nowMs } from '@/lib/time';
 
 /**
@@ -170,12 +170,12 @@ export function SpendFlow() {
             parseResult &&
             parseResult.amount != null &&
             parseResult.cardId && (
-              <ConfirmCard
+              <SpendGovCheck
                 amount={parseResult.amount}
-                userCardId={parseResult.cardId}
-                heldCards={heldCards}
-                confidence={parseResult.confidence}
-                onApply={() => apply(parseResult.cardId!, parseResult.amount!)}
+                cardName={
+                  heldCards.find((c) => c.id === parseResult.cardId)?.card.name ?? 'this card'
+                }
+                onConfirm={(adjusted) => apply(parseResult.cardId!, adjusted)}
                 onCancel={() => {
                   setPhase('idle');
                   setParseResult(null);
@@ -188,7 +188,10 @@ export function SpendFlow() {
               amount={parseResult.amount}
               utterance={parseResult.utterance}
               heldCards={heldCards}
-              onPick={(id) => apply(id, parseResult.amount!)}
+              onPick={(id) => {
+                setParseResult((r) => (r ? { ...r, cardId: id } : r));
+                setPhase('confirm');
+              }}
               onCancel={() => {
                 setPhase('idle');
                 setParseResult(null);
@@ -242,70 +245,6 @@ export function SpendFlow() {
         </>
       )}
     </main>
-  );
-}
-
-function ConfirmCard({
-  amount,
-  userCardId,
-  heldCards,
-  confidence,
-  onApply,
-  onCancel,
-}: {
-  amount: number;
-  userCardId: string;
-  heldCards: ReturnType<typeof selectUserCardsWithDetails>;
-  confidence: 'high' | 'medium' | 'low';
-  onApply: () => void;
-  onCancel: () => void;
-}) {
-  const uc = heldCards.find((c) => c.id === userCardId);
-  if (!uc) {
-    return (
-      <p className="mt-4 text-xs text-rose-600">
-        Parse picked a card I can&apos;t find. Try again.
-      </p>
-    );
-  }
-  const projection = projectBonusCompletion(uc);
-  return (
-    <div className="mt-4 rounded-2xl border border-emerald-200 bg-emerald-50 p-4 text-sm dark:border-emerald-900 dark:bg-emerald-950/40">
-      <div className="flex items-baseline justify-between gap-2">
-        <span className="font-semibold">
-          Add {formatCurrency(amount)} to {uc.card.name}?
-        </span>
-        <ConfidencePill level={confidence} />
-      </div>
-      {uc.bonusTarget && (
-        <p className="mt-1 text-xs text-emerald-900 dark:text-emerald-200">
-          New total: {formatCurrency((uc.bonusSpentToDate ?? 0) + amount)} of{' '}
-          {formatCurrency(uc.bonusTarget)}{' '}
-          {uc.card.bonusPoints && `· chasing ${formatPoints(uc.card.bonusPoints)} pts`}
-        </p>
-      )}
-      {projection && projection.shortfall - amount <= 0 && (
-        <p className="mt-1 text-xs font-medium text-emerald-700 dark:text-emerald-300">
-          This update hits your min-spend target.
-        </p>
-      )}
-      <div className="mt-3 flex gap-2">
-        <button
-          type="button"
-          onClick={onApply}
-          className="flex-1 rounded-full bg-[var(--color-ph-red)] px-3 py-2 text-sm font-medium text-white"
-        >
-          Confirm
-        </button>
-        <button
-          type="button"
-          onClick={onCancel}
-          className="rounded-full border border-zinc-300 px-3 py-2 text-sm font-medium text-zinc-700 dark:border-zinc-700 dark:text-zinc-300"
-        >
-          Cancel
-        </button>
-      </div>
-    </div>
   );
 }
 
@@ -418,19 +357,5 @@ function UndoToast({
         </div>
       </div>
     </div>
-  );
-}
-
-function ConfidencePill({ level }: { level: 'high' | 'medium' | 'low' }) {
-  const cls =
-    level === 'high'
-      ? 'bg-emerald-200 text-emerald-900 dark:bg-emerald-900 dark:text-emerald-100'
-      : level === 'medium'
-        ? 'bg-amber-200 text-amber-900 dark:bg-amber-900 dark:text-amber-100'
-        : 'bg-zinc-200 text-zinc-700 dark:bg-zinc-800 dark:text-zinc-300';
-  return (
-    <span className={`rounded-full px-1.5 py-0.5 text-[10px] font-medium ${cls}`}>
-      {level} confidence
-    </span>
   );
 }

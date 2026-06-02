@@ -39,3 +39,9 @@ pnpm-debug.log*
 
 # Claude Code session artefacts
 .claude/
+
+# Vercel CLI / link artefacts (per-machine; pulled via `vercel link`)
+.vercel/
+
+# Heavy reference assets — keep out of Git, use cloud storage or LFS instead
+docs/**/*.zip

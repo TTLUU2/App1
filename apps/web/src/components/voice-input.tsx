@@ -115,16 +115,27 @@ export function VoiceInput({
     setStatus('idle');
   }
 
-  function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
+  function trySubmit() {
     const trimmed = text.trim();
     if (!trimmed || disabled) return;
     onSubmit(trimmed);
     setText('');
   }
 
+  function handleKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
+    // Capture Enter ourselves and prevent any parent form from submitting —
+    // VoiceInput is intentionally NOT wrapped in <form>, because callers
+    // sometimes embed it inside another form (e.g. the Add Card review),
+    // and nested forms are invalid HTML.
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      e.stopPropagation();
+      trySubmit();
+    }
+  }
+
   return (
-    <form onSubmit={handleSubmit} className="w-full">
+    <div className="w-full">
       <div className="flex items-center gap-2 rounded-2xl border border-zinc-300 bg-white px-2 py-1.5 focus-within:ring-2 focus-within:ring-[var(--color-ph-red)] dark:border-zinc-700 dark:bg-zinc-900">
         {supported && (
           <button
@@ -150,6 +161,7 @@ export function VoiceInput({
           type="text"
           value={text}
           onChange={(e) => setText(e.target.value)}
+          onKeyDown={handleKeyDown}
           placeholder={placeholder}
           aria-label={ariaLabel}
           disabled={disabled}
@@ -157,7 +169,8 @@ export function VoiceInput({
           className="min-w-0 flex-1 bg-transparent px-1 py-2 text-sm outline-none"
         />
         <button
-          type="submit"
+          type="button"
+          onClick={trySubmit}
           disabled={!text.trim() || disabled}
           aria-label="Send"
           className="grid h-9 w-9 flex-none place-items-center rounded-full bg-[var(--color-ph-red)] text-white disabled:cursor-not-allowed disabled:opacity-40"
@@ -182,6 +195,6 @@ export function VoiceInput({
         </p>
       )}
       {hint && <div className="mt-2 text-[11px] text-zinc-500">{hint}</div>}
-    </form>
+    </div>
   );
 }

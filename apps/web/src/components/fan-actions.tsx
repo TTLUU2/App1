@@ -25,23 +25,23 @@ interface FanAction {
   href?: string;
 }
 
-// Ordered left → right as they appear in the arc (so the array index maps
-// directly to position in ARC_POSITIONS below).
+// Ordered left → right as they appear in the arc.
 const ACTIONS: FanAction[] = [
-  { id: 'add', label: 'Add card', Icon: CreditCard }, // leftmost — taps trigger the add-card modal
+  { id: 'add', label: 'Add card', Icon: CreditCard },
   { id: 'spend', label: 'Spend', Icon: Receipt, href: '/spend' },
   { id: 'benefits', label: 'Benefits', Icon: Sparkles, href: '/benefits' },
-  { id: 'ask', label: 'Ask', Icon: Mic, href: '/ask' }, // rightmost
+  { id: 'ask', label: 'Ask', Icon: Mic, href: '/ask' },
 ];
 
-// Positions on a ~140° upward arc, radius 110px, evenly spread.
-// (-x = left, -y = up.) Symmetric pairs: outer L/R further out + lower,
-// inner L/R higher + closer to centre.
-const ARC_POSITIONS: { x: number; y: number; align: 'left' | 'right' }[] = [
-  { x: -95, y: -55, align: 'left' }, // B0 outer left
-  { x: -40, y: -100, align: 'left' }, // B1 inner left
-  { x: 40, y: -100, align: 'right' }, // B2 inner right
-  { x: 95, y: -55, align: 'right' }, // B3 outer right
+// Wider arc — icon-over-label stack keeps each button ~64px wide so we can
+// space them out without overlapping or running off a 360px-wide viewport.
+// Outer pair sits lower and wider; inner pair sits higher and closer to the
+// vertical, producing a clear fan silhouette.
+const ARC_POSITIONS: { x: number; y: number }[] = [
+  { x: -110, y: -60 }, // B0 outer left
+  { x: -45, y: -135 }, // B1 inner left
+  { x: 45, y: -135 }, // B2 inner right
+  { x: 110, y: -60 }, // B3 outer right
 ];
 
 export function FanActions({
@@ -88,7 +88,6 @@ export function FanActions({
             <FanButton
               key={action.id}
               action={action}
-              align={pos.align}
               open={open}
               transform={transform}
               delayMs={delay}
@@ -104,7 +103,6 @@ export function FanActions({
 
 function FanButton({
   action,
-  align,
   open,
   transform,
   delayMs,
@@ -112,16 +110,16 @@ function FanButton({
   onClose,
 }: {
   action: FanAction;
-  align: 'left' | 'right';
   open: boolean;
   transform: string;
   delayMs: number;
   onPick: (id: FanActionId) => void;
   onClose: () => void;
 }) {
+  // Icon-over-label stack. Each button is ~64px wide, narrow enough that
+  // ARC_POSITIONS at ±110px / ±45px keep clear spacing on a 360px viewport.
   const baseClass = clsx(
-    'pointer-events-auto absolute left-0 top-0 flex items-center gap-2 transition-all duration-200 ease-out',
-    align === 'right' ? 'flex-row' : 'flex-row-reverse',
+    'pointer-events-auto absolute left-0 top-0 flex w-16 flex-col items-center gap-1 transition-all duration-200 ease-out',
     open ? 'opacity-100' : 'opacity-0',
   );
   const style = {
@@ -129,15 +127,15 @@ function FanButton({
     transitionDelay: `${delayMs}ms`,
   } as const;
 
-  const icon = (
-    <span className="grid h-12 w-12 place-items-center rounded-full bg-white text-zinc-800 shadow-md ring-1 ring-zinc-200 transition-transform hover:scale-105 active:scale-95 dark:bg-zinc-900 dark:text-zinc-100 dark:ring-zinc-700">
-      <action.Icon className="h-5 w-5" aria-hidden />
-    </span>
-  );
-  const label = (
-    <span className="rounded-full bg-zinc-900/85 px-2 py-1 text-[11px] font-medium text-white shadow-sm dark:bg-zinc-100/90 dark:text-zinc-900">
-      {action.label}
-    </span>
+  const body = (
+    <>
+      <span className="grid h-12 w-12 place-items-center rounded-full bg-white text-zinc-800 shadow-md ring-1 ring-zinc-200 transition-transform hover:scale-105 active:scale-95 dark:bg-zinc-900 dark:text-zinc-100 dark:ring-zinc-700">
+        <action.Icon className="h-5 w-5" aria-hidden />
+      </span>
+      <span className="rounded-full bg-zinc-900/85 px-1.5 py-0.5 text-[10px] font-medium text-white shadow-sm dark:bg-zinc-100/90 dark:text-zinc-900">
+        {action.label}
+      </span>
+    </>
   );
 
   // Tabbable + reachable by screen reader only when open.
@@ -155,8 +153,7 @@ function FanButton({
         className={baseClass}
         style={style}
       >
-        {icon}
-        {label}
+        {body}
       </Link>
     );
   }
@@ -170,8 +167,7 @@ function FanButton({
       className={baseClass}
       style={style}
     >
-      {icon}
-      {label}
+      {body}
     </button>
   );
 }

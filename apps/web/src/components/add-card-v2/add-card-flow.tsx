@@ -1,59 +1,47 @@
 'use client';
 
-// Unified Add Card flow (PRD §11.2.1, revised).
+// Unified Add Card flow — photo-first, smart-defaulted review, no Q&A.
 //
-// One progressive screen with three modes:
-//   1. Photo step: take photo, upload, or "pick manually"
-//   2. Conversation: one Q&A per screen with a running chat history above
-//   3. Review + save
+// 1. Photo step: take photo, upload, or "pick manually"
+// 2. (Only if OCR fails to match) Card picker question
+// 3. Review with smart defaults; every field editable inline; tap Save.
 //
-// Voice is the primary input (VoiceInput is the focused control on every
-// step). Typing and tap-to-pick are the fallbacks. PAN/CVV never captured.
+// Principle (per UX call): never ask the user for something we can extract
+// from the photo or derive from sensible defaults. Approval date defaults
+// to today, fee due derives from approval + 12 months (auto-updates when
+// approval changes unless the user manually edited fee due), min-spend to
+// ~bonusPoints/30 rounded, spend-by to +90 days, bonus received to false.
+// Anything wrong → tap edit, or use the voice mic under approval date.
 
 import { useMemo, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { ChevronLeft, Sparkles, CheckCircle2, AlertTriangle, ArrowLeft } from 'lucide-react';
+import { ChevronLeft, Sparkles, CheckCircle2, AlertTriangle, Pencil } from 'lucide-react';
+import clsx from 'clsx';
+import type { CardWithIssuer } from '@ph/shared';
 import { catalogue, useUserCardsStore } from '@/store/user-cards';
+import { CardArt } from '@/components/card-art';
 import { VoiceInput } from '@/components/voice-input';
-import { speak } from '@/lib/speech';
-import { todayIsoDate } from '@/lib/time';
-import { formatCurrency, formatDate } from '@/lib/format';
-import { ChatThread } from './chat-thread';
 import { PhotoStep } from './photo-step';
 import { CardPickerQuestion } from './card-picker-question';
-import type { ChatBubble, CollectedCard } from './types';
+import { formatCurrency, formatDate } from '@/lib/format';
+import { todayIsoDate } from '@/lib/time';
 
-type StepId =
-  | 'photo'
-  | 'confirm_card' // (photo branch) "Is this the right card?"
-  | 'pick_card' // (manual branch) "Which card?"
-  | 'activation'
-  | 'fee_due'
-  | 'bonus_received'
-  | 'spend_target'
-  | 'review';
+type Step = 'photo' | 'pick' | 'review';
 
-interface ParseDateResp {
-  isoDate: string | null;
-  skip: boolean;
-}
-interface ParseYesNoResp {
-  yes: boolean | null;
-}
-interface ParseSpendResp {
-  amount: number | null;
-  deadlineIso: string | null;
-  skip: boolean;
+interface Collected {
+  cardId: string | null;
+  last4: string | null;
+  expiryMonthYear: string | null;
+  activationDate: string;
+  annualFeeNextDueDate: string;
+  bonusReceived: boolean;
+  bonusTarget: number;
+  bonusSpendWindowEndDate: string;
 }
 
 interface AddCardFlowProps {
-  /** Called instead of router.push('/') after a successful save. The modal
-   *  wrapper uses this to show its own success/Add-another view without
-   *  bouncing the user out of the current tab. */
   onSaved?: (savedCardId: string) => void;
-  /** Called when the user dismisses via the back affordance. The default
-   *  navigates to '/'; the modal wrapper passes its own close-dialog handler. */
   onClose?: () => void;
 }
 
@@ -62,196 +50,98 @@ export function AddCardFlow({ onSaved, onClose }: AddCardFlowProps = {}) {
   const addCard = useUserCardsStore((s) => s.addCard);
   const cards = useMemo(() => catalogue.allCards(), []);
 
-  const [collected, setCollected] = useState<CollectedCard>({
-    cardId: null,
-    last4: null,
-    expiryMonthYear: null,
-    activationDate: null,
-    annualFeeNextDueDate: null,
-    bonusReceived: null,
-    bonusTarget: null,
-    bonusSpendWindowEndDate: null,
-  });
-  const [bubbles, setBubbles] = useState<ChatBubble[]>([]);
-  const [step, setStep] = useState<StepId>('photo');
+  const [step, setStep] = useState<Step>('photo');
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Smart defaults computed once, when entering the review.
+  const [collected, setCollected] = useState<Collected>(() => emptyCollected());
+  // Track which derived fields the user has manually overridden. Until they
+  // do, we auto-recompute from approval date whenever it changes — so a
+  // quick voice "last March" propagates to fee due AND spend-by too.
+  // Default spend-by rule of thumb: 90 days from approval (most AU sign-up
+  // bonuses use a 90-day window; swap with per-card data when available).
+  const [feeDueDirty, setFeeDueDirty] = useState(false);
+  const [spendByDirty, setSpendByDirty] = useState(false);
+
+  function handleChange(patch: Partial<Collected>) {
+    setCollected((c) => {
+      const next = { ...c, ...patch };
+      if (patch.activationDate) {
+        if (!feeDueDirty) {
+          next.annualFeeNextDueDate = addMonthsIso(patch.activationDate, 12);
+        }
+        if (!spendByDirty) {
+          next.bonusSpendWindowEndDate = addDaysIso(patch.activationDate, 90);
+        }
+      }
+      return next;
+    });
+    if (patch.annualFeeNextDueDate !== undefined) {
+      setFeeDueDirty(true);
+    }
+    if (patch.bonusSpendWindowEndDate !== undefined) {
+      setSpendByDirty(true);
+    }
+  }
 
   const matchedCard = useMemo(
     () => (collected.cardId ? (cards.find((c) => c.id === collected.cardId) ?? null) : null),
     [collected.cardId, cards],
   );
 
-  function appendBubble(question: string, answerLabel: string) {
-    setBubbles((b) => [...b, { question, answerLabel }]);
+  function jumpToReviewFor(cardId: string, last4: string | null, expiry: string | null) {
+    const card = cards.find((c) => c.id === cardId);
+    setCollected((c) => ({
+      ...c,
+      cardId,
+      last4: last4 ?? c.last4,
+      expiryMonthYear: expiry ?? c.expiryMonthYear,
+      // Recompute smart defaults that depend on the catalogue match.
+      bonusTarget: smartMinSpend(card),
+    }));
+    setStep('review');
   }
-
-  function advance(next: StepId) {
-    setStep(next);
-    setError(null);
-  }
-
-  // ── Step 1 (photo) handlers ──────────────────────────────────────────────
 
   function handleCaptured(result: {
     matchedCardId: string | null;
     extracted: { last4: string | null; expiryMonthYear: string | null };
   }) {
-    setCollected((c) => ({
-      ...c,
-      cardId: result.matchedCardId ?? c.cardId,
-      last4: result.extracted.last4 ?? c.last4,
-      expiryMonthYear: result.extracted.expiryMonthYear ?? c.expiryMonthYear,
-    }));
     if (result.matchedCardId) {
-      const card = cards.find((c) => c.id === result.matchedCardId);
-      appendBubble(
-        'Snap or upload a photo of the card.',
-        `Got it — looks like ${card?.name ?? 'a card I can match'}.`,
+      jumpToReviewFor(
+        result.matchedCardId,
+        result.extracted.last4,
+        result.extracted.expiryMonthYear,
       );
-      advance('confirm_card');
     } else {
-      appendBubble(
-        'Snap or upload a photo of the card.',
-        "Photo received, but I couldn't pick the card from the catalogue.",
-      );
-      advance('pick_card');
+      // Photo OCR didn't pick a catalogue card — stash extracted last4/expiry
+      // and route to the picker step so the user can choose.
+      setCollected((c) => ({
+        ...c,
+        last4: result.extracted.last4 ?? c.last4,
+        expiryMonthYear: result.extracted.expiryMonthYear ?? c.expiryMonthYear,
+      }));
+      setStep('pick');
     }
   }
 
   function handleManual() {
-    appendBubble('Snap or upload a photo of the card.', "I'll pick it manually.");
-    advance('pick_card');
+    setStep('pick');
   }
 
-  // ── Confirm card (post-OCR) ───────────────────────────────────────────────
-
-  async function handleConfirmCard(utterance: string) {
-    const lower = utterance.toLowerCase().trim();
-    const isYes = /^(y|yes|yep|yeah|correct|right|that's it|that is it|confirm|ok|sure|good)/.test(
-      lower,
-    );
-    if (isYes) {
-      appendBubble(`Is this the right card?`, `Yes — ${matchedCard?.name ?? 'confirmed'}.`);
-      advance('activation');
-      speakPrompt('When did you activate this card?');
-    } else {
-      // Treat as a redo — clear the OCR pick and bounce to manual selection.
-      appendBubble('Is this the right card?', utterance);
-      setCollected((c) => ({ ...c, cardId: null }));
-      advance('pick_card');
-    }
+  function handlePicked(cardId: string) {
+    jumpToReviewFor(cardId, collected.last4, collected.expiryMonthYear);
   }
 
-  function handleConfirmCardYes() {
-    appendBubble('Is this the right card?', `Yes — ${matchedCard?.name ?? 'confirmed'}.`);
-    advance('activation');
-    speakPrompt('When did you activate this card?');
-  }
-  function handleConfirmCardNo() {
-    appendBubble('Is this the right card?', 'No — let me pick it.');
-    setCollected((c) => ({ ...c, cardId: null }));
-    advance('pick_card');
-  }
-
-  // ── Pick card (manual / fallback) ─────────────────────────────────────────
-
-  function handlePickCard(cardId: string, displayLabel: string) {
-    setCollected((c) => ({ ...c, cardId }));
-    appendBubble('Which card is it?', displayLabel);
-    advance('activation');
-    speakPrompt('When did you activate this card?');
-  }
-
-  // ── Date / yes-no / spend questions ───────────────────────────────────────
-
-  async function handleDate(question: string, answer: string, field: keyof CollectedCard) {
-    setPending(true);
-    setError(null);
-    try {
-      const res = await callParse({ kind: 'date', answer });
-      const value = res.skip ? null : res.isoDate;
-      setCollected((c) => ({ ...c, [field]: value }));
-      appendBubble(question, value ? formatDate(value) : 'Skipped');
-    } catch (err) {
-      setError(err instanceof Error ? err.message : String(err));
-    } finally {
-      setPending(false);
-    }
-  }
-
-  async function handleYesNo(question: string, answer: string) {
-    setPending(true);
-    setError(null);
-    try {
-      const res = await callParse({ kind: 'yesno', answer });
-      setCollected((c) => ({ ...c, bonusReceived: res.yes }));
-      appendBubble(
-        question,
-        res.yes == null ? 'Skipped' : res.yes ? 'Yes — received it' : 'Not yet',
-      );
-    } catch (err) {
-      setError(err instanceof Error ? err.message : String(err));
-    } finally {
-      setPending(false);
-    }
-  }
-
-  async function handleSpendTarget(question: string, answer: string) {
-    setPending(true);
-    setError(null);
-    try {
-      const res = await callParse({ kind: 'spend_target', answer });
-      setCollected((c) => ({
-        ...c,
-        bonusTarget: res.skip ? null : res.amount,
-        bonusSpendWindowEndDate: res.skip ? null : res.deadlineIso,
-      }));
-      appendBubble(
-        question,
-        res.skip
-          ? 'Skipped'
-          : `${res.amount != null ? formatCurrency(res.amount) : '—'}${
-              res.deadlineIso ? ` by ${formatDate(res.deadlineIso)}` : ''
-            }`,
-      );
-    } catch (err) {
-      setError(err instanceof Error ? err.message : String(err));
-    } finally {
-      setPending(false);
-    }
-  }
-
-  // Common pattern: ask a question step. When pending or after a successful
-  // append, advance through the queue.
-  async function activationAnswered(utterance: string) {
-    await handleDate('When did you activate this card?', utterance, 'activationDate');
-    advance('fee_due');
-    speakPrompt("When's the annual fee next due?");
-  }
-  async function feeDueAnswered(utterance: string) {
-    await handleDate("When's the annual fee next due?", utterance, 'annualFeeNextDueDate');
-    advance('bonus_received');
-    speakPrompt('Have you received the sign-up bonus yet?');
-  }
-  async function bonusReceivedAnswered(utterance: string) {
-    await handleYesNo('Have you received the sign-up bonus yet?', utterance);
-    advance('spend_target');
-    speakPrompt('How much do you need to spend and by when for the bonus?');
-  }
-  async function spendTargetAnswered(utterance: string) {
-    await handleSpendTarget('How much do you need to spend and by when for the bonus?', utterance);
-    advance('review');
-  }
-
-  async function submit() {
+  async function save() {
     if (!collected.cardId) return;
     setPending(true);
+    setError(null);
     try {
       await addCard({
         cardId: collected.cardId,
-        applicationDate: collected.activationDate ?? todayIsoDate(),
-        bonusReceived: collected.bonusReceived ?? false,
+        applicationDate: collected.activationDate,
+        bonusReceived: collected.bonusReceived,
         last4: collected.last4,
         expiryMonthYear: collected.expiryMonthYear,
         activationDate: collected.activationDate,
@@ -261,8 +151,6 @@ export function AddCardFlow({ onSaved, onClose }: AddCardFlowProps = {}) {
       });
       if (onSaved) {
         onSaved(collected.cardId);
-        // The modal wrapper takes over from here — clear local state in
-        // case it remounts us for an "Add another" cycle.
         setPending(false);
       } else {
         router.push('/');
@@ -270,29 +158,6 @@ export function AddCardFlow({ onSaved, onClose }: AddCardFlowProps = {}) {
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
       setPending(false);
-    }
-  }
-
-  function back() {
-    setError(null);
-    // Walk one step back through the conversational sequence.
-    const order: StepId[] = [
-      'photo',
-      'confirm_card',
-      'pick_card',
-      'activation',
-      'fee_due',
-      'bonus_received',
-      'spend_target',
-      'review',
-    ];
-    const idx = order.indexOf(step);
-    if (idx > 0) {
-      const prev = order[idx - 1];
-      if (prev) {
-        setStep(prev);
-        setBubbles((b) => b.slice(0, Math.max(0, b.length - 1)));
-      }
     }
   }
 
@@ -311,7 +176,7 @@ export function AddCardFlow({ onSaved, onClose }: AddCardFlowProps = {}) {
         ) : (
           <Link
             href="/"
-            aria-label="Back to Next Card"
+            aria-label="Back"
             className="grid h-9 w-9 place-items-center rounded-full text-zinc-600 hover:bg-zinc-100 dark:text-zinc-300 dark:hover:bg-zinc-800"
           >
             <ChevronLeft className="h-5 w-5" aria-hidden />
@@ -324,9 +189,29 @@ export function AddCardFlow({ onSaved, onClose }: AddCardFlowProps = {}) {
       </header>
 
       <div className="mt-4">
-        <ChatThread bubbles={bubbles} currentQuestion={questionFor(step, matchedCard?.name)}>
-          {renderInput()}
-        </ChatThread>
+        {step === 'photo' && <PhotoStep onCaptured={handleCaptured} onManual={handleManual} />}
+
+        {step === 'pick' && (
+          <div className="space-y-3">
+            <p className="text-sm text-zinc-700 dark:text-zinc-300">
+              Pick your card from the list.
+            </p>
+            <CardPickerQuestion cards={cards} onPick={(id) => handlePicked(id)} />
+          </div>
+        )}
+
+        {step === 'review' && matchedCard && (
+          <ReviewForm
+            card={matchedCard}
+            collected={collected}
+            feeDueDirty={feeDueDirty}
+            spendByDirty={spendByDirty}
+            onChange={handleChange}
+            onChangeCard={() => setStep('pick')}
+            onSave={save}
+            pending={pending}
+          />
+        )}
       </div>
 
       {error && (
@@ -338,231 +223,285 @@ export function AddCardFlow({ onSaved, onClose }: AddCardFlowProps = {}) {
           {error}
         </div>
       )}
-
-      {step !== 'photo' && step !== 'review' && (
-        <button
-          type="button"
-          onClick={back}
-          className="mt-3 inline-flex items-center gap-1 text-xs text-zinc-500 underline-offset-2 hover:underline"
-        >
-          <ArrowLeft className="h-3 w-3" aria-hidden />
-          Back one step
-        </button>
-      )}
     </main>
   );
-
-  function renderInput() {
-    if (step === 'photo') {
-      return <PhotoStep onCaptured={handleCaptured} onManual={handleManual} />;
-    }
-    if (step === 'confirm_card') {
-      return (
-        <div className="space-y-2">
-          <div className="flex gap-2">
-            <button
-              type="button"
-              onClick={handleConfirmCardYes}
-              className="flex-1 rounded-full bg-[var(--color-ph-red)] px-3 py-2 text-sm font-medium text-white"
-            >
-              Yes, that&apos;s it
-            </button>
-            <button
-              type="button"
-              onClick={handleConfirmCardNo}
-              className="rounded-full border border-zinc-300 px-3 py-2 text-sm font-medium text-zinc-700 dark:border-zinc-700 dark:text-zinc-300"
-            >
-              No, let me pick
-            </button>
-          </div>
-          <VoiceInput
-            ariaLabel="Confirm card"
-            placeholder="Say yes / no, or describe the right card…"
-            onSubmit={handleConfirmCard}
-            disabled={pending}
-            hint="Voice tip: just say 'yes' or 'no'."
-          />
-        </div>
-      );
-    }
-    if (step === 'pick_card') {
-      return <CardPickerQuestion cards={cards} onPick={handlePickCard} />;
-    }
-    if (step === 'activation') {
-      return (
-        <VoiceInput
-          ariaLabel="Activation date"
-          placeholder="Say 'three weeks ago', '12 May', or 'skip'…"
-          onSubmit={activationAnswered}
-          disabled={pending}
-          autoFocus
-        />
-      );
-    }
-    if (step === 'fee_due') {
-      return (
-        <VoiceInput
-          ariaLabel="Annual fee due date"
-          placeholder="Say 'next March', 'in 11 months', or 'skip'…"
-          onSubmit={feeDueAnswered}
-          disabled={pending}
-          autoFocus
-        />
-      );
-    }
-    if (step === 'bonus_received') {
-      return (
-        <div className="space-y-2">
-          <div className="flex gap-2">
-            <button
-              type="button"
-              onClick={() => bonusReceivedAnswered('yes')}
-              className="flex-1 rounded-full bg-[var(--color-ph-red)] px-3 py-2 text-sm font-medium text-white"
-              disabled={pending}
-            >
-              Yes
-            </button>
-            <button
-              type="button"
-              onClick={() => bonusReceivedAnswered('no')}
-              className="flex-1 rounded-full border border-zinc-300 px-3 py-2 text-sm font-medium text-zinc-700 dark:border-zinc-700 dark:text-zinc-300"
-              disabled={pending}
-            >
-              Not yet
-            </button>
-          </div>
-          <VoiceInput
-            ariaLabel="Bonus received"
-            placeholder="Say 'yep', 'not yet', or 'received last week'…"
-            onSubmit={bonusReceivedAnswered}
-            disabled={pending}
-          />
-        </div>
-      );
-    }
-    if (step === 'spend_target') {
-      return (
-        <VoiceInput
-          ariaLabel="Min-spend target and deadline"
-          placeholder="Say '$3000 in 90 days', 'skip', or '$5k by end of June'…"
-          onSubmit={spendTargetAnswered}
-          disabled={pending}
-          autoFocus
-        />
-      );
-    }
-    // review
-    return (
-      <ReviewBlock
-        collected={collected}
-        cardName={matchedCard?.name ?? 'Selected card'}
-        pending={pending}
-        onSubmit={submit}
-      />
-    );
-  }
 }
 
-function ReviewBlock({
+function ReviewForm({
+  card,
   collected,
-  cardName,
+  feeDueDirty,
+  spendByDirty,
+  onChange,
+  onChangeCard,
+  onSave,
   pending,
-  onSubmit,
 }: {
-  collected: CollectedCard;
-  cardName: string;
+  card: CardWithIssuer;
+  collected: Collected;
+  feeDueDirty: boolean;
+  spendByDirty: boolean;
+  onChange: (patch: Partial<Collected>) => void;
+  onChangeCard: () => void;
+  onSave: () => void;
   pending: boolean;
-  onSubmit: () => void;
 }) {
+  const [voiceParsing, setVoiceParsing] = useState(false);
+  const [voiceError, setVoiceError] = useState<string | null>(null);
+  // Set when the most recent voice/text submission successfully updated the
+  // approval date. Drives the green confirmation chip + the brief ring
+  // highlight on the date input.
+  const [voiceSuccess, setVoiceSuccess] = useState<string | null>(null);
+
+  async function handleVoiceApprovalDate(utterance: string) {
+    setVoiceParsing(true);
+    setVoiceError(null);
+    setVoiceSuccess(null);
+    try {
+      const res = await fetch('/api/onboard/parse', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ kind: 'date', answer: utterance, today: todayIsoDate() }),
+      });
+      const json = (await res.json()) as
+        | { isoDate: string | null; skip: boolean }
+        | { error: string };
+      if (!res.ok || 'error' in json) {
+        throw new Error('error' in json ? json.error : 'parse failed');
+      }
+      if (json.skip || !json.isoDate) {
+        setVoiceError("Couldn't pick a date from that — try '12 May' or 'three weeks ago'.");
+        return;
+      }
+      // Defensive: only accept strict yyyy-MM-dd (the schema requests it, but
+      // models occasionally return ISO-with-time or other formats).
+      const normalised = /^\d{4}-\d{2}-\d{2}$/.test(json.isoDate)
+        ? json.isoDate
+        : json.isoDate.slice(0, 10);
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(normalised)) {
+        setVoiceError(`Couldn't read the parsed date ("${json.isoDate}") — try again.`);
+        return;
+      }
+      onChange({ activationDate: normalised });
+      setVoiceSuccess(normalised);
+    } catch (err) {
+      setVoiceError(err instanceof Error ? err.message : String(err));
+    } finally {
+      setVoiceParsing(false);
+    }
+  }
   return (
-    <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-4 text-sm dark:border-emerald-900 dark:bg-emerald-950/40">
-      <p className="font-semibold">Review {cardName}</p>
-      <dl className="mt-3 grid grid-cols-2 gap-y-1 text-xs">
-        <dt className="text-emerald-900/70 dark:text-emerald-200/70">Activation</dt>
-        <dd className="text-right">
-          {collected.activationDate ? formatDate(collected.activationDate) : '—'}
-        </dd>
-        <dt className="text-emerald-900/70 dark:text-emerald-200/70">Annual fee due</dt>
-        <dd className="text-right">
-          {collected.annualFeeNextDueDate ? formatDate(collected.annualFeeNextDueDate) : '—'}
-        </dd>
-        <dt className="text-emerald-900/70 dark:text-emerald-200/70">Bonus received</dt>
-        <dd className="text-right">
-          {collected.bonusReceived == null ? '—' : collected.bonusReceived ? 'Yes' : 'Not yet'}
-        </dd>
-        <dt className="text-emerald-900/70 dark:text-emerald-200/70">Min-spend target</dt>
-        <dd className="text-right">
-          {collected.bonusTarget ? formatCurrency(collected.bonusTarget) : '—'}
-        </dd>
-        <dt className="text-emerald-900/70 dark:text-emerald-200/70">Spend by</dt>
-        <dd className="text-right">
-          {collected.bonusSpendWindowEndDate ? formatDate(collected.bonusSpendWindowEndDate) : '—'}
-        </dd>
-        {collected.last4 && (
-          <>
-            <dt className="text-emerald-900/70 dark:text-emerald-200/70">Last 4</dt>
-            <dd className="text-right">•••• {collected.last4}</dd>
-          </>
-        )}
-        {collected.expiryMonthYear && (
-          <>
-            <dt className="text-emerald-900/70 dark:text-emerald-200/70">Expiry</dt>
-            <dd className="text-right">{collected.expiryMonthYear}</dd>
-          </>
-        )}
-      </dl>
+    <form
+      onSubmit={(e) => {
+        e.preventDefault();
+        onSave();
+      }}
+      className="space-y-4"
+    >
+      {/* Card identity (from OCR + catalogue match). Visible, with a quick
+          way to swap if the match was wrong. */}
+      <section className="flex items-center gap-3 rounded-2xl border border-zinc-200 bg-white p-3 dark:border-zinc-800 dark:bg-zinc-900">
+        <CardArt card={card} size="sm" />
+        <div className="min-w-0 flex-1">
+          <p className="truncate text-sm font-semibold">{card.name}</p>
+          <p className="text-xs text-zinc-500">
+            {card.issuer.name} · annual fee {formatCurrency(card.annualFee)}
+          </p>
+          {(collected.last4 || collected.expiryMonthYear) && (
+            <p className="mt-0.5 text-[11px] text-zinc-500">
+              {collected.last4 && <>•••• {collected.last4}</>}
+              {collected.last4 && collected.expiryMonthYear && ' · '}
+              {collected.expiryMonthYear && <>exp {collected.expiryMonthYear}</>}
+            </p>
+          )}
+        </div>
+        <button
+          type="button"
+          onClick={onChangeCard}
+          className="inline-flex items-center gap-1 rounded-full border border-zinc-300 px-2 py-1 text-[11px] font-medium text-zinc-600 hover:border-[var(--color-ph-red)] hover:text-[var(--color-ph-red)] dark:border-zinc-700 dark:text-zinc-400"
+        >
+          <Pencil className="h-3 w-3" aria-hidden />
+          Change
+        </button>
+      </section>
+
+      {/* Smart defaults — every field editable. */}
+      <div className="space-y-3 rounded-2xl border border-zinc-200 bg-white p-3 dark:border-zinc-800 dark:bg-zinc-900">
+        <p className="text-[10px] font-semibold uppercase tracking-widest text-zinc-500">
+          Defaults — edit anything wrong
+        </p>
+
+        {/* Approval date — promoted to a full-width row with a voice override
+            underneath, because everything else (fee due, spend-by) derives
+            from it and it's the field most likely to be wrong by default. */}
+        <Field label="Approval date" hint="When the issuer approved your application.">
+          <input
+            type="date"
+            value={collected.activationDate}
+            onChange={(e) => {
+              onChange({ activationDate: e.target.value });
+              // Clear the voice-success chip when the user types in the
+              // field directly — the chip would otherwise stay stale.
+              setVoiceSuccess(null);
+            }}
+            // Brief ring highlight whenever the voice override just updated
+            // the value, so the user can see what changed.
+            className={clsx(
+              'w-full rounded-lg border border-zinc-300 bg-white px-2 py-1.5 text-sm transition-shadow dark:border-zinc-700 dark:bg-zinc-950',
+              voiceSuccess === collected.activationDate &&
+                'ring-2 ring-emerald-400/70 ring-offset-1 dark:ring-offset-zinc-900',
+            )}
+          />
+          <div className="mt-2">
+            <VoiceInput
+              ariaLabel="Approval date — voice or text override"
+              placeholder="Say 'last March', 'three weeks ago', '12 May'…"
+              onSubmit={handleVoiceApprovalDate}
+              disabled={voiceParsing}
+              hint="Tap Send (or press Enter) after typing — the field above will update."
+            />
+            {voiceParsing && <p className="mt-1 text-[11px] text-zinc-500">Parsing…</p>}
+            {voiceSuccess && voiceSuccess === collected.activationDate && !voiceError && (
+              <p className="mt-1 inline-flex items-center gap-1 text-[11px] font-medium text-emerald-700 dark:text-emerald-300">
+                <CheckCircle2 className="h-3 w-3" aria-hidden />
+                Approval date set to {formatDate(voiceSuccess)}
+              </p>
+            )}
+            {voiceError && (
+              <p className="mt-1 text-[11px] text-rose-600 dark:text-rose-400">{voiceError}</p>
+            )}
+          </div>
+        </Field>
+
+        <div className="grid grid-cols-2 gap-3">
+          <Field
+            label="Annual fee next due"
+            hint={
+              feeDueDirty
+                ? 'Manually set.'
+                : `Auto — ${formatDate(collected.annualFeeNextDueDate)} (approval + 12m).`
+            }
+          >
+            <input
+              type="date"
+              value={collected.annualFeeNextDueDate}
+              onChange={(e) => onChange({ annualFeeNextDueDate: e.target.value })}
+              className="w-full rounded-lg border border-zinc-300 bg-white px-2 py-1.5 text-sm dark:border-zinc-700 dark:bg-zinc-950"
+            />
+          </Field>
+          <Field label="Min-spend target">
+            <input
+              type="number"
+              inputMode="numeric"
+              min={0}
+              step={500}
+              value={String(collected.bonusTarget)}
+              onChange={(e) => onChange({ bonusTarget: Number(e.target.value) || 0 })}
+              className="w-full rounded-lg border border-zinc-300 bg-white px-2 py-1.5 text-sm tabular-nums dark:border-zinc-700 dark:bg-zinc-950"
+            />
+          </Field>
+          <Field
+            label="Spend by"
+            hint={
+              spendByDirty
+                ? 'Manually set.'
+                : `Auto — ${formatDate(collected.bonusSpendWindowEndDate)} (approval + 90 days).`
+            }
+          >
+            <input
+              type="date"
+              value={collected.bonusSpendWindowEndDate}
+              onChange={(e) => onChange({ bonusSpendWindowEndDate: e.target.value })}
+              className="w-full rounded-lg border border-zinc-300 bg-white px-2 py-1.5 text-sm dark:border-zinc-700 dark:bg-zinc-950"
+            />
+          </Field>
+        </div>
+        <div className="flex items-center justify-between gap-3 rounded-lg bg-zinc-50 px-3 py-2 dark:bg-zinc-950/60">
+          <span className="text-sm font-medium text-zinc-800 dark:text-zinc-200">
+            Sign-up bonus already received?
+          </span>
+          <button
+            type="button"
+            role="switch"
+            aria-checked={collected.bonusReceived}
+            onClick={() => onChange({ bonusReceived: !collected.bonusReceived })}
+            className={`relative inline-flex h-6 w-11 flex-none items-center rounded-full transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-ph-red)] ${
+              collected.bonusReceived ? 'bg-[var(--color-ph-red)]' : 'bg-zinc-300 dark:bg-zinc-700'
+            }`}
+          >
+            <span
+              className={`inline-block h-5 w-5 transform rounded-full bg-white shadow transition-transform ${
+                collected.bonusReceived ? 'translate-x-5' : 'translate-x-0.5'
+              }`}
+            />
+          </button>
+        </div>
+      </div>
+
       <button
-        type="button"
-        onClick={onSubmit}
+        type="submit"
         disabled={pending}
-        className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-full bg-[var(--color-ph-red)] px-4 py-2.5 text-sm font-medium text-white disabled:opacity-50"
+        className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-[var(--color-ph-red)] px-4 py-3 text-sm font-medium text-white disabled:opacity-50"
       >
         <CheckCircle2 className="h-4 w-4" aria-hidden />
         {pending ? 'Saving…' : 'Save card'}
       </button>
-    </div>
+    </form>
   );
 }
 
-// ── Helpers ─────────────────────────────────────────────────────────────────
-
-function questionFor(step: StepId, cardName?: string): string | undefined {
-  switch (step) {
-    case 'photo':
-      return undefined; // photo step has its own prompt inside
-    case 'confirm_card':
-      return cardName ? `Is this the right card — ${cardName}?` : 'Is this the right card?';
-    case 'pick_card':
-      return 'Which card is it?';
-    case 'activation':
-      return 'When did you activate this card?';
-    case 'fee_due':
-      return "When's the annual fee next due?";
-    case 'bonus_received':
-      return 'Have you received the sign-up bonus yet?';
-    case 'spend_target':
-      return 'How much do you need to spend and by when for the bonus?';
-    case 'review':
-      return 'Looks good — tap save to add this card.';
-  }
+function Field({
+  label,
+  hint,
+  children,
+}: {
+  label: string;
+  hint?: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <label className="block">
+      <span className="block text-[11px] font-medium text-zinc-600 dark:text-zinc-400">
+        {label}
+      </span>
+      <div className="mt-1">{children}</div>
+      {hint && <p className="mt-1 text-[10px] text-zinc-500">{hint}</p>}
+    </label>
+  );
 }
 
-function speakPrompt(prompt: string): void {
-  speak(prompt);
+// ── Smart defaults ──────────────────────────────────────────────────────────
+
+function emptyCollected(): Collected {
+  const today = todayIsoDate();
+  return {
+    cardId: null,
+    last4: null,
+    expiryMonthYear: null,
+    activationDate: today,
+    annualFeeNextDueDate: addMonthsIso(today, 12),
+    bonusReceived: false,
+    bonusTarget: 3000,
+    bonusSpendWindowEndDate: addDaysIso(today, 90),
+  };
 }
 
-async function callParse(args: { kind: 'date'; answer: string }): Promise<ParseDateResp>;
-async function callParse(args: { kind: 'yesno'; answer: string }): Promise<ParseYesNoResp>;
-async function callParse(args: { kind: 'spend_target'; answer: string }): Promise<ParseSpendResp>;
-async function callParse(args: { kind: string; answer: string }): Promise<unknown> {
-  const res = await fetch('/api/onboard/parse', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ ...args, today: todayIsoDate() }),
-  });
-  const json = (await res.json()) as Record<string, unknown>;
-  if (!res.ok) {
-    throw new Error(typeof json.error === 'string' ? json.error : 'Parse failed');
-  }
-  return json;
+/** Heuristic min-spend default from the card's bonusPoints. ~30 points per
+ * $1 typical; round to the nearest $500; floor at $1500. */
+function smartMinSpend(card: CardWithIssuer | undefined): number {
+  if (!card?.bonusPoints) return 3000;
+  const raw = card.bonusPoints / 30;
+  return Math.max(1500, Math.round(raw / 500) * 500);
+}
+
+function addDaysIso(iso: string, days: number): string {
+  const d = new Date(iso + 'T00:00:00');
+  d.setDate(d.getDate() + days);
+  return d.toISOString().slice(0, 10);
+}
+
+function addMonthsIso(iso: string, months: number): string {
+  const d = new Date(iso + 'T00:00:00');
+  d.setMonth(d.getMonth() + months);
+  return d.toISOString().slice(0, 10);
 }

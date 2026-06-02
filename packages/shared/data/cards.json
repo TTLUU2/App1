@@ -9,7 +9,8 @@
     "annualFee": 1450,
     "rewardsProgram": "flexible",
     "pointHacksUrl": "https://www.pointhacks.com.au/credit-cards/american-express-platinum-guide/",
-    "cardArtUrl": "https://plastic.pointhacks.com.au/api/files/q3s7m5x1/cjk2jnnoewycj09/amex_platinum_charge_2022_6xljjf9deh.jpg"
+    "cardArtUrl": "https://plastic.pointhacks.com.au/api/files/q3s7m5x1/cjk2jnnoewycj09/amex_platinum_charge_2022_6xljjf9deh.jpg",
+    "earnRatePer1Aud": 2.25
   },
   {
     "id": "3b4ebbd4-af18-5f7e-8e78-78c07bc91fd9",
@@ -21,7 +22,8 @@
     "annualFee": 399,
     "rewardsProgram": "flexible",
     "pointHacksUrl": "https://www.pointhacks.com.au/credit-cards/american-express-explorer-guide/",
-    "cardArtUrl": "https://plastic.pointhacks.com.au/api/files/q3s7m5x1/cjk2jqn6xwyk709/american_express_explorer_card_art_november_2024_arjvjbew8m.jpg"
+    "cardArtUrl": "https://plastic.pointhacks.com.au/api/files/q3s7m5x1/cjk2jqn6xwyk709/american_express_explorer_card_art_november_2024_arjvjbew8m.jpg",
+    "earnRatePer1Aud": 2
   },
   {
     "id": "25647c5a-da76-5323-bb73-16749973ef9a",
@@ -33,7 +35,8 @@
     "annualFee": 450,
     "rewardsProgram": "velocity",
     "pointHacksUrl": "https://www.pointhacks.com.au/credit-cards/american-express-velocity-platinum-guide/",
-    "cardArtUrl": "https://plastic.pointhacks.com.au/api/files/q3s7m5x1/cjk2k6qzhwzr009/american_express_velocity_platinum_card_art_2024_49yh3firx7.jpeg"
+    "cardArtUrl": "https://plastic.pointhacks.com.au/api/files/q3s7m5x1/cjk2k6qzhwzr009/american_express_velocity_platinum_card_art_2024_49yh3firx7.jpeg",
+    "earnRatePer1Aud": 1.25
   },
   {
     "id": "a6ba6bbb-cbf9-5f18-8f30-6f2b2b5c2c4d",
@@ -45,7 +48,8 @@
     "annualFee": 450,
     "rewardsProgram": "qantas",
     "pointHacksUrl": "https://www.pointhacks.com.au/credit-cards/qantas-american-express-ultimate-guide/",
-    "cardArtUrl": "https://plastic.pointhacks.com.au/api/files/q3s7m5x1/cjk2fhvlxwpsq09/qantas_american_express_ultimate_card_art_2024_lw48ej3v5b.jpg"
+    "cardArtUrl": "https://plastic.pointhacks.com.au/api/files/q3s7m5x1/cjk2fhvlxwpsq09/qantas_american_express_ultimate_card_art_2024_lw48ej3v5b.jpg",
+    "earnRatePer1Aud": 1.25
   },
   {
     "id": "c9bb9fb2-0463-5161-941d-f29c9c6859d1",
@@ -57,7 +61,8 @@
     "annualFee": 249,
     "rewardsProgram": "qantas",
     "pointHacksUrl": "https://www.pointhacks.com.au/credit-cards/qantas-american-express-premium-guide/",
-    "cardArtUrl": "https://plastic.pointhacks.com.au/api/files/q3s7m5x1/cjk2gbmvcwrc509/qantas_american_express_premium_card_art_2024_vaos32059g.jpg"
+    "cardArtUrl": "https://plastic.pointhacks.com.au/api/files/q3s7m5x1/cjk2gbmvcwrc509/qantas_american_express_premium_card_art_2024_vaos32059g.jpg",
+    "earnRatePer1Aud": 1
   },
   {
     "id": "dbc11c74-c173-5a8b-8576-4ed1fc660c3e",
@@ -69,7 +74,8 @@
     "annualFee": 450,
     "rewardsProgram": "velocity",
     "pointHacksUrl": "https://www.pointhacks.com.au/credit-cards/american-express-velocity-business-guide/",
-    "cardArtUrl": "https://plastic.pointhacks.com.au/api/files/q3s7m5x1/cjk2jtubywyte09/american_express_velocity_business_card_november_2024_8ywiovg8hz.jpg"
+    "cardArtUrl": "https://plastic.pointhacks.com.au/api/files/q3s7m5x1/cjk2jtubywyte09/american_express_velocity_business_card_november_2024_8ywiovg8hz.jpg",
+    "earnRatePer1Aud": 1
   },
   {
     "id": "beefeee3-c4ac-5507-961c-2fa81eb5cdb2",
@@ -81,7 +87,8 @@
     "annualFee": 1750,
     "rewardsProgram": "flexible",
     "pointHacksUrl": "https://www.pointhacks.com.au/credit-cards/american-express-platinum-business-guide/",
-    "cardArtUrl": "https://plastic.pointhacks.com.au/api/files/q3s7m5x1/cjk2gkaw9wru109/amex_platinum_business_2022_600px_x465e2m7ws.jpg"
+    "cardArtUrl": "https://plastic.pointhacks.com.au/api/files/q3s7m5x1/cjk2gkaw9wru109/amex_platinum_business_2022_600px_x465e2m7ws.jpg",
+    "earnRatePer1Aud": 2.25
   },
   {
     "id": "72cc6f92-0058-5ca5-8467-5ab6d726db3d",
@@ -93,7 +100,8 @@
     "annualFee": 149,
     "rewardsProgram": "flexible",
     "pointHacksUrl": null,
-    "cardArtUrl": null
+    "cardArtUrl": null,
+    "earnRatePer1Aud": 1.5
   },
   {
     "id": "18b040ff-44e7-51ff-a9e1-75dfd494b226",
@@ -105,7 +113,8 @@
     "annualFee": 295,
     "rewardsProgram": "flexible",
     "pointHacksUrl": null,
-    "cardArtUrl": null
+    "cardArtUrl": null,
+    "earnRatePer1Aud": 1.5
   },
   {
     "id": "f03943cf-1590-5fff-b22c-dcbbfaa8703e",
@@ -117,7 +126,8 @@
     "annualFee": 375,
     "rewardsProgram": "flexible",
     "pointHacksUrl": "https://www.pointhacks.com.au/credit-cards/anz-rewards-black-guide/",
-    "cardArtUrl": "https://plastic.pointhacks.com.au/api/files/q3s7m5x1/cjknttt9jue8w09/anz_rewards_black_visa_s7rwnzufb8.jpg"
+    "cardArtUrl": "https://plastic.pointhacks.com.au/api/files/q3s7m5x1/cjknttt9jue8w09/anz_rewards_black_visa_s7rwnzufb8.jpg",
+    "earnRatePer1Aud": 1
   },
   {
     "id": "9207c194-46e1-5d50-bb04-601bb6594e40",
@@ -129,7 +139,8 @@
     "annualFee": 425,
     "rewardsProgram": "qantas",
     "pointHacksUrl": "https://www.pointhacks.com.au/credit-cards/anz-frequent-flyer-black-guide/",
-    "cardArtUrl": "https://plastic.pointhacks.com.au/api/files/q3s7m5x1/cjknvh2xvugq509/anz_frequent_flyer_black_visa_6ibk1p3ynr.jpg"
+    "cardArtUrl": "https://plastic.pointhacks.com.au/api/files/q3s7m5x1/cjknvh2xvugq509/anz_frequent_flyer_black_visa_6ibk1p3ynr.jpg",
+    "earnRatePer1Aud": 0.5
   },
   {
     "id": "e05f8ed8-9922-5083-bcc1-60fe547914a8",
@@ -141,7 +152,8 @@
     "annualFee": 150,
     "rewardsProgram": "flexible",
     "pointHacksUrl": "https://www.pointhacks.com.au/credit-cards/anz-rewards-platinum-guide/",
-    "cardArtUrl": "https://plastic.pointhacks.com.au/api/files/q3s7m5x1/cjknt9di9uddp09/anz_rewards_platinum_600_px_wwlozabnnu.jpg"
+    "cardArtUrl": "https://plastic.pointhacks.com.au/api/files/q3s7m5x1/cjknt9di9uddp09/anz_rewards_platinum_600_px_wwlozabnnu.jpg",
+    "earnRatePer1Aud": 0.5
   },
   {
     "id": "dba7d258-93cf-5cdf-a86c-a9b6f1eeeed9",
@@ -153,7 +165,8 @@
     "annualFee": 295,
     "rewardsProgram": "qantas",
     "pointHacksUrl": "https://www.pointhacks.com.au/credit-cards/anz-frequent-flyer-platinum-guide/",
-    "cardArtUrl": "https://plastic.pointhacks.com.au/api/files/q3s7m5x1/cjknv6hd1ug9p09/anz_ff_platinum_visa_600px_0538qyaam2.jpg"
+    "cardArtUrl": "https://plastic.pointhacks.com.au/api/files/q3s7m5x1/cjknv6hd1ug9p09/anz_ff_platinum_visa_600px_0538qyaam2.jpg",
+    "earnRatePer1Aud": 0.5
   },
   {
     "id": "4c007e58-8917-51f1-8d47-baa0a8a95ba3",
@@ -165,7 +178,8 @@
     "annualFee": 370,
     "rewardsProgram": "qantas",
     "pointHacksUrl": "https://www.pointhacks.com.au/credit-cards/westpac-altitude-qantas-black-guide/",
-    "cardArtUrl": "https://plastic.pointhacks.com.au/api/files/q3s7m5x1/cka5ybmc8pu1h08/westpac_altitude_black_2023_fknlgqsd7s.jpg"
+    "cardArtUrl": "https://plastic.pointhacks.com.au/api/files/q3s7m5x1/cka5ybmc8pu1h08/westpac_altitude_black_2023_fknlgqsd7s.jpg",
+    "earnRatePer1Aud": 0.8
   },
   {
     "id": "715b5b1a-1e7d-5714-94cb-ebeba79b233f",
@@ -177,7 +191,8 @@
     "annualFee": 150,
     "rewardsProgram": "qantas",
     "pointHacksUrl": "https://www.pointhacks.com.au/credit-cards/westpac-altitude-rewards-platinum-guide/",
-    "cardArtUrl": "https://plastic.pointhacks.com.au/api/files/q3s7m5x1/cka5x0ssypqy908/altitude_platinum_2023_6vcc4gv533.jpg"
+    "cardArtUrl": "https://plastic.pointhacks.com.au/api/files/q3s7m5x1/cka5x0ssypqy908/altitude_platinum_2023_6vcc4gv533.jpg",
+    "earnRatePer1Aud": 1
   },
   {
     "id": "0fcb21c3-818f-5fdd-bcd3-75908fd84268",
@@ -189,7 +204,8 @@
     "annualFee": 250,
     "rewardsProgram": "velocity",
     "pointHacksUrl": "https://www.pointhacks.com.au/credit-cards/westpac-altitude-velocity-black-guide/",
-    "cardArtUrl": "https://plastic.pointhacks.com.au/api/files/q3s7m5x1/cldie1bixep4y0b/westpac_altitude_velocity_black_2025_1radouosgy.jpeg"
+    "cardArtUrl": "https://plastic.pointhacks.com.au/api/files/q3s7m5x1/cldie1bixep4y0b/westpac_altitude_velocity_black_2025_1radouosgy.jpeg",
+    "earnRatePer1Aud": 0.8
   },
   {
     "id": "22176ce6-68d4-5527-b5a9-e039a2d55cff",
@@ -201,7 +217,8 @@
     "annualFee": 150,
     "rewardsProgram": "velocity",
     "pointHacksUrl": "https://www.pointhacks.com.au/credit-cards/westpac-altitude-velocity-platinum-guide/",
-    "cardArtUrl": "https://plastic.pointhacks.com.au/api/files/q3s7m5x1/cldwl708u5s0c0a/westpac_altitude_velocity_platinum_2023_rlcx95salf.jpg"
+    "cardArtUrl": "https://plastic.pointhacks.com.au/api/files/q3s7m5x1/cldwl708u5s0c0a/westpac_altitude_velocity_platinum_2023_rlcx95salf.jpg",
+    "earnRatePer1Aud": 0.5
   },
   {
     "id": "ae4e020e-110e-58d9-890d-2138d79aa258",
@@ -213,7 +230,8 @@
     "annualFee": 420,
     "rewardsProgram": "qantas",
     "pointHacksUrl": "https://www.pointhacks.com.au/credit-cards/nab-qantas-rewards-signature-guide/",
-    "cardArtUrl": "https://plastic.pointhacks.com.au/api/files/q3s7m5x1/cjkw9fq7r1e9509/nab_qantas_signature_card_art_2028_qkoxmp0i2r.jpeg"
+    "cardArtUrl": "https://plastic.pointhacks.com.au/api/files/q3s7m5x1/cjkw9fq7r1e9509/nab_qantas_signature_card_art_2028_qkoxmp0i2r.jpeg",
+    "earnRatePer1Aud": 0.5
   },
   {
     "id": "ea810f86-ccc4-5529-8cbc-fd13e77234ca",
@@ -225,7 +243,8 @@
     "annualFee": 199,
     "rewardsProgram": "qantas",
     "pointHacksUrl": "https://www.pointhacks.com.au/credit-cards/nab-qantas-rewards-premium-guide/",
-    "cardArtUrl": "https://plastic.pointhacks.com.au/api/files/q3s7m5x1/cjkw98yry1dwy09/nab_qantas_platinum_card_art_2028_g72jpgc3df.jpeg"
+    "cardArtUrl": "https://plastic.pointhacks.com.au/api/files/q3s7m5x1/cjkw98yry1dwy09/nab_qantas_platinum_card_art_2028_g72jpgc3df.jpeg",
+    "earnRatePer1Aud": 0.33
   },
   {
     "id": "07e255d2-4c19-580b-bcfc-4d7e56586583",
@@ -237,7 +256,8 @@
     "annualFee": 195,
     "rewardsProgram": "flexible",
     "pointHacksUrl": "https://www.pointhacks.com.au/credit-cards/nab-rewards-signature-guide/",
-    "cardArtUrl": "https://plastic.pointhacks.com.au/api/files/q3s7m5x1/cjkwcchfg1j1y09/nab_rewards_signature_card_art_2028_xwhzqycmot.jpeg"
+    "cardArtUrl": "https://plastic.pointhacks.com.au/api/files/q3s7m5x1/cjkwcchfg1j1y09/nab_rewards_signature_card_art_2028_xwhzqycmot.jpeg",
+    "earnRatePer1Aud": 0.5
   },
   {
     "id": "fe455cac-3567-51be-93cd-4eac9c90b872",
@@ -249,7 +269,8 @@
     "annualFee": 95,
     "rewardsProgram": "flexible",
     "pointHacksUrl": "https://www.pointhacks.com.au/credit-cards/nab-rewards-platinum-guide/",
-    "cardArtUrl": "https://plastic.pointhacks.com.au/api/files/q3s7m5x1/cjkwc7zwi1itw09/nab_rewards_platinum_card_art_2028_wmdsopry51.jpeg"
+    "cardArtUrl": "https://plastic.pointhacks.com.au/api/files/q3s7m5x1/cjkwc7zwi1itw09/nab_rewards_platinum_card_art_2028_wmdsopry51.jpeg",
+    "earnRatePer1Aud": 1
   },
   {
     "id": "d775bf3f-1530-53de-ade4-249067d17115",
@@ -261,7 +282,8 @@
     "annualFee": 399,
     "rewardsProgram": "qantas",
     "pointHacksUrl": "https://www.pointhacks.com.au/credit-cards/qantas-premier-platinum-card-guide/",
-    "cardArtUrl": "https://plastic.pointhacks.com.au/api/files/q3s7m5x1/cjm241rlwwy5v09/qantas_money_platinum_card_art_e9ebj2sysx.jpeg"
+    "cardArtUrl": "https://plastic.pointhacks.com.au/api/files/q3s7m5x1/cjm241rlwwy5v09/qantas_money_platinum_card_art_e9ebj2sysx.jpeg",
+    "earnRatePer1Aud": 1
   },
   {
     "id": "2bf37782-dc21-5991-aef2-b71f3de92c79",
@@ -273,7 +295,8 @@
     "annualFee": 449,
     "rewardsProgram": "qantas",
     "pointHacksUrl": "https://www.pointhacks.com.au/credit-cards/qantas-premier-titanium-card-guide/",
-    "cardArtUrl": "https://plastic.pointhacks.com.au/api/files/q3s7m5x1/cjs11tdtueo8308/qantas_money_titanium_card_art_srnuyrq74y.jpeg"
+    "cardArtUrl": "https://plastic.pointhacks.com.au/api/files/q3s7m5x1/cjs11tdtueo8308/qantas_money_titanium_card_art_srnuyrq74y.jpeg",
+    "earnRatePer1Aud": 1.25
   },
   {
     "id": "79d6aee6-22b5-5900-8e20-6a84e0c391ce",
@@ -285,7 +308,8 @@
     "annualFee": 700,
     "rewardsProgram": "flexible",
     "pointHacksUrl": "https://www.pointhacks.com.au/credit-cards/citi-prestige-card-guide/",
-    "cardArtUrl": "https://plastic.pointhacks.com.au/api/files/q3s7m5x1/cjkts6qss3h5f09/citi_prestige_mastercard_1rfn5vguak.jpg"
+    "cardArtUrl": "https://plastic.pointhacks.com.au/api/files/q3s7m5x1/cjkts6qss3h5f09/citi_prestige_mastercard_1rfn5vguak.jpg",
+    "earnRatePer1Aud": 1
   },
   {
     "id": "e32ac90c-31d6-599c-8d19-ef67990375ee",
@@ -297,7 +321,8 @@
     "annualFee": 199,
     "rewardsProgram": "flexible",
     "pointHacksUrl": "https://www.pointhacks.com.au/credit-cards/citi-premier-card-guide/",
-    "cardArtUrl": "https://plastic.pointhacks.com.au/api/files/q3s7m5x1/cjktsifed3hmp09/citi_premier_mastercard_ahmj98jr9q.jpg"
+    "cardArtUrl": "https://plastic.pointhacks.com.au/api/files/q3s7m5x1/cjktsifed3hmp09/citi_premier_mastercard_ahmj98jr9q.jpg",
+    "earnRatePer1Aud": 1
   },
   {
     "id": "4e0a548a-fbe7-5a76-87bf-e035640b9e51",
@@ -309,7 +334,8 @@
     "annualFee": 149,
     "rewardsProgram": "flexible",
     "pointHacksUrl": null,
-    "cardArtUrl": null
+    "cardArtUrl": null,
+    "earnRatePer1Aud": 0.75
   },
   {
     "id": "d6f6fde9-f71f-55fb-8f36-fa3fd3a45f5d",
@@ -321,7 +347,8 @@
     "annualFee": 199,
     "rewardsProgram": "qantas",
     "pointHacksUrl": "https://www.pointhacks.com.au/credit-cards/hsbc-platinum-qantas-guide/",
-    "cardArtUrl": null
+    "cardArtUrl": null,
+    "earnRatePer1Aud": 0.5
   },
   {
     "id": "58f6b234-1cb9-591e-a560-c480689999ef",
@@ -333,7 +360,8 @@
     "annualFee": 199,
     "rewardsProgram": "flexible",
     "pointHacksUrl": "https://www.pointhacks.com.au/credit-cards/hsbc-star-alliance-card-guide/",
-    "cardArtUrl": "https://plastic.pointhacks.com.au/api/files/q3s7m5x1/clb1tlke72a0y09/hsbc_star_alliance_card_4zj1t0xz3a.jpg"
+    "cardArtUrl": "https://plastic.pointhacks.com.au/api/files/q3s7m5x1/clb1tlke72a0y09/hsbc_star_alliance_card_4zj1t0xz3a.jpg",
+    "earnRatePer1Aud": 1
   },
   {
     "id": "648ce135-0a2a-5ecb-93b3-4af69c20cdba",
@@ -345,7 +373,8 @@
     "annualFee": 349,
     "rewardsProgram": "flexible",
     "pointHacksUrl": "https://www.pointhacks.com.au/credit-cards/commbank-ultimate-awards-card-guide/",
-    "cardArtUrl": "https://plastic.pointhacks.com.au/api/files/q3s7m5x1/ckacezu3o4g0n08/commbank_ultimate_awards_card_5gyy7e875f.jpg"
+    "cardArtUrl": "https://plastic.pointhacks.com.au/api/files/q3s7m5x1/ckacezu3o4g0n08/commbank_ultimate_awards_card_5gyy7e875f.jpg",
+    "earnRatePer1Aud": 1
   },
   {
     "id": "d7454e49-7141-5572-948f-3048690eb94c",
@@ -357,7 +386,8 @@
     "annualFee": 119,
     "rewardsProgram": "flexible",
     "pointHacksUrl": null,
-    "cardArtUrl": null
+    "cardArtUrl": null,
+    "earnRatePer1Aud": 0.75
   },
   {
     "id": "9ac036f5-743c-5344-99d4-202c11207141",
@@ -369,7 +399,8 @@
     "annualFee": 89,
     "rewardsProgram": "flexible",
     "pointHacksUrl": null,
-    "cardArtUrl": "https://plastic.pointhacks.com.au/api/files/q3s7m5x1/cjlr7gh4gbvds09/commbank_awards_8uxgzpjz8c.jpg"
+    "cardArtUrl": "https://plastic.pointhacks.com.au/api/files/q3s7m5x1/cjlr7gh4gbvds09/commbank_awards_8uxgzpjz8c.jpg",
+    "earnRatePer1Aud": 0.5
   },
   {
     "id": "1830d4b7-a4eb-5c54-80bd-1c6100530927",
@@ -381,7 +412,8 @@
     "annualFee": 289,
     "rewardsProgram": "velocity",
     "pointHacksUrl": "https://www.pointhacks.com.au/credit-cards/virgin-money-high-flyer-visa-guide/",
-    "cardArtUrl": "https://plastic.pointhacks.com.au/api/files/q3s7m5x1/cjkwdxxvs1lra09/virginmoney_high_flyer_visa_qemy3qd1yd.jpg"
+    "cardArtUrl": "https://plastic.pointhacks.com.au/api/files/q3s7m5x1/cjkwdxxvs1lra09/virginmoney_high_flyer_visa_qemy3qd1yd.jpg",
+    "earnRatePer1Aud": 1
   },
   {
     "id": "b2f49765-bdf7-5277-bf83-d147ecf34726",
@@ -393,7 +425,8 @@
     "annualFee": 129,
     "rewardsProgram": "velocity",
     "pointHacksUrl": "https://www.pointhacks.com.au/credit-cards/virgin-money-flyer-visa-guide/",
-    "cardArtUrl": "https://plastic.pointhacks.com.au/api/files/q3s7m5x1/cjkwdjhj61l4l09/virgin_money_flyer_card_g3tiv493ck.jpg"
+    "cardArtUrl": "https://plastic.pointhacks.com.au/api/files/q3s7m5x1/cjkwdjhj61l4l09/virgin_money_flyer_card_g3tiv493ck.jpg",
+    "earnRatePer1Aud": 0.66
   },
   {
     "id": "61c69824-195b-540f-b0c9-c6c2b64a6f5b",
@@ -405,6 +438,7 @@
     "annualFee": 0,
     "rewardsProgram": "velocity",
     "pointHacksUrl": null,
-    "cardArtUrl": null
+    "cardArtUrl": null,
+    "earnRatePer1Aud": 0.5
   }
 ]

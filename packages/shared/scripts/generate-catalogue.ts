@@ -599,6 +599,60 @@ export const POINT_HACKS_ART_URLS: Record<string, string | null> = {
   'Virgin Money No Annual Fee': null,
 };
 
+// Headline earn rate per $1 AUD spent on everyday purchases. Extracted
+// from each card's Point Hacks guide page. Null = unknown / no public rate.
+//
+// Caveat — tiered cards: many issuer-direct cards (NAB, ANZ, CBA) use a
+// cap-and-drop structure ("1 pt per $1.50 up to $3k/mo, then 1 pt per $3").
+// The values below are the POST-CAP / ongoing rate, which is the
+// conservative read. In practice, a min-spend chase ($3-5k over 90 days)
+// usually keeps the user inside the headline-rate tier, so realised earn
+// will be higher than the "Earned so far" estimate shown in the UI. Future
+// refinement: model `headlineRate` + `headlineCapMonthly` + `postCapRate`
+// per card and let the UI compute realistically. For now the headline is
+// good enough for an internal-testing prototype.
+//
+// Best-guesses for the 6 cards without a Point Hacks guide URL (Amex
+// Business Explorer, Amex David Jones Platinum, Citi Rewards, CommBank
+// Smart Awards, CommBank Awards, Virgin Money No Annual Fee) are based on
+// tier convention. HSBC Platinum Qantas guide returned 404 — also guessed.
+export const POINT_HACKS_EARN_RATES: Record<string, number | null> = {
+  'American Express Platinum Card': 2.25,
+  'American Express Explorer': 2.0,
+  'American Express Velocity Platinum': 1.25,
+  'Qantas American Express Ultimate': 1.25,
+  'Qantas American Express Premium': 1.0,
+  'American Express Velocity Business': 1.0,
+  'American Express Business Platinum': 2.25,
+  'American Express Business Explorer': 1.5,
+  'American Express David Jones Platinum': 1.5,
+  'ANZ Rewards Black': 1.0,
+  'ANZ Frequent Flyer Black': 0.5,
+  'ANZ Rewards Platinum': 0.5,
+  'ANZ Frequent Flyer Platinum': 0.5,
+  'Westpac Altitude Qantas Black': 0.8,
+  'Westpac Altitude Platinum': 1.0,
+  'Westpac Altitude Velocity Black': 0.8,
+  'Westpac Altitude Velocity Platinum': 0.5,
+  'NAB Qantas Rewards Signature': 0.5,
+  'NAB Qantas Rewards Premium': 0.33,
+  'NAB Rewards Signature': 0.5,
+  'NAB Rewards Platinum': 1.0,
+  'Qantas Money Platinum': 1.0,
+  'Qantas Money Titanium': 1.25,
+  'Citi Prestige': 1.0,
+  'Citi Premier': 1.0,
+  'Citi Rewards': 0.75,
+  'HSBC Platinum Qantas': 0.5,
+  'HSBC Star Alliance': 1.0,
+  'CommBank Ultimate Awards': 1.0,
+  'CommBank Smart Awards': 0.75,
+  'CommBank Awards': 0.5,
+  'Virgin Money High Flyer': 1.0,
+  'Virgin Money Flyer': 0.66,
+  'Virgin Money No Annual Fee': 0.5,
+};
+
 // ── Benefits (placeholder dataset, see Decisions doc) ─────────────────────
 //
 // Three tiers by annualFee:
@@ -673,6 +727,11 @@ function main(): void {
         `Card "${d.name}" has no entry in POINT_HACKS_ART_URLS. Add it (null if no image found).`,
       );
     }
+    if (!(d.name in POINT_HACKS_EARN_RATES)) {
+      throw new Error(
+        `Card "${d.name}" has no entry in POINT_HACKS_EARN_RATES. Add it (null if unknown).`,
+      );
+    }
     return {
       id: uuidv5(d.name, CARD_NAMESPACE),
       issuerId,
@@ -684,6 +743,7 @@ function main(): void {
       rewardsProgram: d.rewardsProgram,
       pointHacksUrl: POINT_HACKS_URLS[d.name] ?? null,
       cardArtUrl: POINT_HACKS_ART_URLS[d.name] ?? null,
+      earnRatePer1Aud: POINT_HACKS_EARN_RATES[d.name] ?? null,
     };
   });
 
