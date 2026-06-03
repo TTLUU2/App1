@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { ChevronLeft, Receipt, Undo2, CheckCircle2, AlertTriangle } from 'lucide-react';
@@ -9,6 +9,7 @@ import { SpendGovCheck } from '@/components/spend/spend-gov-check';
 import { selectUserCardsWithDetails, useUserCardsStore } from '@/store/user-cards';
 import { formatCurrency } from '@/lib/format';
 import { nowMs } from '@/lib/time';
+import { cancelSpeech, speak } from '@/lib/tts';
 
 /**
  * PRD §11.3 — Update Card Spend. Voice/text input pane, server-side parsing
@@ -36,6 +37,21 @@ export function SpendFlow() {
     const all = selectUserCardsWithDetails({ userCards, loaded, error: null } as never);
     return all.filter((c) => !c.cancellationDate);
   }, [userCards, loaded]);
+
+  // Screen-mount greeting — fires once when user lands on /spend so they
+  // hear the prompt without having to tap the mic first. Held until cards
+  // load so we don't greet then immediately say "no cards". No cleanup
+  // because StrictMode double-fire would kill the audio mid-greeting.
+  const greetedRef = useRef(false);
+  useEffect(() => {
+    if (greetedRef.current || !loaded) return;
+    greetedRef.current = true;
+    if (heldCards.length === 0) {
+      void speak("You don't have any active cards yet. Add one first using the plus button.");
+    } else {
+      void speak('How much did you spend, and on which card?');
+    }
+  }, [loaded, heldCards.length]);
 
   // Local UX state machine: idle → submitting → (confirm | disambiguate | error)
   const [phase, setPhase] = useState<'idle' | 'submitting' | 'confirm' | 'disambiguate' | 'error'>(

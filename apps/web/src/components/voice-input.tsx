@@ -10,12 +10,13 @@
 // confirms, so a misheard phrase can be corrected in place.
 
 import { useEffect, useRef, useState } from 'react';
-import { Mic, MicOff, Send, AlertCircle } from 'lucide-react';
+import { Mic, MicOff, Send, AlertCircle, Volume2 } from 'lucide-react';
 import {
   getSpeechRecognitionCtor,
   isSpeechRecognitionAvailable,
   type SpeechRecognitionInstance,
 } from '@/lib/speech';
+import { cancelSpeech, speak } from '@/lib/tts';
 
 export interface VoiceInputProps {
   placeholder?: string;
@@ -27,9 +28,15 @@ export interface VoiceInputProps {
   hint?: React.ReactNode;
   /** Optional autoFocus the text input on mount. */
   autoFocus?: boolean;
+  /**
+   * Optional spoken prompt played the FIRST time the user taps the mic on
+   * this instance — gives the app a voice-led "go ahead" before listening
+   * starts. Subsequent taps skip the greeting so it doesn't feel naggy.
+   */
+  micGreeting?: string;
 }
 
-type Status = 'idle' | 'listening' | 'error';
+type Status = 'idle' | 'greeting' | 'listening' | 'error';
 
 export function VoiceInput({
   placeholder,
@@ -39,11 +46,13 @@ export function VoiceInput({
   disabled,
   hint,
   autoFocus,
+  micGreeting,
 }: VoiceInputProps) {
   const [text, setText] = useState(initialValue);
   const [status, setStatus] = useState<Status>('idle');
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const recognitionRef = useRef<SpeechRecognitionInstance | null>(null);
+  const hasGreeted = useRef(false);
   const supported = isSpeechRecognitionAvailable();
 
   useEffect(() => {
@@ -53,10 +62,29 @@ export function VoiceInput({
       } catch {
         /* ignore */
       }
+      // Deliberately NOT calling cancelSpeech() here. In React 19 StrictMode
+      // dev, every mount runs an extra unmount→mount cycle, and this cleanup
+      // would abort any in-flight TTS started by the parent screen's mount
+      // greeting — user hears nothing. The next speak() call cancels prior
+      // audio anyway via lib/tts.ts cancelSpeech-on-entry.
     };
   }, []);
 
-  function startListening() {
+  async function startListening() {
+    if (micGreeting && !hasGreeted.current) {
+      hasGreeted.current = true;
+      setStatus('greeting');
+      setErrorMessage(null);
+      try {
+        await speak(micGreeting);
+      } catch {
+        /* don't block recognition if TTS fails */
+      }
+    }
+    beginRecognition();
+  }
+
+  function beginRecognition() {
     const Ctor = getSpeechRecognitionCtor();
     if (!Ctor) {
       setStatus('error');
@@ -115,6 +143,16 @@ export function VoiceInput({
     setStatus('idle');
   }
 
+  function cancelInteraction() {
+    cancelSpeech();
+    try {
+      recognitionRef.current?.abort();
+    } catch {
+      /* ignore */
+    }
+    setStatus('idle');
+  }
+
   function trySubmit() {
     const trimmed = text.trim();
     if (!trimmed || disabled) return;
@@ -140,17 +178,27 @@ export function VoiceInput({
         {supported && (
           <button
             type="button"
-            onClick={status === 'listening' ? stopListening : startListening}
+            onClick={
+              status === 'listening' || status === 'greeting' ? cancelInteraction : startListening
+            }
             disabled={disabled}
-            aria-label={status === 'listening' ? 'Stop voice input' : 'Start voice input'}
-            aria-pressed={status === 'listening'}
+            aria-label={
+              status === 'greeting'
+                ? 'Speaking — tap to skip'
+                : status === 'listening'
+                  ? 'Stop voice input'
+                  : 'Start voice input'
+            }
+            aria-pressed={status === 'listening' || status === 'greeting'}
             className={`grid h-9 w-9 flex-none place-items-center rounded-full transition-colors ${
-              status === 'listening'
+              status === 'listening' || status === 'greeting'
                 ? 'animate-pulse bg-[var(--color-ph-red)] text-white'
                 : 'text-zinc-600 hover:bg-zinc-100 dark:text-zinc-300 dark:hover:bg-zinc-800'
             }`}
           >
-            {status === 'listening' ? (
+            {status === 'greeting' ? (
+              <Volume2 className="h-4 w-4" aria-hidden />
+            ) : status === 'listening' ? (
               <MicOff className="h-4 w-4" aria-hidden />
             ) : (
               <Mic className="h-4 w-4" aria-hidden />

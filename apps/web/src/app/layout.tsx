@@ -7,6 +7,20 @@ import './globals.css';
 export const metadata: Metadata = {
   title: 'Point Hacks Copilot',
   description: 'AU credit-card eligibility & optimisation',
+  // PWA install path — manifest tells the browser the app is installable;
+  // appleWebApp + apple-touch-icon (linked below in <head>) are required
+  // for iOS 16.4+ Add-to-Home-Screen support, which is the only way web
+  // push notifications work on iOS.
+  manifest: '/manifest.json',
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: 'black-translucent',
+    title: 'PH Copilot',
+  },
+  icons: {
+    icon: '/icon.svg',
+    apple: '/icon.svg',
+  },
 };
 
 export const viewport: Viewport = {

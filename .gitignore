@@ -45,3 +45,4 @@ pnpm-debug.log*
 
 # Heavy reference assets — keep out of Git, use cloud storage or LFS instead
 docs/**/*.zip
+.vercel

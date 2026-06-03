@@ -27,6 +27,7 @@ import {
 } from '@ph/shared';
 import { getDb } from '@/lib/db';
 import { assertNoPanOrCvv } from '@/lib/safety';
+import { clearProjections, syncProjections } from '@/lib/projections';
 
 export interface NewUserCardInput {
   cardId: string;
@@ -98,6 +99,11 @@ export const useUserCardsStore = create<UserCardsState>((set, get) => ({
     };
     await getDb().userCards.add(record);
     set({ userCards: [...get().userCards, record] });
+    // Push fresh alert projections (best-effort, fire-and-forget).
+    const cardWithIssuer = getCardWithIssuer(record.cardId);
+    if (cardWithIssuer) {
+      void syncProjections({ ...record, card: cardWithIssuer });
+    }
     return record;
   },
 
@@ -107,11 +113,21 @@ export const useUserCardsStore = create<UserCardsState>((set, get) => ({
     set({
       userCards: get().userCards.map((c) => (c.id === id ? { ...c, ...patch } : c)),
     });
+    // Re-sync if fields that affect projections changed, or anytime — the
+    // server endpoint is cheap and idempotent.
+    const updated = get().userCards.find((c) => c.id === id);
+    if (updated) {
+      const cardWithIssuer = getCardWithIssuer(updated.cardId);
+      if (cardWithIssuer) {
+        void syncProjections({ ...updated, card: cardWithIssuer });
+      }
+    }
   },
 
   async deleteCard(id) {
     await getDb().userCards.delete(id);
     set({ userCards: get().userCards.filter((c) => c.id !== id) });
+    void clearProjections(id);
   },
 
   async reset() {

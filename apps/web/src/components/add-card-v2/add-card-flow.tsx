@@ -13,7 +13,7 @@
 // ~bonusPoints/30 rounded, spend-by to +90 days, bonus received to false.
 // Anything wrong → tap edit, or use the voice mic under approval date.
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { ChevronLeft, Sparkles, CheckCircle2, AlertTriangle, Pencil } from 'lucide-react';
@@ -24,8 +24,9 @@ import { CardArt } from '@/components/card-art';
 import { VoiceInput } from '@/components/voice-input';
 import { PhotoStep } from './photo-step';
 import { CardPickerQuestion } from './card-picker-question';
-import { formatCurrency, formatDate } from '@/lib/format';
+import { formatCurrency, formatDate, spokenDate } from '@/lib/format';
 import { todayIsoDate } from '@/lib/time';
+import { cancelSpeech, speak } from '@/lib/tts';
 
 type Step = 'photo' | 'pick' | 'review';
 
@@ -189,7 +190,9 @@ export function AddCardFlow({ onSaved, onClose }: AddCardFlowProps = {}) {
       </header>
 
       <div className="mt-4">
-        {step === 'photo' && <PhotoStep onCaptured={handleCaptured} onManual={handleManual} />}
+        {step === 'photo' && (
+          <PhotoStep onCaptured={handleCaptured} onManual={handleManual} onSpeak={handleManual} />
+        )}
 
         {step === 'pick' && (
           <div className="space-y-3">
@@ -252,6 +255,40 @@ function ReviewForm({
   // approval date. Drives the green confirmation chip + the brief ring
   // highlight on the date input.
   const [voiceSuccess, setVoiceSuccess] = useState<string | null>(null);
+
+  // Spoken summary when the user lands on the review screen — reads back
+  // all four smart-defaulted values so the user can confirm or correct
+  // without scrolling. Summary-first (vs one-by-one) keeps the rhythm
+  // conversational and respects user time. Fires once per mount via a ref
+  // so React 19 strict-mode doesn't double-speak. NO cleanup: in dev,
+  // StrictMode runs effects twice with cleanup in between, and cancelling
+  // here would kill the audio between the two runs and we'd hear nothing.
+  const welcomedRef = useRef(false);
+  useEffect(() => {
+    if (welcomedRef.current) return;
+    welcomedRef.current = true;
+    const parts: string[] = [`Here's what I picked up for your ${card.name}.`];
+    if (collected.activationDate) {
+      parts.push(`Approval ${spokenDate(collected.activationDate)}.`);
+    }
+    if (collected.annualFeeNextDueDate) {
+      parts.push(`Annual fee due ${spokenDate(collected.annualFeeNextDueDate)}.`);
+    }
+    if (collected.bonusTarget) {
+      parts.push(`Min spend ${formatCurrency(collected.bonusTarget)}.`);
+    }
+    if (collected.bonusSpendWindowEndDate) {
+      parts.push(`Spend-by ${spokenDate(collected.bonusSpendWindowEndDate)}.`);
+    }
+    parts.push(`Tap save if that looks right, or tell me what needs changing.`);
+    void speak(parts.join(' '));
+  }, [
+    card.name,
+    collected.activationDate,
+    collected.annualFeeNextDueDate,
+    collected.bonusTarget,
+    collected.bonusSpendWindowEndDate,
+  ]);
 
   async function handleVoiceApprovalDate(utterance: string) {
     setVoiceParsing(true);
@@ -321,7 +358,7 @@ function ReviewForm({
           className="inline-flex items-center gap-1 rounded-full border border-zinc-300 px-2 py-1 text-[11px] font-medium text-zinc-600 hover:border-[var(--color-ph-red)] hover:text-[var(--color-ph-red)] dark:border-zinc-700 dark:text-zinc-400"
         >
           <Pencil className="h-3 w-3" aria-hidden />
-          Change
+          Change card
         </button>
       </section>
 

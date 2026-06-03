@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
 import { TrendingUp } from 'lucide-react';
 import { getAllBenefits } from '@ph/shared';
 import {
@@ -14,7 +14,9 @@ import { SummaryHeader } from '@/components/tab3/summary-header';
 import { ThreeMonthCta } from '@/components/tab3/three-month-cta';
 import { HeldCardRow } from '@/components/tab3/held-card-row';
 import { CardUpdateCard } from '@/components/tab3/card-update-card';
+import { NotificationsCard } from '@/components/notifications-card';
 import { TripleTapHeader } from '@/components/triple-tap-header';
+import { cancelSpeech, speak } from '@/lib/tts';
 import Link from 'next/link';
 
 /**
@@ -58,6 +60,33 @@ export default function OptimisationPage() {
   );
   const ctaCards = useMemo(() => threeMonthCtaCards(recommendations), [recommendations]);
 
+  // Home-screen mount greeting — fires once per visit so the user hears
+  // what's possible without tapping anything. Different copy for empty
+  // state vs. has-cards so the prompt matches the action surface visible
+  // below. Held until cards load so we don't greet then say something
+  // contradictory.
+  //
+  // Intentionally NO cleanup function: React 19 StrictMode double-fires
+  // effects in dev (run → cleanup → run again), and a `cancelSpeech()` in
+  // cleanup would kill the audio between the two runs and we'd hear
+  // nothing. Any subsequent screen's speak() cancels the in-flight audio
+  // via lib/tts.ts internal cancelSpeech, so worst case is a one-second
+  // overlap on fast navigation.
+  const greetedRef = useRef(false);
+  useEffect(() => {
+    if (greetedRef.current || !loaded) return;
+    greetedRef.current = true;
+    if (heldCards.length === 0) {
+      void speak(
+        'Welcome to Point Hacks Copilot. Tap the plus button below to add your first card.',
+      );
+    } else {
+      void speak(
+        'Hi. Tap the mic to update spend or mark a benefit used. Or use the plus button to add a card or ask me anything.',
+      );
+    }
+  }, [loaded, heldCards.length]);
+
   return (
     <main className="flex-1 px-4 pb-6 pt-4">
       <TripleTapHeader>
@@ -100,6 +129,12 @@ export default function OptimisationPage() {
               ))}
             </ul>
           )}
+
+          {/* Push notifications opt-in — placed after the card list so it
+              doesn't elbow the primary workflow but is still visible. */}
+          <div className="mt-4">
+            <NotificationsCard />
+          </div>
         </>
       )}
     </main>

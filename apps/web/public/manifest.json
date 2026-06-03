@@ -1,0 +1,19 @@
+{
+  "name": "Point Hacks Copilot",
+  "short_name": "PH Copilot",
+  "description": "AU credit-card eligibility & optimisation. Track sign-up bonuses, benefits, and your next best card.",
+  "start_url": "/optimisation",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0c0a09",
+  "theme_color": "#dc2626",
+  "icons": [
+    {
+      "src": "/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

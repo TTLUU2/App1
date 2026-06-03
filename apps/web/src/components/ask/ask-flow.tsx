@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import { ChevronLeft, Mic, Volume2, VolumeX, AlertTriangle } from 'lucide-react';
 import { getAllBenefits } from '@ph/shared';
@@ -12,7 +12,8 @@ import {
 } from '@/store/user-cards';
 import { useUserBenefitsStore } from '@/store/user-benefits';
 import { buildAskContext } from '@/lib/ask-context';
-import { isSpeechSynthesisAvailable, speak } from '@/lib/speech';
+import { isSpeechSynthesisAvailable } from '@/lib/speech';
+import { cancelSpeech, speak } from '@/lib/tts';
 import { todayIsoDate } from '@/lib/time';
 
 interface Turn {
@@ -44,6 +45,16 @@ export function AskFlow() {
   const [error, setError] = useState<string | null>(null);
   const [speakOutput, setSpeakOutput] = useState<boolean>(isSpeechSynthesisAvailable());
 
+  // Greet on screen-mount (not on mic tap). User lands here knowing they
+  // chose Copilot; spoken prompt frames the conversation. No cleanup:
+  // StrictMode double-fire would kill the audio between effect runs.
+  const greetedRef = useRef(false);
+  useEffect(() => {
+    if (greetedRef.current) return;
+    greetedRef.current = true;
+    void speak('Hi, what would you like to ask about your cards?');
+  }, []);
+
   async function ask(question: string) {
     setPending(true);
     setError(null);
@@ -66,7 +77,7 @@ export function AskFlow() {
         throw new Error('error' in json ? json.error : 'Ask failed');
       }
       setTurns((t) => [...t, { question, answer: json.answer, inScope: json.inScope }]);
-      if (speakOutput) speak(json.answer);
+      if (speakOutput) void speak(json.answer);
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
     } finally {

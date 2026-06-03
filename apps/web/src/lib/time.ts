@@ -14,3 +14,15 @@ export function nowIso(): string {
 export function todayIsoDate(): string {
   return new Date().toISOString().slice(0, 10);
 }
+
+/** 'yyyy-MM-dd' minus N calendar days. Returns 'yyyy-MM-dd'. */
+export function subDaysIso(iso: string, days: number): string {
+  const d = new Date(iso + 'T00:00:00Z');
+  d.setUTCDate(d.getUTCDate() - days);
+  return d.toISOString().slice(0, 10);
+}
+
+/** True when iso is strictly before today's local date. */
+export function isPastIso(iso: string): boolean {
+  return iso < todayIsoDate();
+}

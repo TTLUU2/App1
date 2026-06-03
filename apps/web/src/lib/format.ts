@@ -23,6 +23,17 @@ export function formatDate(iso: string): string {
   return d.toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' });
 }
 
+/**
+ * TTS-friendly variant of formatDate. ElevenLabs (and most TTS engines)
+ * mispronounce month abbreviations like "Aug" — turning into "Aoorg" or
+ * spelling it letter by letter. Using full month names ("8 August 2026")
+ * reads cleanly. Day stays numeric without a leading zero.
+ */
+export function spokenDate(iso: string): string {
+  const d = new Date(iso + 'T00:00:00');
+  return d.toLocaleDateString('en-AU', { day: 'numeric', month: 'long', year: 'numeric' });
+}
+
 export function formatRelativeDays(daysRemaining: number): string {
   if (daysRemaining <= 0) return 'now';
   if (daysRemaining === 1) return '1 day';

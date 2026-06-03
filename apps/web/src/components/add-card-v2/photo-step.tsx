@@ -10,7 +10,7 @@
 // the manual signal so the parent state machine routes to a card picker.
 
 import { useRef, useState } from 'react';
-import { Camera, Upload, Pencil, RefreshCcw } from 'lucide-react';
+import { Camera, Upload, Pencil, RefreshCcw, Mic } from 'lucide-react';
 
 interface OcrResult {
   matchedCardId: string | null;
@@ -20,9 +20,13 @@ interface OcrResult {
 export function PhotoStep({
   onCaptured,
   onManual,
+  onSpeak,
 }: {
   onCaptured: (result: OcrResult) => void;
   onManual: () => void;
+  /** Same destination as onManual (the picker step), but signals voice-first
+   *  intent. Kept distinct so we could route differently later. */
+  onSpeak: () => void;
 }) {
   const cameraInput = useRef<HTMLInputElement>(null);
   const fileInput = useRef<HTMLInputElement>(null);
@@ -63,7 +67,7 @@ export function PhotoStep({
   return (
     <div className="space-y-4">
       <p className="text-sm text-zinc-700 dark:text-zinc-300">
-        Let&apos;s add a card. Snap a photo, upload one, or pick from the list.
+        Let&apos;s add a card. Snap a photo, speak the name, or pick from the list.
       </p>
 
       {preview && (
@@ -106,6 +110,15 @@ export function PhotoStep({
             e.target.value = '';
           }}
         />
+        <button
+          type="button"
+          onClick={onSpeak}
+          disabled={submitting}
+          className="inline-flex items-center justify-center gap-2 rounded-2xl border border-zinc-300 bg-white px-4 py-3 text-sm font-medium text-zinc-700 disabled:opacity-50 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-300"
+        >
+          <Mic className="h-4 w-4" aria-hidden />
+          Speak the card name
+        </button>
         <button
           type="button"
           onClick={() => fileInput.current?.click()}

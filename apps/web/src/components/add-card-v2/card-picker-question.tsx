@@ -3,9 +3,10 @@
 // "Which card?" answered by either voice (Claude fuzzy matches the spoken
 // name against the catalogue), tap-to-pick from a grouped list, or both.
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import type { CardWithIssuer } from '@ph/shared';
 import { VoiceInput } from '@/components/voice-input';
+import { cancelSpeech, speak } from '@/lib/tts';
 
 export function CardPickerQuestion({
   cards,
@@ -26,6 +27,16 @@ export function CardPickerQuestion({
 
   const [submitting, setSubmitting] = useState(false);
   const [voiceError, setVoiceError] = useState<string | null>(null);
+
+  // Mount greeting — fires once when the picker appears (either after
+  // "Speak the card name" or "I'll pick it manually" on the photo step).
+  // No cleanup: StrictMode double-fire would kill the audio mid-greeting.
+  const greetedRef = useRef(false);
+  useEffect(() => {
+    if (greetedRef.current) return;
+    greetedRef.current = true;
+    void speak('Which card would you like to add? Say or type its name.');
+  }, []);
 
   async function handleVoice(utterance: string) {
     setSubmitting(true);

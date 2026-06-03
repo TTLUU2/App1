@@ -70,11 +70,14 @@ export function FanActions({
       />
 
       {/* Fan buttons. Anchored to the same fixed position as the FAB; each
-          transform-translates to its arc position when open. */}
+          transform-translates to its arc position when open.
+          Uses `inert` (not aria-hidden) when closed — inert blocks both
+          AT and focus, which avoids the "aria-hidden ancestor of focused
+          element" warning when the user dismisses mid-animation. */}
       <div
         className="pointer-events-none fixed left-1/2 z-50"
         style={{ bottom: 'calc(2.25rem + env(safe-area-inset-bottom))' }}
-        aria-hidden={!open}
+        inert={!open}
       >
         {ACTIONS.map((action, i) => {
           const pos = ARC_POSITIONS[i];

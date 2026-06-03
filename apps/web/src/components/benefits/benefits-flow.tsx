@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { ChevronLeft, Sparkles, CheckCircle2, AlertTriangle, Undo2 } from 'lucide-react';
@@ -8,6 +8,7 @@ import { getAllBenefits } from '@ph/shared';
 import { VoiceInput } from '@/components/voice-input';
 import { selectUserCardsWithDetails, useUserCardsStore } from '@/store/user-cards';
 import { useUserBenefitsStore } from '@/store/user-benefits';
+import { cancelSpeech, speak } from '@/lib/tts';
 
 export function BenefitsFlow() {
   const router = useRouter();
@@ -44,6 +45,19 @@ export function BenefitsFlow() {
     }
     return out;
   }, [heldCards]);
+
+  // Screen-mount greeting — fires once when /benefits loads. Says nothing
+  // if there are no benefit-bearing cards yet, since the empty state on
+  // screen already explains. No cleanup because StrictMode double-fire
+  // would kill the audio mid-greeting.
+  const greetedRef = useRef(false);
+  useEffect(() => {
+    if (greetedRef.current || !loaded) return;
+    greetedRef.current = true;
+    if (benefitOptions.length > 0) {
+      void speak('Which benefit have you used?');
+    }
+  }, [loaded, benefitOptions.length]);
 
   const [phase, setPhase] = useState<'idle' | 'submitting' | 'confirm' | 'disambiguate' | 'error'>(
     'idle',
