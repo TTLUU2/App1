@@ -11,7 +11,7 @@
 
 import { useEffect, useState } from 'react';
 import * as Dialog from '@radix-ui/react-dialog';
-import { X, CheckCircle2, Pencil, Volume2 } from 'lucide-react';
+import { X, CheckCircle2, Pencil, Volume2, Trash2 } from 'lucide-react';
 import type { UserCardWithDetails } from '@ph/shared';
 import { useUserCardsStore } from '@/store/user-cards';
 import {
@@ -36,6 +36,8 @@ interface Editable {
 
 export function EditCardModal({ uc, onClose }: EditCardModalProps) {
   const updateCard = useUserCardsStore((s) => s.updateCard);
+  const deleteCard = useUserCardsStore((s) => s.deleteCard);
+  const [confirmingDelete, setConfirmingDelete] = useState(false);
 
   // Seed from current card. Use today as fallback if a field is unset so
   // the inputs always have a sensible value.
@@ -204,6 +206,48 @@ export function EditCardModal({ uc, onClose }: EditCardModalProps) {
               <CheckCircle2 className="h-4 w-4" aria-hidden />
               {saving ? 'Saving…' : 'Save changes'}
             </button>
+
+            {/* Delete — for "I added this card by mistake" cases. Unlike
+                Cancel (which keeps the card in history for eligibility
+                math), Delete removes the record entirely so it stops
+                blocking new bonuses. Two-step confirm so a single tap
+                can't nuke data. */}
+            {!confirmingDelete ? (
+              <button
+                type="button"
+                onClick={() => setConfirmingDelete(true)}
+                className="mx-auto mt-1 flex items-center gap-1 text-[11px] font-medium text-rose-700 hover:underline dark:text-rose-300"
+              >
+                <Trash2 className="h-3 w-3" aria-hidden />
+                Delete this card from history
+              </button>
+            ) : (
+              <div className="mt-2 rounded-xl border border-rose-200 bg-rose-50 p-3 text-xs dark:border-rose-900 dark:bg-rose-950/40">
+                <p className="text-rose-800 dark:text-rose-200">
+                  Delete <span className="font-semibold">{uc.card.name}</span> from your history?
+                  This removes it entirely — eligibility for new bonuses won&apos;t factor it in.
+                </p>
+                <div className="mt-2 flex gap-2">
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      await deleteCard(uc.id);
+                      onClose();
+                    }}
+                    className="flex-1 rounded-full bg-rose-600 px-3 py-2 text-xs font-medium text-white"
+                  >
+                    Yes, delete
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setConfirmingDelete(false)}
+                    className="flex-1 rounded-full border border-zinc-300 px-3 py-2 text-xs font-medium text-zinc-700 dark:border-zinc-700 dark:text-zinc-300"
+                  >
+                    Keep it
+                  </button>
+                </div>
+              </div>
+            )}
           </form>
         </Dialog.Content>
       </Dialog.Portal>

@@ -1,10 +1,9 @@
 'use client';
 
 import type { Recommendation } from '@ph/shared';
-import { Plane, CreditCard, Building2 } from 'lucide-react';
+import { Plane, Building2 } from 'lucide-react';
 import clsx from 'clsx';
 import { programGroup } from '@/lib/theme';
-import { formatPoints } from '@/lib/format';
 import type { FilterKey } from './sort-filter-bar';
 
 /**
@@ -37,8 +36,6 @@ export function EligibleSummary({
     groups[g.key].count += 1;
     groups[g.key].points += rec.card.bonusPoints ?? 0;
   }
-
-  const totalPoints = eligible.reduce((sum, r) => sum + (r.card.bonusPoints ?? 0), 0);
 
   // 'Bank' tile maps to the 'flexible' filter key (sort-filter-bar uses
   // 'flexible' for bank/flexible points). Translate at the boundary so
@@ -83,15 +80,10 @@ export function EligibleSummary({
         />
       </div>
 
-      <div className="mt-2 flex items-center justify-between rounded-xl bg-zinc-100 px-3 py-2 text-xs dark:bg-zinc-900">
-        <span className="flex items-center gap-1.5 text-zinc-600 dark:text-zinc-400">
-          <CreditCard className="h-3.5 w-3.5" aria-hidden />
-          {eligible.length} cards eligible right now
-        </span>
-        <span className="font-medium text-zinc-900 dark:text-zinc-100">
-          {formatPoints(totalPoints)} pts total
-        </span>
-      </div>
+      {/* Total-eligible + total-points strip removed — the new
+          EligibilityBanner above the hero owns that summary now, and
+          the cluster tiles below carry the per-program counts. The
+          totals are still surfaced in the banner's click-out modal. */}
     </section>
   );
 }

@@ -304,12 +304,15 @@ describe('time_based — same_card scope (CBA)', () => {
 });
 
 describe('generateRecommendations ranking', () => {
-  it('returns only non-not_eligible cards, sorted by priority desc', () => {
+  it('returns every catalogue card (including not_eligible), sorted by priority desc', () => {
     const userCards: UserCardWithDetails[] = [];
     const recs = generateRecommendations(ALL_CARDS, userCards, ALL_ISSUERS);
 
-    expect(recs.length).toBe(ALL_CARDS.length); // empty history → all eligible
-    expect(recs.every((r) => r.eligibility.status !== 'not_eligible')).toBe(true);
+    // Engine no longer drops not_eligible — Tab 4 surfaces them in a
+    // collapsed "Not eligible" section as reference info. With empty
+    // history, every card is eligible anyway.
+    expect(recs.length).toBe(ALL_CARDS.length);
+    expect(recs.every((r) => r.eligibility.status === 'eligible')).toBe(true);
 
     // Sorted descending by priority.
     for (let i = 0; i < recs.length - 1; i++) {

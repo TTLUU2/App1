@@ -386,7 +386,10 @@ export function generateRecommendations(
     if (card.cardType === 'personal' && !allowPersonal) continue;
 
     const eligibility = calculateEligibility(card, userCards, allIssuers);
-    if (eligibility.status === 'not_eligible') continue;
+    // not_eligible cards are kept in the result (with priority 0) so the
+    // Tab 4 "Not eligible" section can render them as reference info.
+    // They sort to the bottom because nothing boosts a not_eligible card's
+    // priority below.
 
     let priority = 0;
 

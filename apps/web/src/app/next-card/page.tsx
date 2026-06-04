@@ -4,11 +4,12 @@ import { Sparkles, PlusCircle, Sliders } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { useUserCardsStore } from '@/store/user-cards';
-import { selectRecommendations } from '@/store/user-cards';
+import { selectRecommendations, selectUserCardsWithDetails } from '@/store/user-cards';
 import { useUserPreferencesStore } from '@/store/user-preferences';
 import { BestMoveHero } from '@/components/next-card/best-move-hero';
+import { EligibilityBanner } from '@/components/next-card/eligibility-banner';
 import { EligibleSummary } from '@/components/next-card/eligible-summary';
-import { UpcomingList } from '@/components/next-card/upcoming-list';
+import { Clock, List, GalleryHorizontalEnd } from 'lucide-react';
 import { CollapsibleSection } from '@/components/next-card/collapsible-section';
 import { CardRow } from '@/components/next-card/card-row';
 import {
@@ -18,6 +19,8 @@ import {
 } from '@/components/next-card/sort-filter-bar';
 import { ProgramPills } from '@/components/next-card/program-pills';
 import { PreferencesModal } from '@/components/next-card/preferences-modal';
+import { HiddenByPrefsChip } from '@/components/next-card/hidden-by-prefs-chip';
+import { SwiperView } from '@/components/next-card/swiper-view';
 import { TripleTapHeader } from '@/components/triple-tap-header';
 
 /**
@@ -40,10 +43,23 @@ export default function NextCardPage() {
     [userCards, loaded, preferences],
   );
 
+  // All user cards (held + cancelled) — needed by the eligibility banner
+  // to surface the bridge between Tab 3 history and Tab 4 eligibility in
+  // one sentence.
+  const allUserCards = useMemo(
+    () => selectUserCardsWithDetails({ userCards, loaded, error: null } as never),
+    [userCards, loaded],
+  );
+
   const [sortFilter, setSortFilter] = useState<SortFilterValue>({
     sort: 'priority',
     filter: 'all',
   });
+  // List vs swiper. Swiper renders one eligible card at a time with
+  // bigger context — counters decision fatigue. Sticks to the eligible
+  // list only (Upcoming / Grey / Not-eligible stay in list view because
+  // they're reference info, not decision info).
+  const [viewMode, setViewMode] = useState<'list' | 'swiper'>('list');
   const filtered = useMemo(
     () => applySortFilter(recommendations, sortFilter),
     [recommendations, sortFilter],
@@ -84,10 +100,18 @@ export default function NextCardPage() {
 
       {loaded && hero && (
         <>
+          {/* Eligibility banner — one-line bridge between Tab 3 history
+              (active + cancelled counts) and Tab 4 future (eligible now,
+              next unlock). Lives above the prefs chip so the user reads
+              "where I stand" before "what filters are applied to it". */}
+          <div className="mt-3">
+            <EligibilityBanner allCards={allUserCards} recommendations={recommendations} />
+          </div>
+
           {/* Preferences chip — shows current settings, taps to edit. Sits
               above the hero so the user sees the filter context that's
               shaping the recommendation below. */}
-          <div className="mt-3 flex items-center justify-between gap-2 rounded-full border border-zinc-200 bg-white px-3 py-1.5 text-xs dark:border-zinc-800 dark:bg-zinc-900">
+          <div className="mt-2 flex items-center justify-between gap-2 rounded-full border border-zinc-200 bg-white px-3 py-1.5 text-xs dark:border-zinc-800 dark:bg-zinc-900">
             <span className="inline-flex items-center gap-1.5 text-zinc-500">
               <Sliders className="h-3.5 w-3.5" aria-hidden />
               Preferences:
@@ -104,6 +128,14 @@ export default function NextCardPage() {
             </button>
           </div>
 
+          {/* Honesty chip — surfaces how many catalogue cards are being
+              filtered out by the card-type pref, so the user knows the
+              ranking isn't missing recommendations silently. Renders
+              nothing when nothing is hidden. */}
+          <div className="mt-2">
+            <HiddenByPrefsChip cardType={preferences.cardType} onClick={() => setPrefsOpen(true)} />
+          </div>
+
           <div className="mt-3">
             <BestMoveHero rec={hero} />
           </div>
@@ -117,33 +149,80 @@ export default function NextCardPage() {
           </div>
 
           <div className="mt-6 space-y-2">
-            <SortFilterBar value={sortFilter} onChange={setSortFilter} />
+            <div className="flex items-center gap-2">
+              <div className="flex-1">
+                <SortFilterBar value={sortFilter} onChange={setSortFilter} />
+              </div>
+              {/* List ↔ Swiper toggle. Disabled when filter !== 'all' so
+                  the swiper always operates on the canonical priority
+                  ranking, not a sub-filter. */}
+              <div className="flex flex-none overflow-hidden rounded-full border border-zinc-300 dark:border-zinc-700">
+                <button
+                  type="button"
+                  onClick={() => setViewMode('list')}
+                  aria-pressed={viewMode === 'list'}
+                  aria-label="List view"
+                  className={
+                    viewMode === 'list'
+                      ? 'grid h-8 w-8 place-items-center bg-[var(--color-ph-red)] text-white'
+                      : 'grid h-8 w-8 place-items-center bg-white text-zinc-500 hover:bg-zinc-100 dark:bg-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-800'
+                  }
+                >
+                  <List className="h-3.5 w-3.5" aria-hidden />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setViewMode('swiper')}
+                  aria-pressed={viewMode === 'swiper'}
+                  aria-label="Swiper view"
+                  className={
+                    viewMode === 'swiper'
+                      ? 'grid h-8 w-8 place-items-center bg-[var(--color-ph-red)] text-white'
+                      : 'grid h-8 w-8 place-items-center bg-white text-zinc-500 hover:bg-zinc-100 dark:bg-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-800'
+                  }
+                >
+                  <GalleryHorizontalEnd className="h-3.5 w-3.5" aria-hidden />
+                </button>
+              </div>
+            </div>
             <ProgramPills
               value={sortFilter.filter}
               onChange={(next) => setSortFilter({ ...sortFilter, filter: next })}
             />
           </div>
 
-          {sortFilter.filter === 'all' ? (
+          {viewMode === 'swiper' ? (
+            // Swiper view: focus mode on the eligible list only. Upcoming
+            // / Grey / Not-eligible are reference info, not decision info,
+            // so they don't appear here.
+            <div className="mt-4">
+              <SwiperView items={eligible} />
+            </div>
+          ) : (
             <>
-              {/* Default view: grouped sections. */}
-              {waiting.length > 0 && (
-                <div className="mt-6">
-                  <UpcomingList recommendations={waiting} />
-                </div>
-              )}
+              {/* Default view: grouped sections. Eligible is open by
+                  default — that's the daily focus. Upcoming / Grey /
+                  Not-eligible all collapsed for visual quiet. */}
               {eligible.length > 0 && (
                 <div className="mt-6">
                   <h2 className="px-1 text-[10px] font-semibold uppercase tracking-widest text-zinc-500">
                     All eligible · {eligible.length}
                   </h2>
                   <ul className="mt-2 space-y-2">
-                    {eligible.map((r) => (
+                    {eligible.map((r, i) => (
                       <li key={r.card.id}>
-                        <CardRow rec={r} />
+                        {/* rank=i+1 drives the "Top pick" prefix in the
+                            "why this card" line — only meaningful for
+                            eligible cards. */}
+                        <CardRow rec={r} rank={i + 1} />
                       </li>
                     ))}
                   </ul>
+                </div>
+              )}
+              {waiting.length > 0 && (
+                <div className="mt-6">
+                  <CollapsibleSection heading="Upcoming" items={waiting} icon={Clock} />
                 </div>
               )}
               {grey.length > 0 && (
@@ -157,16 +236,6 @@ export default function NextCardPage() {
                 </div>
               )}
             </>
-          ) : (
-            <div className="mt-4">
-              <ul className="space-y-2">
-                {filtered.map((r) => (
-                  <li key={r.card.id}>
-                    <CardRow rec={r} />
-                  </li>
-                ))}
-              </ul>
-            </div>
           )}
         </>
       )}

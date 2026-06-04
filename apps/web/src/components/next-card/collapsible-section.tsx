@@ -2,21 +2,25 @@
 
 import type { Recommendation } from '@ph/shared';
 import { ChevronDown, ChevronRight } from 'lucide-react';
+import type { ComponentType } from 'react';
 import { useState } from 'react';
 import { CardRow } from './card-row';
 
 /**
- * Collapsible list used for the Grey area + Not eligible sections (PRD §10.2.4).
- * Defaults closed because they're low-priority for the daily glance.
+ * Collapsible list used for the Upcoming / Grey area / Not eligible
+ * sections (PRD §10.2.4). Defaults closed because they're low-priority
+ * for the daily glance — the eligible list above gets the user's focus.
  */
 export function CollapsibleSection({
   heading,
   items,
   defaultOpen = false,
+  icon: Icon,
 }: {
   heading: string;
   items: Recommendation[];
   defaultOpen?: boolean;
+  icon?: ComponentType<{ className?: string; 'aria-hidden'?: boolean }>;
 }) {
   const [open, setOpen] = useState(defaultOpen);
   if (items.length === 0) return null;
@@ -37,6 +41,7 @@ export function CollapsibleSection({
           ) : (
             <ChevronRight className="h-3 w-3" aria-hidden />
           )}
+          {Icon && <Icon className="h-3 w-3" aria-hidden />}
           {heading} · {items.length}
         </span>
       </button>
