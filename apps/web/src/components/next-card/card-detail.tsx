@@ -205,12 +205,11 @@ export function CardDetail({ card }: { card: CardWithIssuer }) {
             )}
           </>
         )}
-        <Link
-          href="/add-card"
-          className="inline-flex items-center justify-center gap-2 rounded-full border border-zinc-300 px-4 py-2.5 text-sm font-medium text-zinc-700 transition-colors hover:border-[var(--color-ph-red)] hover:text-[var(--color-ph-red)] dark:border-zinc-700 dark:text-zinc-300"
-        >
-          Add a different date / details
-        </Link>
+        {/* "Add a different date / details" removed: redundant with the
+            Edit details modal on Tab 3 (faster path), and the label was
+            confusing — it created a second card record rather than
+            editing the existing one. FAB → Add Card still handles the
+            rare "want to re-add this card later" case. */}
         <ReadGuideButton card={card} />
       </div>
     </main>

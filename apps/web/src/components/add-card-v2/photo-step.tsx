@@ -9,8 +9,9 @@
 // { matchedCardId, extracted } via onCaptured. The "manual" branch emits
 // the manual signal so the parent state machine routes to a card picker.
 
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Camera, Upload, Pencil, RefreshCcw, Mic } from 'lucide-react';
+import { speak } from '@/lib/tts';
 
 interface OcrResult {
   matchedCardId: string | null;
@@ -33,6 +34,18 @@ export function PhotoStep({
   const [preview, setPreview] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Greet on mount — user just tapped FAB → Add Card, so the gesture is
+  // fresh and audio.play() should pass autoplay checks. No cleanup so
+  // StrictMode's dev double-fire doesn't kill the audio mid-play.
+  const greetedRef = useRef(false);
+  useEffect(() => {
+    if (greetedRef.current) return;
+    greetedRef.current = true;
+    void speak(
+      "Let's add a card. Snap a photo, speak the card name, or pick it manually from the list.",
+    );
+  }, []);
 
   async function handleFile(file: File) {
     setError(null);

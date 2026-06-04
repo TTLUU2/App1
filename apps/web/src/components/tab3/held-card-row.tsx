@@ -2,7 +2,25 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { ChevronDown, ChevronRight, CheckCircle2, Circle, AlertCircle } from 'lucide-react';
+import {
+  ChevronDown,
+  ChevronRight,
+  CheckCircle2,
+  Circle,
+  AlertCircle,
+  Receipt,
+  Pencil,
+  Ban,
+  DollarSign,
+  Sparkles,
+  TrendingUp,
+  TrendingDown,
+  Plane,
+  BedDouble,
+  UtensilsCrossed,
+  Shield,
+} from 'lucide-react';
+import type { BenefitCategory } from '@ph/shared';
 import type { Benefit, UserCardWithDetails, UserBenefitRedemption } from '@ph/shared';
 import { CardArt } from '@/components/card-art';
 import { formatCurrency, formatDate, formatPoints } from '@/lib/format';
@@ -19,6 +37,7 @@ import { useUserCardsStore } from '@/store/user-cards';
 import { useUserBenefitsStore } from '@/store/user-benefits';
 import { CancelCardConfirm } from '@/components/cancel-card-confirm';
 import { MinSpendCountdown } from '@/components/tab3/min-spend-countdown';
+import { EditCardModal } from '@/components/tab3/edit-card-modal';
 import { todayIsoDate } from '@/lib/time';
 
 /**
@@ -106,6 +125,7 @@ function ExpandedDetails({
   const [spendEdit, setSpendEdit] = useState<string>(String(uc.bonusSpentToDate ?? ''));
   const [editingSpend, setEditingSpend] = useState(false);
   const [confirmingCancel, setConfirmingCancel] = useState(false);
+  const [editingCard, setEditingCard] = useState(false);
 
   async function commitSpend() {
     const amount = Number(spendEdit);
@@ -163,115 +183,136 @@ function ExpandedDetails({
               users from logging spend). When no spend logged we say
               "Unrecorded" with a tap-to-log affordance so the call-to-action
               is the editor itself. */}
-          <p className="mt-2 text-xs text-zinc-600 dark:text-zinc-400">
-            <span className="text-zinc-500">Amount spent: </span>
-            {editingSpend ? (
-              <span className="inline-flex items-baseline gap-1 align-baseline">
-                <span className="text-zinc-500">$</span>
-                <input
-                  autoFocus
-                  type="number"
-                  inputMode="decimal"
-                  value={spendEdit}
-                  onChange={(e) => setSpendEdit(e.target.value)}
-                  onBlur={commitSpend}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter') void commitSpend();
-                    if (e.key === 'Escape') {
-                      setSpendEdit(String(uc.bonusSpentToDate ?? ''));
-                      setEditingSpend(false);
-                    }
-                  }}
-                  className="w-24 rounded border border-zinc-300 bg-white px-1 py-0.5 text-xs tabular-nums dark:border-zinc-700 dark:bg-zinc-900"
-                />
-              </span>
-            ) : (uc.bonusSpentToDate ?? 0) > 0 ? (
-              <>
+          {/* Three info blocks (Spent / Earned / Pace) with leading icons +
+              clear hierarchy. Primary line = the headline value, bold and
+              tabular-nums. Secondary line = supporting context in zinc-500.
+              Pace icon + headline are color-coded with the same traffic
+              system as the countdown bar (emerald = good, amber = mind it,
+              rose = trouble). */}
+
+          {/* Spent */}
+          <div className="mt-3 flex items-start gap-2">
+            <DollarSign className="mt-0.5 h-4 w-4 flex-none text-zinc-400" aria-hidden />
+            <div className="min-w-0 flex-1">
+              {editingSpend ? (
+                <div className="flex items-baseline gap-1">
+                  <span className="text-zinc-500">$</span>
+                  <input
+                    autoFocus
+                    type="number"
+                    inputMode="decimal"
+                    value={spendEdit}
+                    onChange={(e) => setSpendEdit(e.target.value)}
+                    onBlur={commitSpend}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') void commitSpend();
+                      if (e.key === 'Escape') {
+                        setSpendEdit(String(uc.bonusSpentToDate ?? ''));
+                        setEditingSpend(false);
+                      }
+                    }}
+                    className="w-24 rounded border border-zinc-300 bg-white px-1 py-0.5 text-xs tabular-nums dark:border-zinc-700 dark:bg-zinc-900"
+                  />
+                </div>
+              ) : (uc.bonusSpentToDate ?? 0) > 0 ? (
+                <>
+                  <p className="text-xs font-semibold tabular-nums text-zinc-900 dark:text-zinc-100">
+                    <button
+                      type="button"
+                      onClick={() => setEditingSpend(true)}
+                      className="underline-offset-2 hover:underline"
+                      aria-label="Edit current spend"
+                    >
+                      {formatCurrency(uc.bonusSpentToDate ?? 0)}
+                    </button>
+                    <span className="font-normal text-zinc-500">
+                      {' '}
+                      of {formatCurrency(uc.bonusTarget)}
+                    </span>
+                  </p>
+                  <p className="text-[11px] text-zinc-500">
+                    {Math.round(((uc.bonusSpentToDate ?? 0) / uc.bonusTarget) * 100)}% of goal
+                  </p>
+                </>
+              ) : (
                 <button
                   type="button"
                   onClick={() => setEditingSpend(true)}
-                  className="font-semibold tabular-nums text-zinc-900 underline-offset-2 hover:underline dark:text-zinc-100"
-                  aria-label="Edit current spend"
+                  className="text-xs italic text-zinc-500 underline-offset-2 hover:text-zinc-700 hover:underline dark:hover:text-zinc-300"
                 >
-                  {formatCurrency(uc.bonusSpentToDate ?? 0)}
+                  Unrecorded — tap to log
                 </button>
-                <span className="text-zinc-500">
-                  {' '}
-                  / {formatCurrency(uc.bonusTarget)} ·{' '}
-                  {Math.round(((uc.bonusSpentToDate ?? 0) / uc.bonusTarget) * 100)}% of goal
-                </span>
-              </>
-            ) : (
-              <button
-                type="button"
-                onClick={() => setEditingSpend(true)}
-                className="italic text-zinc-500 underline-offset-2 hover:text-zinc-700 hover:underline dark:hover:text-zinc-300"
-              >
-                Unrecorded — tap to log
-              </button>
-            )}
-          </p>
-
-          {/* Points context as a single secondary line — earn rate from the
-              upstream catalogue (POINT_HACKS_EARN_RATES), and a soft estimate
-              of points earned so far from logged spend × headline rate. Actual
-              earn varies by category; this understates real earn for tiered
-              cards during the min-spend chase. Bonus-on-offer lives in the
-              section header, so it's not repeated here. */}
-          {uc.card.earnRatePer1Aud != null && (
-            <p className="mt-2 text-[11px] text-zinc-500">
-              Earning <span className="tabular-nums">{uc.card.earnRatePer1Aud}</span> pt/$1
-              {(uc.bonusSpentToDate ?? 0) > 0 && (
-                <>
-                  {' · ~'}
-                  <span className="tabular-nums">
-                    {formatPoints(Math.round((uc.bonusSpentToDate ?? 0) * uc.card.earnRatePer1Aud))}
-                  </span>{' '}
-                  pts so far
-                </>
               )}
-            </p>
+            </div>
+          </div>
+
+          {/* Earned (only when earn rate is known) */}
+          {uc.card.earnRatePer1Aud != null && (
+            <div className="mt-2 flex items-start gap-2">
+              <Sparkles className="mt-0.5 h-4 w-4 flex-none text-amber-400" aria-hidden />
+              <div className="min-w-0 flex-1">
+                <p className="text-xs font-semibold tabular-nums text-zinc-900 dark:text-zinc-100">
+                  {(uc.bonusSpentToDate ?? 0) > 0
+                    ? `~${formatPoints(
+                        Math.round((uc.bonusSpentToDate ?? 0) * uc.card.earnRatePer1Aud),
+                      )} pts`
+                    : '0 pts'}
+                </p>
+                <p className="text-[11px] text-zinc-500">
+                  earning {uc.card.earnRatePer1Aud} pt per $1 spent
+                </p>
+              </div>
+            </div>
           )}
+
+          {/* Pace — color-coded by state */}
           {projection &&
             (() => {
-              // Distinguish three states cleanly:
-              //   1. Actually met — spent >= target. Done.
-              //   2. On pace — current run-rate will hit target before deadline.
-              //   3. Behind — won't hit target at current pace; show shortfall.
-              // The previous code conflated (1) and (2) via projection.shortfall,
-              // so a card with $500 spent and decent run-rate would falsely
-              // claim "Target met".
-              const actualMet = (uc.bonusSpentToDate ?? 0) >= uc.bonusTarget!;
+              // Three honest states (was previously conflated into a single
+              // "Target met" branch which fired on shortfall<=0 — false
+              // positive for cards with strong run-rate but tiny spend).
+              const actualMet = (uc.bonusSpentToDate ?? 0) >= (uc.bonusTarget ?? 0);
               const onPace = projection.shortfall <= 0;
+              const noSpendYet =
+                (uc.bonusSpentToDate ?? 0) === 0 || projection.projectedMissDays === Infinity;
+
               if (actualMet) {
                 return (
-                  <p className="mt-2 text-[11px] text-emerald-700 dark:text-emerald-300">
-                    Target met. Bonus should post next statement.
-                  </p>
+                  <PaceBlock
+                    icon={CheckCircle2}
+                    tone="emerald"
+                    primary="Target met"
+                    secondary="Bonus should post next statement."
+                  />
+                );
+              }
+              if (noSpendYet) {
+                return (
+                  <PaceBlock
+                    icon={TrendingDown}
+                    tone="zinc"
+                    primary="No spend yet"
+                    secondary={`Log spend to see projection.`}
+                  />
                 );
               }
               if (onPace) {
                 return (
-                  <p className="mt-2 text-[11px] text-zinc-500">
-                    On pace — at {formatCurrency(Math.round(projection.averageDailySpend))}/day
-                    you&apos;ll hit {formatCurrency(uc.bonusTarget!)} before{' '}
-                    {formatDate(uc.bonusSpendWindowEndDate!)}.
-                  </p>
+                  <PaceBlock
+                    icon={TrendingUp}
+                    tone="emerald"
+                    primary="On pace"
+                    secondary={`${formatCurrency(Math.round(projection.averageDailySpend))}/day will hit target before ${formatDate(uc.bonusSpendWindowEndDate!)}.`}
+                  />
                 );
               }
               return (
-                <p className="mt-2 text-[11px] text-zinc-500">
-                  At your current pace ({formatCurrency(Math.round(projection.averageDailySpend))}
-                  /day), projected {formatCurrency(Math.round(projection.projectedTotal))} by{' '}
-                  {formatDate(uc.bonusSpendWindowEndDate!)} —{' '}
-                  {projection.projectedMissDays === Infinity
-                    ? 'no spend yet to project from.'
-                    : projection.projectedMissDays > 0
-                      ? `short by ${projection.projectedMissDays} day${
-                          projection.projectedMissDays === 1 ? '' : 's'
-                        }.`
-                      : 'on track.'}
-                </p>
+                <PaceBlock
+                  icon={TrendingDown}
+                  tone="rose"
+                  primary={`Short by ${projection.projectedMissDays} day${projection.projectedMissDays === 1 ? '' : 's'}`}
+                  secondary={`At ${formatCurrency(Math.round(projection.averageDailySpend))}/day, projected ${formatCurrency(Math.round(projection.projectedTotal))} by ${formatDate(uc.bonusSpendWindowEndDate!)}.`}
+                />
               );
             })()}
         </section>
@@ -284,81 +325,103 @@ function ExpandedDetails({
             Benefits
           </h4>
           <ul className="mt-1 space-y-1.5">
-            {benefitStatuses.map((bs) => (
-              <li key={bs.benefit.id} className="flex items-start gap-2">
-                <button
-                  type="button"
-                  onClick={() => {
-                    if (bs.redemption) {
-                      void removeRedemption(bs.redemption.id);
-                    } else {
-                      void markUsed({
-                        userCardId: uc.id,
-                        benefit: bs.benefit,
-                        activationDate: uc.activationDate ?? uc.applicationDate,
-                      });
+            {benefitStatuses.map((bs) => {
+              const CategoryIcon = benefitCategoryIcon(bs.benefit.category);
+              return (
+                <li key={bs.benefit.id} className="flex items-start gap-2">
+                  {/* Category badge — instantly readable benefit type
+                      (Plane = travel, BedDouble = hotel, etc.) Sits left of
+                      the redemption-state toggle. */}
+                  <span
+                    className="mt-0.5 grid h-6 w-6 flex-none place-items-center rounded-full bg-zinc-100 text-zinc-500 dark:bg-zinc-800 dark:text-zinc-400"
+                    aria-hidden
+                  >
+                    <CategoryIcon className="h-3.5 w-3.5" />
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (bs.redemption) {
+                        void removeRedemption(bs.redemption.id);
+                      } else {
+                        void markUsed({
+                          userCardId: uc.id,
+                          benefit: bs.benefit,
+                          activationDate: uc.activationDate ?? uc.applicationDate,
+                        });
+                      }
+                    }}
+                    aria-label={
+                      bs.redemption
+                        ? `Unmark ${bs.benefit.name} as used`
+                        : `Mark ${bs.benefit.name} as used`
                     }
-                  }}
-                  aria-label={
-                    bs.redemption
-                      ? `Unmark ${bs.benefit.name} as used`
-                      : `Mark ${bs.benefit.name} as used`
-                  }
-                  className="mt-0.5 flex-none"
-                >
-                  {bs.state === 'used' ? (
-                    <CheckCircle2 className="h-4 w-4 text-emerald-600" aria-hidden />
-                  ) : bs.state === 'expiring_soon' ? (
-                    <AlertCircle className="h-4 w-4 text-amber-600" aria-hidden />
-                  ) : (
-                    <Circle className="h-4 w-4 text-zinc-400" aria-hidden />
-                  )}
-                </button>
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-baseline justify-between gap-2">
-                    <span className="text-xs font-medium">{bs.benefit.name}</span>
-                    <span className="text-[10px] text-zinc-500">
-                      {formatCurrency(bs.benefit.valueAud)}
-                    </span>
+                    className="mt-0.5 flex-none"
+                  >
+                    {bs.state === 'used' ? (
+                      <CheckCircle2 className="h-4 w-4 text-emerald-600" aria-hidden />
+                    ) : bs.state === 'expiring_soon' ? (
+                      <AlertCircle className="h-4 w-4 text-amber-600" aria-hidden />
+                    ) : (
+                      <Circle className="h-4 w-4 text-zinc-400" aria-hidden />
+                    )}
+                  </button>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-baseline justify-between gap-2">
+                      <span className="text-xs font-medium">{bs.benefit.name}</span>
+                      <span className="text-[10px] text-zinc-500">
+                        {formatCurrency(bs.benefit.valueAud)}
+                      </span>
+                    </div>
+                    <p className="text-[10px] text-zinc-500">
+                      {bs.state === 'used'
+                        ? 'Used this period'
+                        : bs.state === 'expiring_soon'
+                          ? `Expires in ${bs.daysRemaining} days`
+                          : `Period ends ${formatDate(bs.period.end)}`}
+                    </p>
                   </div>
-                  <p className="text-[10px] text-zinc-500">
-                    {bs.state === 'used'
-                      ? 'Used this period'
-                      : bs.state === 'expiring_soon'
-                        ? `Expires in ${bs.daysRemaining} days`
-                        : `Period ends ${formatDate(bs.period.end)}`}
-                  </p>
-                </div>
-              </li>
-            ))}
+                </li>
+              );
+            })}
           </ul>
         </section>
       )}
 
-      {/* Quick actions */}
-      <div className="mt-3 flex flex-wrap gap-2 text-xs">
+      {/* Quick actions — primary (update spend, daily action) on the left,
+          edit (occasional correction) in the middle, destructive (cancel)
+          right-aligned and rose-tinted so it sits visually apart. Card
+          catalogue info is still reachable via Tab 4 (Next card) where
+          users browse cards they don't hold yet. */}
+      <div className="mt-3 flex flex-wrap items-center gap-2 text-xs">
         <Link
           href={`/spend?card=${uc.id}`}
-          className="rounded-full border border-zinc-300 px-3 py-1 hover:border-[var(--color-ph-red)] hover:text-[var(--color-ph-red)] dark:border-zinc-700"
+          className="inline-flex items-center gap-1 rounded-full bg-[var(--color-ph-red)] px-3 py-1 font-medium text-white"
         >
+          <Receipt className="h-3 w-3" aria-hidden />
           Update spend
         </Link>
-        <Link
-          href={`/cards/${uc.cardId}`}
-          className="rounded-full border border-zinc-300 px-3 py-1 hover:border-[var(--color-ph-red)] hover:text-[var(--color-ph-red)] dark:border-zinc-700"
+        <button
+          type="button"
+          onClick={() => setEditingCard(true)}
+          className="inline-flex items-center gap-1 rounded-full border border-zinc-300 px-3 py-1 hover:border-[var(--color-ph-red)] hover:text-[var(--color-ph-red)] dark:border-zinc-700"
         >
-          Card details
-        </Link>
+          <Pencil className="h-3 w-3" aria-hidden />
+          Edit details
+        </button>
         {!uc.cancellationDate && (
           <button
             type="button"
             onClick={() => setConfirmingCancel(true)}
-            className="rounded-full border border-zinc-300 px-3 py-1 text-rose-700 hover:border-rose-400 dark:border-zinc-700 dark:text-rose-300"
+            className="ml-auto inline-flex items-center gap-1 rounded-full border border-rose-200 px-3 py-1 text-rose-700 hover:border-rose-400 dark:border-rose-900 dark:text-rose-300"
           >
-            Cancel card
+            <Ban className="h-3 w-3" aria-hidden />
+            Cancel
           </button>
         )}
       </div>
+
+      {editingCard && <EditCardModal uc={uc} onClose={() => setEditingCard(false)} />}
 
       {confirmingCancel && (
         <CancelCardConfirm
@@ -372,4 +435,58 @@ function ExpandedDetails({
       )}
     </div>
   );
+}
+
+// Color-coded pace block — icon + tinted headline + neutral secondary
+// caption. Tones match the countdown bar's traffic system so the user
+// reads the same signal across both surfaces.
+function PaceBlock({
+  icon: Icon,
+  tone,
+  primary,
+  secondary,
+}: {
+  icon: React.ComponentType<{ className?: string; 'aria-hidden'?: boolean }>;
+  tone: 'emerald' | 'amber' | 'rose' | 'zinc';
+  primary: string;
+  secondary: string;
+}) {
+  const tones: Record<typeof tone, { icon: string; primary: string }> = {
+    emerald: {
+      icon: 'text-emerald-500',
+      primary: 'text-emerald-700 dark:text-emerald-300',
+    },
+    amber: { icon: 'text-amber-500', primary: 'text-amber-700 dark:text-amber-300' },
+    rose: { icon: 'text-rose-500', primary: 'text-rose-700 dark:text-rose-300' },
+    zinc: { icon: 'text-zinc-400', primary: 'text-zinc-700 dark:text-zinc-300' },
+  };
+  const t = tones[tone];
+  return (
+    <div className="mt-2 flex items-start gap-2">
+      <Icon className={`mt-0.5 h-4 w-4 flex-none ${t.icon}`} aria-hidden />
+      <div className="min-w-0 flex-1">
+        <p className={`text-xs font-semibold ${t.primary}`}>{primary}</p>
+        <p className="text-[11px] text-zinc-500">{secondary}</p>
+      </div>
+    </div>
+  );
+}
+
+// Lucide icon per benefit category. Schema centralises the categories in
+// packages/shared, so this map is exhaustive — TypeScript catches misses.
+function benefitCategoryIcon(
+  category: BenefitCategory,
+): React.ComponentType<{ className?: string; 'aria-hidden'?: boolean }> {
+  switch (category) {
+    case 'travel_credit':
+      return Plane;
+    case 'hotel_credit':
+      return BedDouble;
+    case 'dining_credit':
+      return UtensilsCrossed;
+    case 'statement_credit':
+      return Receipt;
+    case 'insurance':
+      return Shield;
+  }
 }

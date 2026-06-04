@@ -13,10 +13,10 @@
 // ~bonusPoints/30 rounded, spend-by to +90 days, bonus received to false.
 // Anything wrong → tap edit, or use the voice mic under approval date.
 
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { ChevronLeft, Sparkles, CheckCircle2, AlertTriangle, Pencil } from 'lucide-react';
+import { ChevronLeft, Sparkles, CheckCircle2, AlertTriangle, Pencil, Volume2 } from 'lucide-react';
 import clsx from 'clsx';
 import type { CardWithIssuer } from '@ph/shared';
 import { catalogue, useUserCardsStore } from '@/store/user-cards';
@@ -24,6 +24,7 @@ import { CardArt } from '@/components/card-art';
 import { VoiceInput } from '@/components/voice-input';
 import { PhotoStep } from './photo-step';
 import { CardPickerQuestion } from './card-picker-question';
+import { VoiceReviewWalkthrough, type ReviewField } from './voice-review-walkthrough';
 import { formatCurrency, formatDate, spokenDate } from '@/lib/format';
 import { todayIsoDate } from '@/lib/time';
 import { cancelSpeech, speak } from '@/lib/tts';
@@ -150,6 +151,17 @@ export function AddCardFlow({ onSaved, onClose }: AddCardFlowProps = {}) {
         bonusTarget: collected.bonusTarget,
         bonusSpendWindowEndDate: collected.bonusSpendWindowEndDate,
       });
+      // Confirmation welcome — names the just-saved card so the user has
+      // closure on what they added. Await before navigating so audio
+      // plays out fully (next page's mount greeting otherwise cancels via
+      // lib/tts cancelSpeech-on-entry).
+      if (matchedCard?.name) {
+        try {
+          await speak(`Welcome to your ${matchedCard.name}.`);
+        } catch {
+          /* don't block navigation on TTS failure */
+        }
+      }
       if (onSaved) {
         onSaved(collected.cardId);
         setPending(false);
@@ -207,7 +219,6 @@ export function AddCardFlow({ onSaved, onClose }: AddCardFlowProps = {}) {
           <ReviewForm
             card={matchedCard}
             collected={collected}
-            feeDueDirty={feeDueDirty}
             spendByDirty={spendByDirty}
             onChange={handleChange}
             onChangeCard={() => setStep('pick')}
@@ -233,7 +244,6 @@ export function AddCardFlow({ onSaved, onClose }: AddCardFlowProps = {}) {
 function ReviewForm({
   card,
   collected,
-  feeDueDirty,
   spendByDirty,
   onChange,
   onChangeCard,
@@ -242,7 +252,6 @@ function ReviewForm({
 }: {
   card: CardWithIssuer;
   collected: Collected;
-  feeDueDirty: boolean;
   spendByDirty: boolean;
   onChange: (patch: Partial<Collected>) => void;
   onChangeCard: () => void;
@@ -256,17 +265,11 @@ function ReviewForm({
   // highlight on the date input.
   const [voiceSuccess, setVoiceSuccess] = useState<string | null>(null);
 
-  // Spoken summary when the user lands on the review screen — reads back
-  // all four smart-defaulted values so the user can confirm or correct
-  // without scrolling. Summary-first (vs one-by-one) keeps the rhythm
-  // conversational and respects user time. Fires once per mount via a ref
-  // so React 19 strict-mode doesn't double-speak. NO cleanup: in dev,
-  // StrictMode runs effects twice with cleanup in between, and cancelling
-  // here would kill the audio between the two runs and we'd hear nothing.
-  const welcomedRef = useRef(false);
-  useEffect(() => {
-    if (welcomedRef.current) return;
-    welcomedRef.current = true;
+  // Build the spoken summary text. Pulled out of the mount effect so the
+  // "Hear summary again" button (rendered below) can reuse the exact same
+  // copy. Uses the LATEST field values at call time — if the user has
+  // already edited something, the replay reflects the change.
+  function buildSummary(): string {
     const parts: string[] = [`Here's what I picked up for your ${card.name}.`];
     if (collected.activationDate) {
       parts.push(`Approval ${spokenDate(collected.activationDate)}.`);
@@ -281,14 +284,21 @@ function ReviewForm({
       parts.push(`Spend-by ${spokenDate(collected.bonusSpendWindowEndDate)}.`);
     }
     parts.push(`Tap save if that looks right, or tell me what needs changing.`);
-    void speak(parts.join(' '));
-  }, [
-    card.name,
-    collected.activationDate,
-    collected.annualFeeNextDueDate,
-    collected.bonusTarget,
-    collected.bonusSpendWindowEndDate,
-  ]);
+    return parts.join(' ');
+  }
+
+  // Spoken summary on mount — deferred via setTimeout so React 19
+  // StrictMode's dev double-mount doesn't race two speak() calls (the
+  // second was cancelling the first's in-flight audio and the result was
+  // silence). Cleanup cancels the TIMER not the audio, so exactly one
+  // speak() fires per real mount. Doesn't re-fire on value edits — the
+  // voice walkthrough handles per-edit confirmations, and the "Hear
+  // summary" button below covers explicit replays.
+  useEffect(() => {
+    const t = setTimeout(() => void speak(buildSummary()), 100);
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   async function handleVoiceApprovalDate(utterance: string) {
     setVoiceParsing(true);
@@ -410,40 +420,32 @@ function ReviewForm({
           </div>
         </Field>
 
-        <div className="grid grid-cols-2 gap-3">
-          <Field
-            label="Annual fee next due"
-            hint={
-              feeDueDirty
-                ? 'Manually set.'
-                : `Auto — ${formatDate(collected.annualFeeNextDueDate)} (approval + 12m).`
-            }
-          >
-            <input
-              type="date"
-              value={collected.annualFeeNextDueDate}
-              onChange={(e) => onChange({ annualFeeNextDueDate: e.target.value })}
-              className="w-full rounded-lg border border-zinc-300 bg-white px-2 py-1.5 text-sm dark:border-zinc-700 dark:bg-zinc-950"
-            />
-          </Field>
+        {/* Min-spend target + spend-by deadline paired on one row — they're
+            conceptually the same chase (target $ + deadline). Annual fee
+            next due is auto-derived from approval + 12 months and shown
+            on the held-card row, not here — keeps this screen focused on
+            the chase, not on long-term tracking. Edit details modal on
+            Tab 3 covers the rare case the auto-fee-date is wrong. */}
+        <div className="grid grid-cols-[1fr,1.2fr] gap-3">
           <Field label="Min-spend target">
-            <input
-              type="number"
-              inputMode="numeric"
-              min={0}
-              step={500}
-              value={String(collected.bonusTarget)}
-              onChange={(e) => onChange({ bonusTarget: Number(e.target.value) || 0 })}
-              className="w-full rounded-lg border border-zinc-300 bg-white px-2 py-1.5 text-sm tabular-nums dark:border-zinc-700 dark:bg-zinc-950"
-            />
+            <div className="relative">
+              <span className="pointer-events-none absolute left-2 top-1/2 -translate-y-1/2 text-sm text-zinc-500">
+                $
+              </span>
+              <input
+                type="number"
+                inputMode="numeric"
+                min={0}
+                step={500}
+                value={String(collected.bonusTarget)}
+                onChange={(e) => onChange({ bonusTarget: Number(e.target.value) || 0 })}
+                className="w-full rounded-lg border border-zinc-300 bg-white py-1.5 pl-5 pr-2 text-sm tabular-nums dark:border-zinc-700 dark:bg-zinc-950"
+              />
+            </div>
           </Field>
           <Field
             label="Spend by"
-            hint={
-              spendByDirty
-                ? 'Manually set.'
-                : `Auto — ${formatDate(collected.bonusSpendWindowEndDate)} (approval + 90 days).`
-            }
+            hint={spendByDirty ? 'Manually set.' : `Auto — approval + 90 days.`}
           >
             <input
               type="date"
@@ -474,6 +476,40 @@ function ReviewForm({
           </button>
         </div>
       </div>
+
+      {/* Replay button — in case the mount summary was missed (autoplay
+          blocked, user scrolled too fast, user wants to re-hear after
+          editing). Cancels any in-flight audio via lib/tts. */}
+      <button
+        type="button"
+        onClick={() => void speak(buildSummary())}
+        className="mx-auto flex items-center gap-1.5 rounded-full border border-zinc-300 px-3 py-1 text-[11px] font-medium text-zinc-600 hover:border-[var(--color-ph-red)] hover:text-[var(--color-ph-red)] dark:border-zinc-700 dark:text-zinc-400"
+      >
+        <Volume2 className="h-3 w-3" aria-hidden />
+        Hear summary
+      </button>
+
+      {/* Conversational voice walkthrough — speaks back any field the user
+          asks to change, or saves when they say "looks good". Visual
+          editing above still works in parallel; this is the voice-first
+          path for hands-busy users. */}
+      <VoiceReviewWalkthrough
+        cardName={card.name}
+        current={{
+          activationDate: collected.activationDate,
+          annualFeeNextDueDate: collected.annualFeeNextDueDate,
+          bonusTarget: collected.bonusTarget,
+          bonusSpendWindowEndDate: collected.bonusSpendWindowEndDate,
+        }}
+        onUpdate={(field: ReviewField, value) => {
+          if (field === 'bonusTarget') {
+            onChange({ bonusTarget: Number(value) });
+          } else {
+            onChange({ [field]: String(value) } as Partial<Collected>);
+          }
+        }}
+        onSave={onSave}
+      />
 
       <button
         type="submit"
