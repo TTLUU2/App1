@@ -183,12 +183,13 @@ function ExpandedDetails({
               users from logging spend). When no spend logged we say
               "Unrecorded" with a tap-to-log affordance so the call-to-action
               is the editor itself. */}
-          {/* Three info blocks (Spent / Earned / Pace) with leading icons +
-              clear hierarchy. Primary line = the headline value, bold and
-              tabular-nums. Secondary line = supporting context in zinc-500.
-              Pace icon + headline are color-coded with the same traffic
-              system as the countdown bar (emerald = good, amber = mind it,
-              rose = trouble). */}
+          {/* Three info blocks on single lines: primary value (bold) + dot
+              separator + secondary context (zinc-500). Order is Spent →
+              Pace → Earned: spent is the action driver, pace is the
+              direct consequence of spend, earned is a side metric (still
+              useful but less chase-critical). Pace icon + primary stay
+              color-coded with the same traffic system as the countdown
+              bar (emerald = good, rose = trouble, zinc = no data). */}
 
           {/* Spent */}
           <div className="mt-3 flex items-start gap-2">
@@ -215,25 +216,24 @@ function ExpandedDetails({
                   />
                 </div>
               ) : (uc.bonusSpentToDate ?? 0) > 0 ? (
-                <>
-                  <p className="text-xs font-semibold tabular-nums text-zinc-900 dark:text-zinc-100">
-                    <button
-                      type="button"
-                      onClick={() => setEditingSpend(true)}
-                      className="underline-offset-2 hover:underline"
-                      aria-label="Edit current spend"
-                    >
-                      {formatCurrency(uc.bonusSpentToDate ?? 0)}
-                    </button>
-                    <span className="font-normal text-zinc-500">
-                      {' '}
-                      of {formatCurrency(uc.bonusTarget)}
-                    </span>
-                  </p>
-                  <p className="text-[11px] text-zinc-500">
+                <p className="text-xs">
+                  <button
+                    type="button"
+                    onClick={() => setEditingSpend(true)}
+                    className="font-semibold tabular-nums text-emerald-700 underline-offset-2 hover:underline dark:text-emerald-300"
+                    aria-label="Edit current spend"
+                  >
+                    {formatCurrency(uc.bonusSpentToDate ?? 0)}
+                  </button>
+                  <span className="font-normal text-zinc-500">
+                    {' '}
+                    of {formatCurrency(uc.bonusTarget)}
+                  </span>
+                  <span className="text-[11px] text-zinc-500">
+                    {' · '}
                     {Math.round(((uc.bonusSpentToDate ?? 0) / uc.bonusTarget) * 100)}% of goal
-                  </p>
-                </>
+                  </span>
+                </p>
               ) : (
                 <button
                   type="button"
@@ -246,26 +246,9 @@ function ExpandedDetails({
             </div>
           </div>
 
-          {/* Earned (only when earn rate is known) */}
-          {uc.card.earnRatePer1Aud != null && (
-            <div className="mt-2 flex items-start gap-2">
-              <Sparkles className="mt-0.5 h-4 w-4 flex-none text-amber-400" aria-hidden />
-              <div className="min-w-0 flex-1">
-                <p className="text-xs font-semibold tabular-nums text-zinc-900 dark:text-zinc-100">
-                  {(uc.bonusSpentToDate ?? 0) > 0
-                    ? `~${formatPoints(
-                        Math.round((uc.bonusSpentToDate ?? 0) * uc.card.earnRatePer1Aud),
-                      )} pts`
-                    : '0 pts'}
-                </p>
-                <p className="text-[11px] text-zinc-500">
-                  earning {uc.card.earnRatePer1Aud} pt per $1 spent
-                </p>
-              </div>
-            </div>
-          )}
-
-          {/* Pace — color-coded by state */}
+          {/* Pace — color-coded by state. Placed directly below Spent
+              because it's the direct read of "am I on track with what I
+              just logged?". */}
           {projection &&
             (() => {
               // Three honest states (was previously conflated into a single
@@ -292,17 +275,19 @@ function ExpandedDetails({
                     icon={TrendingDown}
                     tone="zinc"
                     primary="No spend yet"
-                    secondary={`Log spend to see projection.`}
+                    secondary="Log spend to see projection."
                   />
                 );
               }
               if (onPace) {
+                // Date intentionally omitted — countdown bar above already
+                // shows the deadline. Stays as a single short line.
                 return (
                   <PaceBlock
                     icon={TrendingUp}
                     tone="emerald"
                     primary="On pace"
-                    secondary={`${formatCurrency(Math.round(projection.averageDailySpend))}/day will hit target before ${formatDate(uc.bonusSpendWindowEndDate!)}.`}
+                    secondary={`${formatCurrency(Math.round(projection.averageDailySpend))}/day will hit target`}
                   />
                 );
               }
@@ -311,10 +296,33 @@ function ExpandedDetails({
                   icon={TrendingDown}
                   tone="rose"
                   primary={`Short by ${projection.projectedMissDays} day${projection.projectedMissDays === 1 ? '' : 's'}`}
-                  secondary={`At ${formatCurrency(Math.round(projection.averageDailySpend))}/day, projected ${formatCurrency(Math.round(projection.projectedTotal))} by ${formatDate(uc.bonusSpendWindowEndDate!)}.`}
+                  secondary={`at ${formatCurrency(Math.round(projection.averageDailySpend))}/day, projected ${formatCurrency(Math.round(projection.projectedTotal))}`}
                 />
               );
             })()}
+
+          {/* Earned — side metric, sits last because it's informational
+              not action-driving. Only shown when we know the earn rate.
+              Points value is emerald-bold to read as a positive gain (vs
+              the neutral spend number above) and to visually echo the
+              Pace block when both are healthy. */}
+          {uc.card.earnRatePer1Aud != null && (
+            <div className="mt-2 flex items-start gap-2">
+              <Sparkles className="mt-0.5 h-4 w-4 flex-none text-amber-400" aria-hidden />
+              <p className="min-w-0 flex-1 text-xs">
+                <span className="font-semibold tabular-nums text-emerald-700 dark:text-emerald-300">
+                  {(uc.bonusSpentToDate ?? 0) > 0
+                    ? `~${formatPoints(
+                        Math.round((uc.bonusSpentToDate ?? 0) * uc.card.earnRatePer1Aud),
+                      )} pts`
+                    : '0 pts'}
+                </span>
+                <span className="text-[11px] text-zinc-500">
+                  {' · '}earning {uc.card.earnRatePer1Aud} pt per $1 spent
+                </span>
+              </p>
+            </div>
+          )}
         </section>
       )}
 
@@ -464,10 +472,13 @@ function PaceBlock({
   return (
     <div className="mt-2 flex items-start gap-2">
       <Icon className={`mt-0.5 h-4 w-4 flex-none ${t.icon}`} aria-hidden />
-      <div className="min-w-0 flex-1">
-        <p className={`text-xs font-semibold ${t.primary}`}>{primary}</p>
-        <p className="text-[11px] text-zinc-500">{secondary}</p>
-      </div>
+      <p className="min-w-0 flex-1 text-xs">
+        <span className={`font-semibold ${t.primary}`}>{primary}</span>
+        <span className="text-[11px] text-zinc-500">
+          {' · '}
+          {secondary}
+        </span>
+      </p>
     </div>
   );
 }

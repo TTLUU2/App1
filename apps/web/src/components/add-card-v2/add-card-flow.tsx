@@ -17,17 +17,15 @@ import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { ChevronLeft, Sparkles, CheckCircle2, AlertTriangle, Pencil, Volume2 } from 'lucide-react';
-import clsx from 'clsx';
 import type { CardWithIssuer } from '@ph/shared';
 import { catalogue, useUserCardsStore } from '@/store/user-cards';
 import { CardArt } from '@/components/card-art';
-import { VoiceInput } from '@/components/voice-input';
 import { PhotoStep } from './photo-step';
 import { CardPickerQuestion } from './card-picker-question';
 import { VoiceReviewWalkthrough, type ReviewField } from './voice-review-walkthrough';
 import { formatCurrency, formatDate, spokenDate } from '@/lib/format';
 import { todayIsoDate } from '@/lib/time';
-import { cancelSpeech, speak } from '@/lib/tts';
+import { speak } from '@/lib/tts';
 
 type Step = 'photo' | 'pick' | 'review';
 
@@ -258,13 +256,6 @@ function ReviewForm({
   onSave: () => void;
   pending: boolean;
 }) {
-  const [voiceParsing, setVoiceParsing] = useState(false);
-  const [voiceError, setVoiceError] = useState<string | null>(null);
-  // Set when the most recent voice/text submission successfully updated the
-  // approval date. Drives the green confirmation chip + the brief ring
-  // highlight on the date input.
-  const [voiceSuccess, setVoiceSuccess] = useState<string | null>(null);
-
   // Build the spoken summary text. Pulled out of the mount effect so the
   // "Hear summary again" button (rendered below) can reuse the exact same
   // copy. Uses the LATEST field values at call time — if the user has
@@ -300,43 +291,6 @@ function ReviewForm({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  async function handleVoiceApprovalDate(utterance: string) {
-    setVoiceParsing(true);
-    setVoiceError(null);
-    setVoiceSuccess(null);
-    try {
-      const res = await fetch('/api/onboard/parse', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ kind: 'date', answer: utterance, today: todayIsoDate() }),
-      });
-      const json = (await res.json()) as
-        | { isoDate: string | null; skip: boolean }
-        | { error: string };
-      if (!res.ok || 'error' in json) {
-        throw new Error('error' in json ? json.error : 'parse failed');
-      }
-      if (json.skip || !json.isoDate) {
-        setVoiceError("Couldn't pick a date from that — try '12 May' or 'three weeks ago'.");
-        return;
-      }
-      // Defensive: only accept strict yyyy-MM-dd (the schema requests it, but
-      // models occasionally return ISO-with-time or other formats).
-      const normalised = /^\d{4}-\d{2}-\d{2}$/.test(json.isoDate)
-        ? json.isoDate
-        : json.isoDate.slice(0, 10);
-      if (!/^\d{4}-\d{2}-\d{2}$/.test(normalised)) {
-        setVoiceError(`Couldn't read the parsed date ("${json.isoDate}") — try again.`);
-        return;
-      }
-      onChange({ activationDate: normalised });
-      setVoiceSuccess(normalised);
-    } catch (err) {
-      setVoiceError(err instanceof Error ? err.message : String(err));
-    } finally {
-      setVoiceParsing(false);
-    }
-  }
   return (
     <form
       onSubmit={(e) => {
@@ -385,39 +339,14 @@ function ReviewForm({
           <input
             type="date"
             value={collected.activationDate}
-            onChange={(e) => {
-              onChange({ activationDate: e.target.value });
-              // Clear the voice-success chip when the user types in the
-              // field directly — the chip would otherwise stay stale.
-              setVoiceSuccess(null);
-            }}
-            // Brief ring highlight whenever the voice override just updated
-            // the value, so the user can see what changed.
-            className={clsx(
-              'w-full rounded-lg border border-zinc-300 bg-white px-2 py-1.5 text-sm transition-shadow dark:border-zinc-700 dark:bg-zinc-950',
-              voiceSuccess === collected.activationDate &&
-                'ring-2 ring-emerald-400/70 ring-offset-1 dark:ring-offset-zinc-900',
-            )}
+            onChange={(e) => onChange({ activationDate: e.target.value })}
+            className="w-full rounded-lg border border-zinc-300 bg-white px-2 py-1.5 text-sm dark:border-zinc-700 dark:bg-zinc-950"
           />
-          <div className="mt-2">
-            <VoiceInput
-              ariaLabel="Approval date — voice or text override"
-              placeholder="Say 'last March', 'three weeks ago', '12 May'…"
-              onSubmit={handleVoiceApprovalDate}
-              disabled={voiceParsing}
-              hint="Tap Send (or press Enter) after typing — the field above will update."
-            />
-            {voiceParsing && <p className="mt-1 text-[11px] text-zinc-500">Parsing…</p>}
-            {voiceSuccess && voiceSuccess === collected.activationDate && !voiceError && (
-              <p className="mt-1 inline-flex items-center gap-1 text-[11px] font-medium text-emerald-700 dark:text-emerald-300">
-                <CheckCircle2 className="h-3 w-3" aria-hidden />
-                Approval date set to {formatDate(voiceSuccess)}
-              </p>
-            )}
-            {voiceError && (
-              <p className="mt-1 text-[11px] text-rose-600 dark:text-rose-400">{voiceError}</p>
-            )}
-          </div>
+          {/* Per-field voice input removed — the "Tap to edit by voice"
+              walkthrough below handles voice-editing for approval date
+              (and all other fields) via /api/parse/review-edit, so the
+              dedicated bar was a redundant second voice surface. Inline
+              typing into the date input still works for tap-edit users. */}
         </Field>
 
         {/* Min-spend target + spend-by deadline paired on one row — they're
