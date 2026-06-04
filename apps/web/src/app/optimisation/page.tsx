@@ -9,6 +9,7 @@ import {
   useUserCardsStore,
 } from '@/store/user-cards';
 import { useUserBenefitsStore } from '@/store/user-benefits';
+import { useUserPreferencesStore } from '@/store/user-preferences';
 import { benefitStatusFor, computeSummary, threeMonthCtaCards } from '@/lib/tab3-status';
 import { SummaryHeader } from '@/components/tab3/summary-header';
 import { ThreeMonthCta } from '@/components/tab3/three-month-cta';
@@ -54,9 +55,13 @@ export default function OptimisationPage() {
     [allCards, benefitStatusByCard],
   );
 
+  // Threading preferences here so Tab 3's "3-month bonus" CTA list also
+  // respects card-type filter + program boost. Otherwise a personal-only
+  // user could see a business card recommended on Tab 3 but hidden on Tab 4.
+  const preferences = useUserPreferencesStore((s) => s.preferences);
   const recommendations = useMemo(
-    () => selectRecommendations({ userCards, loaded, error: null } as never),
-    [userCards, loaded],
+    () => selectRecommendations({ userCards, loaded, error: null } as never, preferences),
+    [userCards, loaded, preferences],
   );
   const ctaCards = useMemo(() => threeMonthCtaCards(recommendations), [recommendations]);
 

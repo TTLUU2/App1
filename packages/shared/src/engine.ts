@@ -367,12 +367,25 @@ export function generateRecommendations(
   allCards: CardWithIssuer[],
   userCards: UserCardWithDetails[],
   allIssuers: Issuer[],
+  preferences?: import('./types').UserPreferences,
 ): Recommendation[] {
   const recommendations: Recommendation[] = [];
 
-  for (const card of allCards) {
-    const eligibility = calculateEligibility(card, userCards, allIssuers);
+  // Resolve preferences: undefined = legacy "show everything" behaviour
+  // (tests and any caller that doesn't supply prefs). When preferences are
+  // explicitly passed we apply both the card-type hard filter and the
+  // program soft boost.
+  const allowPersonal = !preferences || preferences.cardType !== 'business';
+  const allowBusiness = !preferences || preferences.cardType !== 'personal';
+  const hasProgramPreference = (preferences?.preferredPrograms.length ?? 0) > 0;
 
+  for (const card of allCards) {
+    // HARD card-type filter — most users can't apply for business cards
+    // without an ABN, so hiding them is the correct default behavior.
+    if (card.cardType === 'business' && !allowBusiness) continue;
+    if (card.cardType === 'personal' && !allowPersonal) continue;
+
+    const eligibility = calculateEligibility(card, userCards, allIssuers);
     if (eligibility.status === 'not_eligible') continue;
 
     let priority = 0;
@@ -392,6 +405,13 @@ export function generateRecommendations(
       priority += 15;
     }
 
+    // SOFT program-preference boost. +50 is significant but not so large
+    // that a 200k-point non-preferred card gets pushed off the top — the
+    // absolute "best move" is still visible regardless of preference.
+    const programMatched =
+      hasProgramPreference && (preferences?.preferredPrograms ?? []).includes(card.rewardsProgram);
+    if (programMatched) priority += 50;
+
     let reason = '';
     if (eligibility.status === 'eligible') {
       reason = `Safe to apply now${card.bonusPoints ? ` for ${card.bonusPoints.toLocaleString()} points` : ''}.`;
@@ -406,6 +426,10 @@ export function generateRecommendations(
       eligibility,
       priority,
       reason,
+      preferenceMatch: {
+        programMatched,
+        cardTypeAllowed: true, // we filtered above; surviving cards are allowed
+      },
     });
   }
 

@@ -11,6 +11,7 @@ import {
   useUserCardsStore,
 } from '@/store/user-cards';
 import { useUserBenefitsStore } from '@/store/user-benefits';
+import { useUserPreferencesStore } from '@/store/user-preferences';
 import { buildAskContext } from '@/lib/ask-context';
 import { isSpeechSynthesisAvailable } from '@/lib/speech';
 import { cancelSpeech, speak } from '@/lib/tts';
@@ -32,9 +33,12 @@ export function AskFlow() {
     () => selectUserCardsWithDetails({ userCards, loaded, error: null } as never),
     [userCards, loaded],
   );
+  // Copilot answers should respect the same preferences as Tab 4 — no point
+  // recommending an Amex Business when the user has set 'personal only'.
+  const preferences = useUserPreferencesStore((s) => s.preferences);
   const recommendations = useMemo(
-    () => selectRecommendations({ userCards, loaded, error: null } as never),
-    [userCards, loaded],
+    () => selectRecommendations({ userCards, loaded, error: null } as never, preferences),
+    [userCards, loaded, preferences],
   );
 
   const heldCards = useMemo(() => allCards.filter((c) => !c.cancellationDate), [allCards]);

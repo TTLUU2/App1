@@ -146,4 +146,33 @@ export interface Recommendation {
   eligibility: EligibilityResult;
   priority: number;
   reason: string;
+  /** Set when preferences fed into ranking — surfaces "why this card"
+   *  context to the UI without re-running the engine. */
+  preferenceMatch?: {
+    programMatched: boolean;
+    cardTypeAllowed: boolean;
+  };
 }
+
+/**
+ * User-configured preferences that bias Tab 4 ranking. Card type is a
+ * HARD filter (most users can't apply for business cards without an ABN,
+ * so hiding them is the right default). Rewards programs are a SOFT
+ * boost — preferred cards rank higher, but non-preferred cards still
+ * appear so the absolute best move is always visible.
+ *
+ * Stored client-side only; not synced to the server.
+ */
+export type CardTypePreference = 'personal' | 'personal_and_business' | 'business';
+
+export interface UserPreferences {
+  /** Empty array = no preference (treat all as equally good). Non-empty
+   *  array boosts cards whose rewards program is in the list. */
+  preferredPrograms: RewardsProgram[];
+  cardType: CardTypePreference;
+}
+
+export const DEFAULT_USER_PREFERENCES: UserPreferences = {
+  preferredPrograms: [],
+  cardType: 'personal',
+};

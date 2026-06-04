@@ -1,10 +1,11 @@
 'use client';
 
-import { Sparkles, PlusCircle } from 'lucide-react';
-import { useMemo, useState } from 'react';
+import { Sparkles, PlusCircle, Sliders } from 'lucide-react';
+import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { useUserCardsStore } from '@/store/user-cards';
 import { selectRecommendations } from '@/store/user-cards';
+import { useUserPreferencesStore } from '@/store/user-preferences';
 import { BestMoveHero } from '@/components/next-card/best-move-hero';
 import { EligibleSummary } from '@/components/next-card/eligible-summary';
 import { UpcomingList } from '@/components/next-card/upcoming-list';
@@ -16,6 +17,7 @@ import {
   type SortFilterValue,
 } from '@/components/next-card/sort-filter-bar';
 import { ProgramPills } from '@/components/next-card/program-pills';
+import { PreferencesModal } from '@/components/next-card/preferences-modal';
 import { TripleTapHeader } from '@/components/triple-tap-header';
 
 /**
@@ -26,11 +28,16 @@ import { TripleTapHeader } from '@/components/triple-tap-header';
 export default function NextCardPage() {
   const loaded = useUserCardsStore((s) => s.loaded);
   const userCards = useUserCardsStore((s) => s.userCards);
+  // Pull current preferences so the engine can bias ranking. Subscribing
+  // here means edits to preferences (via the prefs modal) re-rank Tab 4
+  // immediately, no refresh.
+  const preferences = useUserPreferencesStore((s) => s.preferences);
+  const prefsLoaded = useUserPreferencesStore((s) => s.loaded);
 
   // Recompute recommendations on every store change. Cheap; see file header.
   const recommendations = useMemo(
-    () => selectRecommendations({ userCards, loaded, error: null } as never),
-    [userCards, loaded],
+    () => selectRecommendations({ userCards, loaded, error: null } as never, preferences),
+    [userCards, loaded, preferences],
   );
 
   const [sortFilter, setSortFilter] = useState<SortFilterValue>({
@@ -41,6 +48,18 @@ export default function NextCardPage() {
     () => applySortFilter(recommendations, sortFilter),
     [recommendations, sortFilter],
   );
+
+  // Preferences modal — open when user explicitly taps the chip, OR
+  // auto-open once on first visit (after both stores hydrate) if the user
+  // has never been prompted. Stops the user from staring at unfiltered
+  // 30-card lists wondering why the ranking is what it is.
+  const promptedAt = useUserPreferencesStore((s) => s.promptedAt);
+  const [prefsOpen, setPrefsOpen] = useState(false);
+  useEffect(() => {
+    if (!prefsLoaded || !loaded) return;
+    if (promptedAt) return; // already prompted at least once
+    setPrefsOpen(true);
+  }, [prefsLoaded, loaded, promptedAt]);
 
   // Hero is always rank #1 from the unfiltered, priority-sorted list.
   const hero = recommendations[0];
@@ -65,6 +84,26 @@ export default function NextCardPage() {
 
       {loaded && hero && (
         <>
+          {/* Preferences chip — shows current settings, taps to edit. Sits
+              above the hero so the user sees the filter context that's
+              shaping the recommendation below. */}
+          <div className="mt-3 flex items-center justify-between gap-2 rounded-full border border-zinc-200 bg-white px-3 py-1.5 text-xs dark:border-zinc-800 dark:bg-zinc-900">
+            <span className="inline-flex items-center gap-1.5 text-zinc-500">
+              <Sliders className="h-3.5 w-3.5" aria-hidden />
+              Preferences:
+            </span>
+            <span className="flex-1 truncate text-zinc-700 dark:text-zinc-300">
+              {summarisePrefs(preferences)}
+            </span>
+            <button
+              type="button"
+              onClick={() => setPrefsOpen(true)}
+              className="rounded-full bg-zinc-100 px-2 py-0.5 text-[11px] font-medium text-zinc-700 hover:bg-zinc-200 dark:bg-zinc-800 dark:text-zinc-300"
+            >
+              Edit
+            </button>
+          </div>
+
           <div className="mt-3">
             <BestMoveHero rec={hero} />
           </div>
@@ -155,6 +194,33 @@ export default function NextCardPage() {
           </Link>
         </div>
       )}
+
+      {prefsOpen && <PreferencesModal onClose={() => setPrefsOpen(false)} />}
     </main>
   );
+}
+
+// Short human-readable summary of the user's current preferences, shown
+// on the chip. e.g. "Qantas · Velocity · Personal only" or "All programs ·
+// Personal only" when no programs selected.
+function summarisePrefs(prefs: {
+  preferredPrograms: string[];
+  cardType: 'personal' | 'personal_and_business' | 'business';
+}): string {
+  const programLabels: Record<string, string> = {
+    qantas: 'Qantas',
+    velocity: 'Velocity',
+    flexible: 'Amex',
+    bank: 'Bank',
+  };
+  const cardTypeLabels: Record<string, string> = {
+    personal: 'Personal',
+    personal_and_business: 'Personal + Business',
+    business: 'Business',
+  };
+  const programPart =
+    prefs.preferredPrograms.length === 0
+      ? 'All programs'
+      : prefs.preferredPrograms.map((p) => programLabels[p] ?? p).join(' · ');
+  return `${programPart} · ${cardTypeLabels[prefs.cardType] ?? prefs.cardType}`;
 }

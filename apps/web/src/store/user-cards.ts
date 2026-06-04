@@ -157,10 +157,19 @@ export function selectUserCardsWithDetails(state: UserCardsState): UserCardWithD
   return out;
 }
 
-/** Recommendations sorted by priority desc. */
-export function selectRecommendations(state: UserCardsState): Recommendation[] {
+/**
+ * Recommendations sorted by priority desc. Optional `preferences` biases
+ * the ranking — hides cards whose card type doesn't match the user's
+ * choice and boosts cards whose rewards program is in the preferred list.
+ * Callers without preferences get the legacy "best move regardless"
+ * behaviour.
+ */
+export function selectRecommendations(
+  state: UserCardsState,
+  preferences?: import('@ph/shared').UserPreferences,
+): Recommendation[] {
   const details = selectUserCardsWithDetails(state);
-  return generateRecommendations(getCardsWithIssuer(), details, getIssuers());
+  return generateRecommendations(getCardsWithIssuer(), details, getIssuers(), preferences);
 }
 
 /** Eligibility result for one specific card id from the catalogue. */
