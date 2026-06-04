@@ -70,7 +70,11 @@ export default function NextCardPage() {
           </div>
 
           <div className="mt-6">
-            <EligibleSummary recommendations={recommendations} />
+            <EligibleSummary
+              recommendations={recommendations}
+              activeFilter={sortFilter.filter}
+              onFilterChange={(next) => setSortFilter({ ...sortFilter, filter: next })}
+            />
           </div>
 
           <div className="mt-6 space-y-2">
