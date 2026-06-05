@@ -50,14 +50,17 @@ export function CardRow({ rec, rank }: { rec: Recommendation; rank?: number }) {
           <span> · </span>
           <span>{card.issuer.shortName}</span>
         </p>
-        {/* "Why this card" — surfaces the personalisation + ranking signal
-            in one line. Sparkles emerald to read as a positive cue. Only
-            renders when at least one tag is meaningful, so the row stays
-            uncluttered for users with no preferences set. */}
+        {/* "Why this card" — surfaces the personalisation + ranking signal.
+            Sparkles emerald to read as a positive cue. Only renders when at
+            least one tag is meaningful so the row stays uncluttered for
+            users with no preferences set.
+            Uses `flex` (not inline-flex) + a wrapping span so the text
+            can break onto a second line on narrow viewports instead of
+            overflowing the row container. */}
         {whyTags.length > 0 && (
-          <p className="mt-1 inline-flex items-center gap-1 text-[11px] font-medium text-emerald-700 dark:text-emerald-300">
-            <Sparkles className="h-3 w-3 flex-none" aria-hidden />
-            <span className="truncate">{whyTags.join(' · ')}</span>
+          <p className="mt-1 flex items-start gap-1 text-[11px] font-medium leading-snug text-emerald-700 dark:text-emerald-300">
+            <Sparkles className="mt-0.5 h-3 w-3 flex-none" aria-hidden />
+            <span className="min-w-0 break-words">{whyTags.join(' · ')}</span>
           </p>
         )}
       </div>

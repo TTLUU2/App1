@@ -11,10 +11,17 @@
     "test": "echo 'no app-level tests yet' && exit 0",
     "db:push": "dotenv -e .env.local -- drizzle-kit push",
     "db:generate": "dotenv -e .env.local -- drizzle-kit generate",
-    "db:studio": "dotenv -e .env.local -- drizzle-kit studio"
+    "db:studio": "dotenv -e .env.local -- drizzle-kit studio",
+    "cap:add:ios": "cap add ios",
+    "cap:sync": "cap sync",
+    "cap:open:ios": "cap open ios",
+    "cap:assets": "capacitor-assets generate --ios --assetPath capacitor-assets"
   },
   "dependencies": {
     "@ai-sdk/anthropic": "^3.0.80",
+    "@capacitor/core": "^8.4.0",
+    "@capacitor/ios": "^8.4.0",
+    "@capacitor/push-notifications": "^8.1.1",
     "@neondatabase/serverless": "^1.1.0",
     "@ph/shared": "workspace:*",
     "@radix-ui/react-dialog": "^1.1.15",
@@ -31,6 +38,8 @@
     "zustand": "^5.0.14"
   },
   "devDependencies": {
+    "@capacitor/assets": "^3.0.5",
+    "@capacitor/cli": "^8.4.0",
     "@tailwindcss/postcss": "^4",
     "@types/node": "^25",
     "@types/react": "^19",

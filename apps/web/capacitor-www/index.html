@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="en-AU">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover" />
+    <title>PH Copilot</title>
+    <style>
+      html,
+      body {
+        margin: 0;
+        height: 100%;
+        background: #dc2626;
+      }
+      .loading {
+        display: grid;
+        place-items: center;
+        height: 100%;
+        color: white;
+        font-family: -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+        font-size: 48px;
+        font-weight: 800;
+        letter-spacing: -1px;
+      }
+    </style>
+  </head>
+  <body>
+    <!-- Loading shell — visible for ~1 frame before WKWebView navigates
+         to server.url (the live Vercel deploy). -->
+    <div class="loading">PH</div>
+  </body>
+</html>

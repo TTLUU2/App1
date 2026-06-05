@@ -1,0 +1,109 @@
+# Codemagic build pipeline for the Capacitor iOS wrapper.
+#
+# We don't have a Mac, so all Xcode work happens in Codemagic's macOS
+# build VMs. Each build:
+#   1. Pulls fresh Node + pnpm
+#   2. Installs the monorepo with frozen lockfile
+#   3. Runs `cap add ios` in apps/web to generate the Xcode project
+#      from scratch (we don't commit ios/, since regenerating is fast
+#      and avoids merge headaches)
+#   4. pod install
+#   5. Archives + exports a signed .ipa
+#   6. Uploads to TestFlight via the App Store Connect API
+#
+# Free tier: 500 build minutes/month. A typical iOS build runs 8–12
+# minutes so that's ~40 builds/month, plenty for early TestFlight.
+
+workflows:
+  ios-testflight:
+    name: iOS — TestFlight
+    instance_type: mac_mini_m2
+    max_build_duration: 60
+
+    environment:
+      groups:
+        # Encrypted in Codemagic UI. Need to be populated BEFORE first
+        # build (see CAPACITOR_TESTFLIGHT.md for setup steps).
+        - app_store_credentials
+      vars:
+        XCODE_WORKSPACE: 'App.xcworkspace'
+        XCODE_SCHEME: 'App'
+        BUNDLE_ID: 'com.pointhacks.copilot'
+      node: 20.18.0
+      xcode: latest
+      cocoapods: default
+
+    integrations:
+      # Configured in Codemagic UI: Settings → Integrations → App Store
+      # Connect. Pulls Issuer ID, Key ID, and the .p8 private key.
+      app_store_connect: pointhacks_appstore
+
+    triggering:
+      events:
+        - push
+      branch_patterns:
+        - pattern: 'mobile/*'
+          include: true
+          source: true
+        - pattern: 'main'
+          include: false
+
+    scripts:
+      - name: Install pnpm
+        script: |
+          npm install -g pnpm@10.33.1
+
+      - name: Install workspace dependencies
+        script: |
+          pnpm install --frozen-lockfile
+
+      - name: Generate iOS project via Capacitor
+        script: |
+          cd apps/web
+          # cap add ios is idempotent-ish — re-runs are safe but slow.
+          # We rebuild from scratch each time so the iOS project
+          # matches the current capacitor.config.ts.
+          npx cap add ios || true
+          npx cap sync ios
+
+      - name: Set bundle version + build number from Codemagic counter
+        script: |
+          cd apps/web/ios/App
+          # Build number = Codemagic's auto-incrementing counter, so
+          # TestFlight always accepts the upload as "newer".
+          agvtool new-version -all $BUILD_NUMBER
+          # Bundle version (CFBundleShortVersionString) stays semver —
+          # bumped by hand in the Info.plist when shipping milestones.
+
+      - name: Install CocoaPods
+        script: |
+          cd apps/web/ios/App
+          pod install
+
+      - name: Set up code signing
+        script: |
+          # Codemagic's App Store Connect integration auto-provisions
+          # the signing certificate + profile under the hood; this
+          # script asks the keychain to use them for the archive step.
+          xcode-project use-profiles
+
+      - name: Archive + export .ipa
+        script: |
+          cd apps/web/ios/App
+          xcode-project build-ipa \
+            --workspace "$XCODE_WORKSPACE" \
+            --scheme "$XCODE_SCHEME"
+
+    artifacts:
+      - apps/web/ios/App/build/ios/ipa/*.ipa
+      - /tmp/xcodebuild_logs/*.log
+
+    publishing:
+      app_store_connect:
+        auth: integration
+        submit_to_testflight: true
+        # Auto-share to the internal testers group on every successful
+        # build. External groups need manual review per build the first
+        # few times, then beta-app review becomes near-instant.
+        beta_groups:
+          - Internal Testers
