@@ -42,17 +42,19 @@ type Status = 'idle' | 'greeting' | 'listening' | 'recording' | 'transcribing' |
 /**
  * Decide which voice-input path to use in this browser.
  *
- * iOS gets the MediaRecorder path even when `webkitSpeechRecognition`
- * exists, because the constructor is present but the actual recognition
- * never completes (a well-known iOS Safari + WKWebView quirk). On iOS
- * PWAs this is the difference between "tap mic, nothing happens" and
- * "tap mic, get transcribed text back".
+ * Prefer SpeechRecognition unconditionally — including on iOS — because
+ * SR gives live interim transcripts (words appear as you speak) which is
+ * what users actually want. The other voice surfaces in this app (the
+ * global mic on Tab 3, the Add Card review walkthrough) use SR directly
+ * and work fine on iOS PWAs, so the previous iOS→MediaRecorder detour
+ * here was overcautious.
+ *
+ * MediaRecorder remains as a last-resort fallback only when SR is
+ * genuinely unavailable (no constructor at all — e.g. headless test
+ * environments or very old browsers).
  */
 function pickVoicePath(): 'sr' | 'record' | 'none' {
   if (typeof window === 'undefined') return 'none';
-  const ua = typeof navigator !== 'undefined' ? navigator.userAgent : '';
-  const isIOS = /iPad|iPhone|iPod/.test(ua);
-  if (isIOS && isRecordingSupported()) return 'record';
   if (isSpeechRecognitionAvailable()) return 'sr';
   if (isRecordingSupported()) return 'record';
   return 'none';
