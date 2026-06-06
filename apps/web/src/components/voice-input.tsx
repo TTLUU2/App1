@@ -71,6 +71,10 @@ export function VoiceInput({
   const [text, setText] = useState(initialValue);
   const [status, setStatus] = useState<Status>('idle');
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  // Live mic volume 0..1, driven by the recorder's VAD. Powers the
+  // pulsing level dots while recording so iOS users get feedback the
+  // mic is hearing them (since MediaRecorder gives no live transcript).
+  const [micLevel, setMicLevel] = useState(0);
   const recognitionRef = useRef<SpeechRecognitionInstance | null>(null);
   const recorderRef = useRef<VoiceRecorder | null>(null);
   const hasGreeted = useRef(false);
@@ -126,13 +130,31 @@ export function VoiceInput({
   // Stops the active recorder, sends the audio blob to /api/transcribe,
   // and drops the returned text into the input. Used on iOS PWAs where
   // browser SpeechRecognition doesn't work.
+  //
+  // VAD + level meter: the recorder fires onLevel during recording (we
+  // mirror to micLevel state for the UI's pulsing dots) and fires
+  // onAutoStop once the user has been silent for ~1.2s after speaking.
+  // The auto-stop triggers stopRecordingAndTranscribe, which gives the
+  // user a "speak naturally, stop naturally" experience without needing
+  // to tap mic twice.
   async function beginRecording() {
     try {
-      const rec = await createVoiceRecorder();
+      const rec = await createVoiceRecorder({
+        onLevel: (level) => setMicLevel(level),
+        onAutoStop: () => {
+          // Recorder detected silence. Finish + transcribe + auto-submit.
+          // Guard against double-fire if the user manually tapped stop
+          // at roughly the same moment.
+          if (recorderRef.current === rec) {
+            void stopRecordingAndTranscribe();
+          }
+        },
+      });
       recorderRef.current = rec;
       rec.start();
       setStatus('recording');
       setErrorMessage(null);
+      setMicLevel(0);
     } catch (err) {
       setStatus('error');
       setErrorMessage(
@@ -380,7 +402,10 @@ export function VoiceInput({
         </p>
       )}
       {status === 'recording' && (
-        <p className="mt-2 text-[11px] text-zinc-500">Listening… tap mic again to finish.</p>
+        <div className="mt-2 flex items-center gap-2 text-[11px] text-zinc-500">
+          <LevelMeter level={micLevel} />
+          <span>Listening… stop speaking and I&apos;ll wrap up.</span>
+        </div>
       )}
       {status === 'transcribing' && <p className="mt-2 text-[11px] text-zinc-500">Transcribing…</p>}
       {errorMessage && (
@@ -394,5 +419,35 @@ export function VoiceInput({
       )}
       {hint && <div className="mt-2 text-[11px] text-zinc-500">{hint}</div>}
     </div>
+  );
+}
+
+/**
+ * Five-dot equalizer-style level meter. Each dot grows + brightens
+ * based on the current RMS volume. Pure visual signal that the mic is
+ * hearing the user — critical UX patch on iOS where MediaRecorder
+ * can't show live transcripts.
+ */
+function LevelMeter({ level }: { level: number }) {
+  // Sensitivity knob. Real-world speech RMS hovers 0.05–0.3; multiplier
+  // expands that to a 0..1 scale that drives visual fullness.
+  const scaled = Math.min(1, level * 4);
+  // Each dot lights up at a different threshold so the meter reads as
+  // a rising waveform, not a single brightness change.
+  const thresholds = [0.05, 0.2, 0.4, 0.6, 0.8];
+  return (
+    <span className="inline-flex h-3 items-end gap-0.5" aria-hidden>
+      {thresholds.map((t, i) => {
+        const active = scaled >= t;
+        const height = active ? Math.min(12, 4 + (scaled - t) * 16) : 3;
+        return (
+          <span
+            key={i}
+            className={`w-0.5 rounded-full transition-all duration-75 ${active ? 'bg-[var(--color-ph-red)]' : 'bg-zinc-300 dark:bg-zinc-600'}`}
+            style={{ height: `${height}px` }}
+          />
+        );
+      })}
+    </span>
   );
 }

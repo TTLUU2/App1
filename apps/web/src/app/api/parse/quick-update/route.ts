@@ -38,9 +38,14 @@ const REQUEST_SCHEMA = z.object({
 
 const PARSE_SCHEMA = z.object({
   kind: z
-    .enum(['spend', 'benefit', 'unknown'])
+    .enum(['spend', 'benefit', 'question', 'unknown'])
     .describe(
-      'spend = the user is logging a transaction amount against a card. benefit = the user used / redeemed a card benefit. unknown = ambiguous or out-of-scope phrase.',
+      'spend = the user is logging a transaction amount against a card ("add 250 to amex"). ' +
+        'benefit = the user used / redeemed a card benefit ("used my hotel credit"). ' +
+        'question = the user is asking the Copilot anything about their cards, eligibility, ' +
+        'fees, benefits, or strategy ("when does my westpac fee hit?", "should I cancel my amex?", ' +
+        'how many points have I earned?"). ' +
+        'unknown = truly ambiguous, off-topic, or unparseable.',
     ),
   amount: z
     .number()
@@ -99,7 +104,16 @@ export async function POST(req: NextRequest) {
     const output = await generateStructuredObject({
       schema: PARSE_SCHEMA,
       instructions:
-        'You parse short spoken/typed phrases from the Card Optimisation dashboard. The user is logging either a spend ("add 250 to amex plat") or a benefit redemption ("used my hotel credit"). Pick which kind they meant, then fill the corresponding fields. Return kind="unknown" with all nulls when truly ambiguous.',
+        'You parse short spoken/typed phrases from the Card Optimisation dashboard. ' +
+        'The user could be: ' +
+        '(1) LOGGING A SPEND — "add 250 to amex plat" → kind=spend, fill amount + spendCardId. ' +
+        '(2) MARKING A BENEFIT USED — "used my hotel credit" → kind=benefit, fill benefit fields. ' +
+        '(3) ASKING A QUESTION — "when does my westpac fee hit?", "should I cancel my amex?", ' +
+        '"what should my next card be?", "how am I tracking on min spend?" → kind=question, all ' +
+        'spend/benefit fields null (the client will pass the original utterance to Copilot). ' +
+        'Prefer "question" over "unknown" whenever the utterance is interrogative or seeking ' +
+        'advice/info, even if it mentions cards by name. Only use "unknown" for genuinely ' +
+        'off-topic or garbled input.',
       userText: `Held cards:\n${heldList}\n\nBenefits on held cards:\n${benefitList}\n\nUtterance: ${parsed.data.utterance}`,
     });
     return NextResponse.json(output);

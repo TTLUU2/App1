@@ -12,8 +12,17 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { AlertTriangle, CheckCircle2, Mic, MicOff, Pencil, Send, Undo2 } from 'lucide-react';
 import clsx from 'clsx';
 import { getAllBenefits } from '@ph/shared';
-import { selectUserCardsWithDetails, useUserCardsStore } from '@/store/user-cards';
+import {
+  selectUserCardsWithDetails,
+  selectRecommendations,
+  useUserCardsStore,
+} from '@/store/user-cards';
 import { useUserBenefitsStore } from '@/store/user-benefits';
+import { useUserPreferencesStore } from '@/store/user-preferences';
+import { buildAskContext } from '@/lib/ask-context';
+import { speak } from '@/lib/tts';
+import { todayIsoDate } from '@/lib/time';
+import { MessageCircle } from 'lucide-react';
 import {
   getSpeechRecognitionCtor,
   isSpeechRecognitionAvailable,
@@ -37,7 +46,15 @@ interface LastBenefit {
 }
 type LastApplied = LastSpend | LastBenefit;
 
-type Phase = 'idle' | 'listening' | 'transcribed' | 'parsing' | 'gov_check' | 'done' | 'error';
+type Phase =
+  | 'idle'
+  | 'listening'
+  | 'transcribed' // legacy intermediate state (text shown, awaiting Apply tap) — preserved for text-input flow, voice flow now skips it
+  | 'parsing'
+  | 'gov_check'
+  | 'answering' // Copilot answering an inline question
+  | 'done'
+  | 'error';
 
 interface PendingSpend {
   userCardId: string;
@@ -83,6 +100,28 @@ export function CardUpdateCard() {
   const [lastApplied, setLastApplied] = useState<LastApplied | null>(null);
   const [undoExpiresAt, setUndoExpiresAt] = useState<number>(0);
   const [pendingSpend, setPendingSpend] = useState<PendingSpend | null>(null);
+  // Copilot answer for inline question-routing. Set when kind === 'question'
+  // in the parse response. Cleared on next voice/text submission.
+  const [lastAnswer, setLastAnswer] = useState<{ question: string; answer: string } | null>(null);
+
+  // Extra context for the Copilot answer path. Cancelled cards + the full
+  // recommendation list + preferences let buildAskContext produce the same
+  // grounded answers the /ask page does.
+  const allUserCards = useMemo(
+    () => selectUserCardsWithDetails({ userCards, loaded, error: null } as never),
+    [userCards, loaded],
+  );
+  const cancelledCards = useMemo(
+    () => allUserCards.filter((c) => c.cancellationDate),
+    [allUserCards],
+  );
+  const preferences = useUserPreferencesStore((s) => s.preferences);
+  const recommendations = useMemo(
+    () => selectRecommendations({ userCards, loaded, error: null } as never, preferences),
+    [userCards, loaded, preferences],
+  );
+  const allBenefitsForContext = useMemo(() => getAllBenefits(), []);
+  const allRedemptions = useUserBenefitsStore((s) => s.redemptions);
 
   useEffect(() => {
     return () => {
@@ -139,10 +178,17 @@ export function CardUpdateCard() {
         setPhase('error');
       };
       r.onend = () => {
+        const trimmed = finalText.trim();
         setPhase((p) => {
           if (p !== 'listening') return p;
-          // If the user got something, advance to transcribed; else back to idle.
-          return finalText.trim().length > 0 ? 'transcribed' : 'idle';
+          // Voice path now AUTO-SUBMITS — no intermediate 'transcribed'
+          // tap step. User taps mic, speaks, mic detects end → straight
+          // to parsing. The undo toast + gov-check still give a safety
+          // net for spend, and the answer panel for questions is
+          // explicitly dismissable. Empty transcript falls back to idle.
+          if (trimmed.length === 0) return 'idle';
+          void submitTranscript(trimmed);
+          return 'parsing';
         });
       };
 
@@ -185,7 +231,7 @@ export function CardUpdateCard() {
       });
       const json = (await res.json()) as
         | {
-            kind: 'spend' | 'benefit' | 'unknown';
+            kind: 'spend' | 'benefit' | 'question' | 'unknown';
             amount: number | null;
             spendCardId: string | null;
             benefitUserCardId: string | null;
@@ -195,6 +241,41 @@ export function CardUpdateCard() {
         | { error: string };
       if (!res.ok || 'error' in json) {
         throw new Error('error' in json ? json.error : 'Parse failed');
+      }
+      if (json.kind === 'question') {
+        // Route to the Copilot. Inline answer panel below the mic; also
+        // spoken aloud via the global TTS toggle (the speak() call
+        // respects the user's voice-mute preference).
+        setPhase('answering');
+        try {
+          const context = buildAskContext({
+            heldCards,
+            cancelledCards,
+            recommendations,
+            benefits: allBenefitsForContext,
+            redemptions: allRedemptions,
+            today: todayIsoDate(),
+          });
+          const askRes = await fetch('/api/ask', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ question: utterance, context }),
+          });
+          const askJson = (await askRes.json()) as
+            | { answer: string; inScope: boolean }
+            | { error: string };
+          if (!askRes.ok || 'error' in askJson) {
+            throw new Error('error' in askJson ? askJson.error : 'Ask failed');
+          }
+          setLastAnswer({ question: utterance, answer: askJson.answer });
+          void speak(askJson.answer);
+          setTranscript('');
+          setPhase('done');
+        } catch (err) {
+          setError(err instanceof Error ? err.message : String(err));
+          setPhase('error');
+        }
+        return;
       }
       if (json.kind === 'spend' && json.spendCardId && json.amount != null) {
         const uc = heldCards.find((c) => c.id === json.spendCardId);
@@ -234,7 +315,7 @@ export function CardUpdateCard() {
         setPhase('done');
       } else {
         setError(
-          "Couldn't tell if that was a spend or a benefit. Try again with the amount or the benefit name.",
+          "Couldn't tell what you wanted. Try again with an amount, a benefit name, or a question.",
         );
         setPhase('error');
       }
@@ -281,7 +362,9 @@ export function CardUpdateCard() {
   const undoActive = lastApplied != null && nowMs() < undoExpiresAt;
 
   // Big centred mic state visuals.
-  const micBusy = phase === 'parsing';
+  // 'parsing' (deciding intent) and 'answering' (Copilot composing) both
+  // disable the mic with the same "busy" visual.
+  const micBusy = phase === 'parsing' || phase === 'answering';
   const micActive = phase === 'listening';
 
   return (
@@ -331,8 +414,10 @@ export function CardUpdateCard() {
           {micActive
             ? 'Listening… tap to finish'
             : micBusy
-              ? 'Working…'
-              : 'Tap to update spend or mark a benefit used'}
+              ? phase === 'answering'
+                ? 'Asking Copilot…'
+                : 'Working…'
+              : 'Log spend, mark a benefit, or ask anything'}
         </p>
         {!supported && (
           <p className="text-center text-[11px] text-zinc-500">
@@ -463,6 +548,36 @@ export function CardUpdateCard() {
             <Undo2 className="h-3 w-3" aria-hidden />
             Undo
           </button>
+        </div>
+      )}
+
+      {/* Inline Copilot answer — appears when the parse routed the
+          utterance to a question. Stays visible until the user dismisses
+          or asks something else. Spoken aloud via speak() above. */}
+      {lastAnswer && (
+        <div className="mt-3 rounded-lg border border-zinc-200 bg-zinc-50 p-3 text-xs dark:border-zinc-800 dark:bg-zinc-950/40">
+          <div className="flex items-start gap-2">
+            <MessageCircle
+              className="mt-0.5 h-3.5 w-3.5 flex-none text-[var(--color-ph-red)]"
+              aria-hidden
+            />
+            <div className="min-w-0 flex-1">
+              <p className="text-[10px] uppercase tracking-wide text-zinc-500">
+                Copilot · &ldquo;{lastAnswer.question}&rdquo;
+              </p>
+              <p className="mt-1 leading-snug text-zinc-700 dark:text-zinc-300">
+                {lastAnswer.answer}
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => setLastAnswer(null)}
+              aria-label="Dismiss answer"
+              className="text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300"
+            >
+              ×
+            </button>
+          </div>
         </div>
       )}
     </section>
