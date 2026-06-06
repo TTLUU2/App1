@@ -170,9 +170,15 @@ export interface UserPreferences {
    *  array boosts cards whose rewards program is in the list. */
   preferredPrograms: RewardsProgram[];
   cardType: CardTypePreference;
+  /** Global toggle for spoken voice output (TTS). When false, every
+   *  speak() call short-circuits — mount greetings, post-save welcomes,
+   *  Copilot answers, the voice review walkthrough all stay silent.
+   *  Voice INPUT (the mic) is unaffected by this setting. */
+  voiceOutputEnabled: boolean;
 }
 
 export const DEFAULT_USER_PREFERENCES: UserPreferences = {
   preferredPrograms: [],
   cardType: 'personal',
+  voiceOutputEnabled: true,
 };

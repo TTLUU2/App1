@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from 'next';
 import { TabBar } from '@/components/tab-bar';
 import { StoreHydrator } from '@/components/store-hydrator';
 import { ThemeToggle, THEME_INIT_SCRIPT } from '@/components/theme-toggle';
+import { VoiceToggle } from '@/components/voice-toggle';
 import './globals.css';
 
 export const metadata: Metadata = {
@@ -48,11 +49,12 @@ export default function RootLayout({
             The bottom tab bar is fixed; we reserve space with bottom padding. */}
         <StoreHydrator />
 
-        {/* Global theme toggle — always visible top-right, doesn't scroll. */}
-        <div className="fixed right-3 top-3 z-40">
-          <div className="rounded-full bg-white/80 backdrop-blur ring-1 ring-zinc-200 dark:bg-zinc-900/80 dark:ring-zinc-800">
-            <ThemeToggle />
-          </div>
+        {/* Global controls — voice mute + theme toggle. Always visible
+            top-right, don't scroll with content. Voice toggle silences
+            every speak() call across the app; mic input is independent. */}
+        <div className="fixed right-3 top-3 z-40 flex gap-1 rounded-full bg-white/80 p-0.5 backdrop-blur ring-1 ring-zinc-200 dark:bg-zinc-900/80 dark:ring-zinc-800">
+          <VoiceToggle />
+          <ThemeToggle />
         </div>
 
         <div className="mx-auto flex min-h-dvh max-w-md flex-col pb-24">{children}</div>

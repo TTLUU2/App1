@@ -10,13 +10,14 @@
 // confirms, so a misheard phrase can be corrected in place.
 
 import { useEffect, useRef, useState } from 'react';
-import { Mic, MicOff, Send, AlertCircle, Volume2 } from 'lucide-react';
+import { Mic, MicOff, Send, AlertCircle, Volume2, Loader2 } from 'lucide-react';
 import {
   getSpeechRecognitionCtor,
   isSpeechRecognitionAvailable,
   type SpeechRecognitionInstance,
 } from '@/lib/speech';
 import { cancelSpeech, speak } from '@/lib/tts';
+import { createVoiceRecorder, isRecordingSupported, type VoiceRecorder } from '@/lib/voice-record';
 
 export interface VoiceInputProps {
   placeholder?: string;
@@ -36,7 +37,26 @@ export interface VoiceInputProps {
   micGreeting?: string;
 }
 
-type Status = 'idle' | 'greeting' | 'listening' | 'error';
+type Status = 'idle' | 'greeting' | 'listening' | 'recording' | 'transcribing' | 'error';
+
+/**
+ * Decide which voice-input path to use in this browser.
+ *
+ * iOS gets the MediaRecorder path even when `webkitSpeechRecognition`
+ * exists, because the constructor is present but the actual recognition
+ * never completes (a well-known iOS Safari + WKWebView quirk). On iOS
+ * PWAs this is the difference between "tap mic, nothing happens" and
+ * "tap mic, get transcribed text back".
+ */
+function pickVoicePath(): 'sr' | 'record' | 'none' {
+  if (typeof window === 'undefined') return 'none';
+  const ua = typeof navigator !== 'undefined' ? navigator.userAgent : '';
+  const isIOS = /iPad|iPhone|iPod/.test(ua);
+  if (isIOS && isRecordingSupported()) return 'record';
+  if (isSpeechRecognitionAvailable()) return 'sr';
+  if (isRecordingSupported()) return 'record';
+  return 'none';
+}
 
 export function VoiceInput({
   placeholder,
@@ -52,13 +72,25 @@ export function VoiceInput({
   const [status, setStatus] = useState<Status>('idle');
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const recognitionRef = useRef<SpeechRecognitionInstance | null>(null);
+  const recorderRef = useRef<VoiceRecorder | null>(null);
   const hasGreeted = useRef(false);
-  const supported = isSpeechRecognitionAvailable();
+  // Decide path once per mount. iOS gets MediaRecorder; everyone else
+  // gets browser SpeechRecognition where available.
+  const voicePath = useRef<'sr' | 'record' | 'none'>('none');
+  if (voicePath.current === 'none' && typeof window !== 'undefined') {
+    voicePath.current = pickVoicePath();
+  }
+  const supported = voicePath.current !== 'none';
 
   useEffect(() => {
     return () => {
       try {
         recognitionRef.current?.abort();
+      } catch {
+        /* ignore */
+      }
+      try {
+        recorderRef.current?.cancel();
       } catch {
         /* ignore */
       }
@@ -81,7 +113,63 @@ export function VoiceInput({
         /* don't block recognition if TTS fails */
       }
     }
-    beginRecognition();
+    if (voicePath.current === 'record') {
+      void beginRecording();
+    } else {
+      beginRecognition();
+    }
+  }
+
+  // Stops the active recorder, sends the audio blob to /api/transcribe,
+  // and drops the returned text into the input. Used on iOS PWAs where
+  // browser SpeechRecognition doesn't work.
+  async function beginRecording() {
+    try {
+      const rec = await createVoiceRecorder();
+      recorderRef.current = rec;
+      rec.start();
+      setStatus('recording');
+      setErrorMessage(null);
+    } catch (err) {
+      setStatus('error');
+      setErrorMessage(
+        err instanceof Error && err.name === 'NotAllowedError'
+          ? 'Microphone permission denied. Allow access in Settings → PH Copilot.'
+          : err instanceof Error
+            ? err.message
+            : String(err),
+      );
+    }
+  }
+
+  async function stopRecordingAndTranscribe() {
+    const rec = recorderRef.current;
+    if (!rec) {
+      setStatus('idle');
+      return;
+    }
+    setStatus('transcribing');
+    try {
+      const blob = await rec.stop();
+      recorderRef.current = null;
+
+      const form = new FormData();
+      form.append('audio', blob, 'recording');
+
+      const res = await fetch('/api/transcribe', { method: 'POST', body: form });
+      const json = (await res.json()) as { text?: string; error?: string };
+      if (!res.ok || !json.text) {
+        throw new Error(json.error ?? `transcribe ${res.status}`);
+      }
+
+      // Append rather than replace — lets the user record multiple
+      // takes or combine with typed text already in the field.
+      setText((prev) => (prev ? `${prev} ${json.text}`.trim() : json.text!.trim()));
+      setStatus('idle');
+    } catch (err) {
+      setStatus('error');
+      setErrorMessage(err instanceof Error ? err.message : String(err));
+    }
   }
 
   function beginRecognition() {
@@ -150,7 +238,38 @@ export function VoiceInput({
     } catch {
       /* ignore */
     }
+    try {
+      recorderRef.current?.cancel();
+    } catch {
+      /* ignore */
+    }
+    recorderRef.current = null;
     setStatus('idle');
+  }
+
+  // Mic button click dispatcher. Behavior depends on current status +
+  // which voice path we're using (SR vs MediaRecorder).
+  function handleMicClick() {
+    if (status === 'greeting') {
+      cancelInteraction();
+      return;
+    }
+    if (status === 'listening') {
+      stopListening();
+      return;
+    }
+    if (status === 'recording') {
+      // User tapped to finish recording — stop + transcribe.
+      void stopRecordingAndTranscribe();
+      return;
+    }
+    if (status === 'transcribing') {
+      // Mid-transcription tap = cancel (we can't actually abort the
+      // in-flight request mid-fetch; just reset state).
+      setStatus('idle');
+      return;
+    }
+    void startListening();
   }
 
   function trySubmit() {
@@ -178,28 +297,34 @@ export function VoiceInput({
         {supported && (
           <button
             type="button"
-            onClick={
-              status === 'listening' || status === 'greeting' ? cancelInteraction : startListening
-            }
-            disabled={disabled}
+            onClick={handleMicClick}
+            disabled={disabled || status === 'transcribing'}
             aria-label={
               status === 'greeting'
                 ? 'Speaking — tap to skip'
                 : status === 'listening'
                   ? 'Stop voice input'
-                  : 'Start voice input'
+                  : status === 'recording'
+                    ? 'Stop recording and transcribe'
+                    : status === 'transcribing'
+                      ? 'Transcribing…'
+                      : 'Start voice input'
             }
-            aria-pressed={status === 'listening' || status === 'greeting'}
+            aria-pressed={status === 'listening' || status === 'greeting' || status === 'recording'}
             className={`grid h-9 w-9 flex-none place-items-center rounded-full transition-colors ${
-              status === 'listening' || status === 'greeting'
+              status === 'listening' || status === 'greeting' || status === 'recording'
                 ? 'animate-pulse bg-[var(--color-ph-red)] text-white'
-                : 'text-zinc-600 hover:bg-zinc-100 dark:text-zinc-300 dark:hover:bg-zinc-800'
+                : status === 'transcribing'
+                  ? 'bg-zinc-200 text-zinc-500 dark:bg-zinc-800'
+                  : 'text-zinc-600 hover:bg-zinc-100 dark:text-zinc-300 dark:hover:bg-zinc-800'
             }`}
           >
             {status === 'greeting' ? (
               <Volume2 className="h-4 w-4" aria-hidden />
-            ) : status === 'listening' ? (
+            ) : status === 'listening' || status === 'recording' ? (
               <MicOff className="h-4 w-4" aria-hidden />
+            ) : status === 'transcribing' ? (
+              <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
             ) : (
               <Mic className="h-4 w-4" aria-hidden />
             )}
@@ -229,10 +354,13 @@ export function VoiceInput({
       {!supported && (
         <p className="mt-2 flex items-start gap-1.5 text-[11px] text-zinc-500">
           <AlertCircle className="mt-0.5 h-3 w-3 flex-none" aria-hidden />
-          Voice input isn’t supported in this browser. Type instead. Chrome, Edge, and Safari
-          support voice.
+          Voice input isn’t supported in this browser. Type instead.
         </p>
       )}
+      {status === 'recording' && (
+        <p className="mt-2 text-[11px] text-zinc-500">Listening… tap mic again to finish.</p>
+      )}
+      {status === 'transcribing' && <p className="mt-2 text-[11px] text-zinc-500">Transcribing…</p>}
       {errorMessage && (
         <p
           role="alert"

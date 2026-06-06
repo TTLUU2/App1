@@ -32,6 +32,10 @@ export function cancelSpeech(): void {
 
 export async function speak(text: string, opts: SpeakOptions = {}): Promise<void> {
   if (!text) return;
+  // Respect the global voice-output toggle. Read directly from
+  // localStorage rather than the Zustand store so lib functions don't
+  // need React context. The store writes the same JSON blob.
+  if (!isVoiceOutputEnabled()) return;
   cancelSpeech();
 
   if (opts.forceNative) {
@@ -89,4 +93,21 @@ export function isSpeechAvailable(): boolean {
   // The fallback needs SpeechSynthesis. Either covers us, so default true
   // outside the server. Real failures degrade silently.
   return typeof window !== 'undefined';
+}
+
+// Read the persisted voice-output preference without taking a React
+// dependency. The user-preferences store writes to this same key; we
+// just decode the JSON. Default = ON when no prefs file exists.
+function isVoiceOutputEnabled(): boolean {
+  if (typeof window === 'undefined') return true;
+  try {
+    const raw = window.localStorage.getItem('ph-user-preferences-v1');
+    if (!raw) return true;
+    const parsed = JSON.parse(raw) as {
+      preferences?: { voiceOutputEnabled?: boolean };
+    };
+    return parsed?.preferences?.voiceOutputEnabled !== false;
+  } catch {
+    return true;
+  }
 }

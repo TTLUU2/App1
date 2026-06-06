@@ -27,6 +27,7 @@ interface UserPreferencesStore {
   hydrate: () => void;
   setPrograms: (programs: RewardsProgram[]) => void;
   setCardType: (cardType: CardTypePreference) => void;
+  setVoiceOutputEnabled: (enabled: boolean) => void;
   markPrompted: () => void;
   reset: () => void;
 }
@@ -79,6 +80,12 @@ export const useUserPreferencesStore = create<UserPreferencesStore>((set, get) =
 
   setCardType(cardType) {
     const next = { ...get().preferences, cardType };
+    set({ preferences: next });
+    save({ preferences: next, promptedAt: get().promptedAt });
+  },
+
+  setVoiceOutputEnabled(enabled) {
+    const next = { ...get().preferences, voiceOutputEnabled: enabled };
     set({ preferences: next });
     save({ preferences: next, promptedAt: get().promptedAt });
   },
