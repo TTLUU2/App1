@@ -109,8 +109,8 @@ export default function OptimisationPage() {
             <SummaryHeader stats={summary} />
           </div>
 
-          {/* Card Update — big mic primary, text fallback. Voice-first inline
-              update for held cards (spend OR benefit, parser decides). */}
+          {/* Copilot — big mic primary, text fallback. Voice-first inline
+              assistant: spend, benefit, or general question (parser decides). */}
           {heldCards.length > 0 && (
             <div className="mt-4">
               <CardUpdateCard />

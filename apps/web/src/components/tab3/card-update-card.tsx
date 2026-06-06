@@ -1,7 +1,9 @@
 'use client';
 
-// "Card Update" — voice-first inline update affordance on Tab 3. Replaces
-// the M2 Quick Update bar.
+// "Copilot" — voice-first inline assistant on Tab 3. Replaces the M2 Quick
+// Update bar. Originally scoped to spend + benefit logging ("Card Update"),
+// now also routes general questions to /api/ask — same brain as the
+// dedicated /ask page, just inline. Renamed to reflect the broader job.
 //
 // Layout: a big centred mic button is the primary CTA. Tap to start
 // listening; live transcript appears below. Tap again to stop, which
@@ -374,7 +376,7 @@ export function CardUpdateCard() {
     >
       <header className="flex items-center justify-between">
         <h2 id="card-update-heading" className="text-sm font-semibold">
-          Card Update
+          Copilot
         </h2>
         <span className="text-[10px] font-medium uppercase tracking-widest text-zinc-500">
           Voice
