@@ -74,6 +74,9 @@ export function VoiceInput({
   const recognitionRef = useRef<SpeechRecognitionInstance | null>(null);
   const recorderRef = useRef<VoiceRecorder | null>(null);
   const hasGreeted = useRef(false);
+  // True when the user actively cancelled a voice session — used to
+  // suppress the auto-submit that otherwise fires on speech end.
+  const cancelledRef = useRef(false);
   // Decide path once per mount. iOS gets MediaRecorder; everyone else
   // gets browser SpeechRecognition where available.
   const voicePath = useRef<'sr' | 'record' | 'none'>('none');
@@ -162,10 +165,13 @@ export function VoiceInput({
         throw new Error(json.error ?? `transcribe ${res.status}`);
       }
 
-      // Append rather than replace — lets the user record multiple
-      // takes or combine with typed text already in the field.
-      setText((prev) => (prev ? `${prev} ${json.text}`.trim() : json.text!.trim()));
+      // Voice path = clear commitment to submit. Auto-fire the same
+      // submit the Send button would, so the user doesn't need a
+      // second tap. Replaces (rather than appending to) any typed
+      // text — the user who tapped mic was dictating fresh.
+      const transcribed = json.text.trim();
       setStatus('idle');
+      if (transcribed) submitValue(transcribed);
     } catch (err) {
       setStatus('error');
       setErrorMessage(err instanceof Error ? err.message : String(err));
@@ -209,7 +215,14 @@ export function VoiceInput({
         );
       };
       recognition.onend = () => {
+        const wasCancelled = cancelledRef.current;
+        cancelledRef.current = false;
         setStatus((s) => (s === 'listening' ? 'idle' : s));
+        // Auto-submit on natural speech end (user finished talking OR
+        // explicitly tapped Stop). Suppress when cancelInteraction set
+        // the cancel flag.
+        const trimmed = finalText.trim();
+        if (!wasCancelled && trimmed) submitValue(trimmed);
       };
 
       recognitionRef.current = recognition;
@@ -232,6 +245,7 @@ export function VoiceInput({
   }
 
   function cancelInteraction() {
+    cancelledRef.current = true;
     cancelSpeech();
     try {
       recognitionRef.current?.abort();
@@ -272,11 +286,19 @@ export function VoiceInput({
     void startListening();
   }
 
-  function trySubmit() {
-    const trimmed = text.trim();
+  // Submit an explicit value — used by both the Send button (trySubmit
+  // reads current `text`) and the voice paths (which pass the freshly-
+  // transcribed string directly to avoid stale-closure issues with
+  // setState batching).
+  function submitValue(value: string) {
+    const trimmed = value.trim();
     if (!trimmed || disabled) return;
     onSubmit(trimmed);
     setText('');
+  }
+
+  function trySubmit() {
+    submitValue(text);
   }
 
   function handleKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
