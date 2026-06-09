@@ -32,6 +32,10 @@ Many items below trace back to the `points-deals` and `chatbot PH files` scoutin
 - **WP Courseware AFF content as supplementary RAG corpus** _(source: `chatbot PH files/wp-courseware/` — 11 XML exports ~3.4MB from `australianfrequentflyer.com.au`'s FF intro course)_. Strip WP-Courseware HTML tags before ingestion. ~1 day.
 - **Intent classification + slot extraction pattern** _(source: `chatbot PH files/points-genie/backend/app/engine/intent.py` + `slots.py`)_. Port the deterministic-state-machine-around-LLM pattern to TS. Borrow the _pattern_, not the 5-intent taxonomy (theirs is acquisition-funnel; we're portfolio-management).
 
+### Distribution
+
+- **TestFlight Public Link for external testers** — once the build stabilizes from internal testing (~1 week), flip on the public link in App Store Connect → TestFlight → External Testing → toggle "Enable Public Link". Generates a single URL (e.g. `https://testflight.apple.com/join/AbCdEfGh`) that anyone can use to install on iPhone — no team membership required. Max 10,000 installs. Revocable anytime. Killer for casual sharing (text, email, QR sticker, social posts). First external build needs Apple Beta App Review (~24h); subsequent builds usually clear instantly. Share strategy options: family/friends first → small Reddit/AFF community drop → broader points-community share. Pair with a feedback form (Typeform / Tally / etc.) so we capture structured input that feeds the RN-vs-Capacitor decision.
+
 ### Other queued items
 
 - **Golden transcripts as eval harness** _(source: `chatbot PH files/04_golden_transcripts.md` — Transcripts 1, 4, 5, 8 are the strongest)_. Use as few-shot examples + regression eval set for Copilot. ~half day.
