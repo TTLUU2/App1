@@ -51,10 +51,14 @@ workflows:
     scripts:
       - name: Install pnpm
         script: |
-          # Use corepack — the package.json declares
-          # "packageManager": "pnpm@10.33.1", which Node 20+ corepack
-          # reads to pin the right version automatically. npm install -g
-          # conflicts with corepack on Node 20+, which was the v1 error.
+          # Update corepack itself FIRST. Node 20.18.0 ships with an older
+          # corepack (~v0.29) that has stale npm-registry signing keys
+          # hardcoded. npm has since rotated its keys, which breaks the
+          # signature check when corepack downloads pnpm with the error:
+          #   "Internal Error: Cannot find matching keyid"
+          # The newer corepack ships with the rotated keys. See
+          # https://github.com/nodejs/corepack/issues/612
+          npm install -g corepack@latest
           corepack enable
           corepack prepare pnpm@10.33.1 --activate
           pnpm --version
