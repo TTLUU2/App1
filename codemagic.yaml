@@ -51,7 +51,13 @@ workflows:
     scripts:
       - name: Install pnpm
         script: |
-          npm install -g pnpm@10.33.1
+          # Use corepack — the package.json declares
+          # "packageManager": "pnpm@10.33.1", which Node 20+ corepack
+          # reads to pin the right version automatically. npm install -g
+          # conflicts with corepack on Node 20+, which was the v1 error.
+          corepack enable
+          corepack prepare pnpm@10.33.1 --activate
+          pnpm --version
 
       - name: Install workspace dependencies
         script: |
