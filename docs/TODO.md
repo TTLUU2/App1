@@ -6,6 +6,9 @@ Living backlog. Update as items move between states. Last touched 2026-06-09.
 
 ## Now (active or queued for next session)
 
+- **Merge `mobile/first-build` → `main`** — all the CI fixes (corepack, Node 22, Capacitor 8 SPM, openssl signing flow), the artwork pipeline, the splash config, the red-footer fix, and the TODO updates currently live only on `mobile/first-build`. `main` is stale from before today's debugging. Any new branch cut from `main` would inherit the broken pipeline. Open a PR, review the diff, merge. Then `mobile/*` branches stay as the trigger pattern for native-only changes and `main` becomes the source of truth again.
+- **Update `docs/CAPACITOR_TESTFLIGHT.md`** — the original guide has several incorrect bits we learned about the hard way today: API key role is **Admin** (not Developer or App Manager), the signing flow needs `openssl genrsa` + `--certificate-key`, Capacitor 8 uses SPM not CocoaPods, "Ready to Submit" build status actually means available to internal testers, Apple ID signed into TestFlight must match the invited email, etc. Rewrite the guide so the next person doesn't burn 9 builds rediscovering this.
+
 - **Capacitor + TestFlight setup** — pipeline is scaffolded (`codemagic.yaml`, `apps/web/capacitor.config.ts`, `docs/CAPACITOR_TESTFLIGHT.md`). Apple Developer enrollment ✅ done. User to complete: Codemagic signup + repo link, App Store Connect API key (.p8 + Key ID + Issuer ID), Codemagic integration named `pointhacks_appstore`, App Store Connect app record with bundle ID `com.pointhacks.copilot`, first `mobile/*` branch push. Then ~24h Apple internal review.
 - **GitHub → Vercel auto-deploy isn't firing** — GitHub integration is connected on the Vercel dashboard but pushes to `main` don't trigger a build. Currently shipping via `vercel deploy --prod` from CLI. Worth checking Production Branch setting + deployment hooks in the project's Git settings page.
 

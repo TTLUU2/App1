@@ -18,6 +18,17 @@
     "pnpm": ">=10.0.0"
   },
   "packageManager": "pnpm@10.33.1",
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "sharp",
+      "esbuild",
+      "@swc/core",
+      "@parcel/watcher",
+      "unrs-resolver",
+      "husky"
+    ],
+    "_comment": "pnpm 10 blocks install scripts for nested packages by default (security). Whitelist any package whose postinstall must run — sharp needs it to fetch platform-specific native binaries (was breaking @capacitor/assets in CI with 'Cannot find module sharp-darwin-arm64v8.node'). Expand this list if a build step fails saying a native module is missing."
+  },
   "lint-staged": {
     "*.{ts,tsx,js,jsx,json,md,yml,yaml,css}": [
       "prettier --write"
