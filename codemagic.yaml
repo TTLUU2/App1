@@ -2,14 +2,18 @@
 #
 # We don't have a Mac, so all Xcode work happens in Codemagic's macOS
 # build VMs. Each build:
-#   1. Pulls fresh Node + pnpm
+#   1. Pulls fresh Node 22 + pnpm via corepack
 #   2. Installs the monorepo with frozen lockfile
 #   3. Runs `cap add ios` in apps/web to generate the Xcode project
 #      from scratch (we don't commit ios/, since regenerating is fast
 #      and avoids merge headaches)
-#   4. pod install
-#   5. Archives + exports a signed .ipa
+#   4. Sets bundle version + build number
+#   5. Archives + exports a signed .ipa via xcodebuild
 #   6. Uploads to TestFlight via the App Store Connect API
+#
+# NB: Capacitor 8 uses Swift Package Manager — no CocoaPods, no
+# Podfile, no .xcworkspace. xcodebuild resolves SPM dependencies
+# automatically during archive.
 #
 # Free tier: 500 build minutes/month. A typical iOS build runs 8–12
 # minutes so that's ~40 builds/month, plenty for early TestFlight.
@@ -26,7 +30,10 @@ workflows:
         # build (see CAPACITOR_TESTFLIGHT.md for setup steps).
         - app_store_credentials
       vars:
-        XCODE_WORKSPACE: 'App.xcworkspace'
+        # Capacitor 8 uses Swift Package Manager — no .xcworkspace gets
+        # generated (no Pods → no workspace). Build directly against the
+        # .xcodeproj instead.
+        XCODE_PROJECT: 'App.xcodeproj'
         XCODE_SCHEME: 'App'
         BUNDLE_ID: 'com.pointhacks.copilot'
       # Capacitor 8 CLI requires Node >= 22. Use current LTS.
@@ -82,11 +89,11 @@ workflows:
           # workspace-resolved binary.
           pnpm exec cap add ios
           pnpm exec cap sync ios
-          # Sanity check — if Podfile is missing, the iOS scaffolding
-          # didn't complete and CocoaPods will fail downstream. Print
-          # what we have for debugging.
-          if [ ! -f ios/App/Podfile ]; then
-            echo "ERROR: ios/App/Podfile missing after cap add ios"
+          # Sanity check — Capacitor 8 uses Swift Package Manager, so we
+          # expect App.xcodeproj + CapApp-SPM (NOT a Podfile — that's
+          # Capacitor 6 and earlier).
+          if [ ! -d ios/App/App.xcodeproj ]; then
+            echo "ERROR: ios/App/App.xcodeproj missing after cap add ios"
             echo "--- ios/ ---"
             ls -la ios/ 2>&1 || echo "(ios/ does not exist)"
             echo "--- ios/App/ ---"
@@ -103,10 +110,11 @@ workflows:
           # Bundle version (CFBundleShortVersionString) stays semver —
           # bumped by hand in the Info.plist when shipping milestones.
 
-      - name: Install CocoaPods
-        script: |
-          cd apps/web/ios/App
-          pod install
+      # NOTE: No CocoaPods step. Capacitor 8 manages iOS plugins via
+      # Swift Package Manager (Package.swift + CapApp-SPM/). xcodebuild
+      # resolves SPM dependencies automatically during archive — no
+      # `pod install` needed. CocoaPods was required for Capacitor 6
+      # and earlier only.
 
       - name: Set up code signing
         script: |
@@ -118,8 +126,10 @@ workflows:
       - name: Archive + export .ipa
         script: |
           cd apps/web/ios/App
+          # --project not --workspace — Capacitor 8 SPM produces no
+          # .xcworkspace.
           xcode-project build-ipa \
-            --workspace "$XCODE_WORKSPACE" \
+            --project "$XCODE_PROJECT" \
             --scheme "$XCODE_SCHEME"
 
     artifacts:
