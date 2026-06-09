@@ -43,8 +43,18 @@ Many items below trace back to the `points-deals` and `chatbot PH files` scoutin
 - **Tiered earn-rate model** — currently single earn rate per card. Real-world cards have category tiers (e.g. 3pt groceries / 1pt other). Needs a 3-field-per-card schema migration + UI affordance.
 - **Stacking math UI** _(source: `points-deals/BACKLOG.md`)_ — the `stacksWith?: string[]` field exists in the deals type but no UI surfaces it. Pull after Deals tab ships.
 - **Email alerts on deals** _(source: `points-deals/BACKLOG.md`)_ — needs magic-link auth + DB. Not now.
-- **Native APNS push migration** — currently using web-push with VAPID. Once Capacitor is live, switch iOS push to native APNS via the Capacitor Push Notifications plugin (already configured in `capacitor.config.ts`).
-- **Native Capacitor Speech Recognition plugin** — current voice input uses browser SR (with MediaRecorder + ElevenLabs Scribe fallback). Native plugin would be faster and more reliable on iOS, but only worth wiring once the Capacitor wrapper is in TestFlight.
+- **Native Capacitor plugin pass — the "middle path" before any RN rewrite** — closes ~70% of the perceived gap with React Native without rewriting anything. Sequence by impact:
+  - `@capacitor-community/speech-recognition` (~half day) — kills the MediaRecorder→Scribe latency on iOS voice input. Biggest perceived win since voice is central. _Replaces the prior standalone SR-plugin TODO._
+  - `@capacitor/push-notifications` (~1 day) — native APNS. Already configured in `capacitor.config.ts`, just needs wiring + a device-token sub-type in the `push_subscriptions` table + `/api/push/subscribe` accepting both shapes + `lib/push.ts` branching to `node-apn`. _Replaces the prior standalone APNS migration TODO._
+  - `@capacitor/haptics` (~1h) — taps + confirmations feel iOS-native.
+  - `@capacitor/share` (~1h) — native iOS share sheet for "share this card recommendation" type flows.
+  - Total: ~2–3 days. Sequence after first TestFlight build + initial user feedback so we know which plugins move the needle most.
+
+## Decisions to revisit
+
+Open architectural questions parked deliberately. Don't act on these without re-evaluating against the trigger condition.
+
+- **React Native / Expo rewrite vs stay on Next.js + Capacitor** — current stack is Next.js 16 + Capacitor WKWebView wrapper. RN/Expo would give us native voice latency, native push, smoother gestures, premium reviewer impression. Trade-offs: ~2–3 weeks port effort, lose web distribution surface OR maintain two codebases, throw away the Codemagic pipeline. **Trigger to revisit:** after first TestFlight build has been used by ~10 real testers for ~2 weeks. **Decision input:** their feedback on voice latency, WebView "texture," gesture lag. **Cheaper middle path first:** the native Capacitor plugin pass listed in Deferred — if that closes the gap, the rewrite isn't worth it. **Reasoning trail:** Next.js was picked because (1) web app concept came first → SEO + share-link distribution matter, (2) `/api/*` co-located with app code, (3) one codebase across web + iOS. Those reasons don't go stale. RN only wins when the native-feel gap becomes a measured problem with users, not a theoretical one.
 
 ## Skip (decided against)
 
