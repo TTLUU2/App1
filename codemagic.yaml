@@ -118,34 +118,34 @@ workflows:
 
       - name: Set up code signing
         script: |
-          # On a fresh Codemagic VM the keychain is empty and no
-          # certificates or profiles exist locally. Build them from
-          # scratch via the App Store Connect API integration.
+          # On a fresh Codemagic VM the keychain is empty and no certs
+          # or profiles exist locally. Build them from scratch via the
+          # App Store Connect API integration.
           #
-          # 1. Initialize a fresh build-only keychain
+          # The canonical 4-step sequence per codemagic-cli-tools docs:
+          # https://github.com/codemagic-ci-cd/cli-tools/blob/master/docs/app-store-connect/fetch-signing-files.md
+          #
+          # 1. Init a fresh build-only keychain
           keychain initialize
-          # 2. CREATE a new iOS Distribution certificate via the API.
-          #    Why create instead of fetch: existing certs in App Store
-          #    Connect can't be downloaded with their private keys
-          #    (Apple constraint — private keys only exist on the
-          #    machine that originally generated them). Creating a new
-          #    cert generates a fresh private key locally that we can
-          #    sign with. --save stores it at the canonical Codemagic
-          #    path for downstream commands to find.
-          #    NB: Requires App Manager role on the API key. If this
-          #    fails with 403, upgrade the key role in App Store
-          #    Connect → Integrations.
-          app-store-connect certificates create \
-            --type IOS_DISTRIBUTION \
-            --save
-          # 3. Fetch (or create if missing) the provisioning profile
-          #    matching our bundle ID. Profiles tie the cert to the
-          #    specific app + capabilities.
+          # 2. Generate a fresh RSA private key. This is the key Apple
+          #    will bind the cert to — must exist BEFORE asking Apple to
+          #    sign anything. Without it, both certs create and
+          #    fetch-signing-files fail with:
+          #      "Cannot create resource without certificate private key"
+          openssl genrsa -out /tmp/ios_distribution.key 2048
+          # 3. Fetch (or create if missing) BOTH the distribution cert
+          #    and the provisioning profile in one call. The
+          #    --certificate-key flag (read from file via @file:) tells
+          #    Apple to bind the new cert to the private key we just
+          #    generated, so we have both halves locally.
+          #    NB: Requires Admin role on the API key (Apple constraint
+          #    for Distribution cert creation). If this fails with 403,
+          #    upgrade the key role.
           app-store-connect fetch-signing-files "$BUNDLE_ID" \
             --type IOS_APP_STORE \
+            --certificate-key=@file:/tmp/ios_distribution.key \
             --create
-          # 4. Load the saved cert + key into the build keychain so
-          #    xcodebuild can sign with it
+          # 4. Import the fetched cert + key into the build keychain
           keychain add-certificates
           # 5. Wire the fetched profile into the xcodeproj
           xcode-project use-profiles
