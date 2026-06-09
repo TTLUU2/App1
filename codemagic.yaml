@@ -100,6 +100,15 @@ workflows:
             ls -la ios/App/ 2>&1 || echo "(ios/App/ does not exist)"
             exit 1
           fi
+          # Generate iOS icon + splash sets from capacitor-assets/ if
+          # source files are present. Skipped silently when missing so
+          # the build still succeeds on fresh repos without artwork.
+          if [ -f capacitor-assets/icon.png ] && [ -f capacitor-assets/splash.png ]; then
+            echo "Found capacitor-assets/{icon,splash}.png — generating iOS variants"
+            pnpm cap:assets
+          else
+            echo "capacitor-assets/{icon,splash}.png not found — skipping cap:assets (using Capacitor defaults)"
+          fi
 
       - name: Set bundle version + build number from Codemagic counter
         script: |

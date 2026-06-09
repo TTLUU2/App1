@@ -42,8 +42,11 @@ const config: CapacitorConfig = {
     // 'always' insets the WKWebView so it respects the iPhone notch +
     // home indicator without our CSS doing extra work.
     contentInset: 'always',
-    // PH red — flash of colour during the brief shell→remote handoff.
-    backgroundColor: '#dc2626',
+    // White WKWebView background — matches the app's zinc-50 / white
+    // body, so the safe-area-inset-bottom strip behind the tab bar
+    // doesn't bleed a colour through during scroll bounce. Was '#dc2626'
+    // (PH red) which caused a thin red strip below the tab bar.
+    backgroundColor: '#ffffff',
     // Tell iOS this is a network-fetched experience so cleartext checks
     // and security policies are applied correctly.
     scheme: 'PHCopilot',
@@ -57,8 +60,14 @@ const config: CapacitorConfig = {
       presentationOptions: ['badge', 'sound', 'alert'],
     },
     SplashScreen: {
-      launchShowDuration: 800,
-      backgroundColor: '#dc2626',
+      // 3000ms gives the user a beat to register the brand before the
+      // app loads. Don't push past this — Capacitor blocks interaction
+      // during the splash window.
+      launchShowDuration: 3000,
+      // Matches the navy gradient in apps/web/capacitor-assets/splash.png.
+      // If you update the splash artwork, sample the dominant colour
+      // and update this too so there's no flash at the edges.
+      backgroundColor: '#1a4e6b',
       showSpinner: false,
     },
   },
