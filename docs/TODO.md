@@ -19,6 +19,38 @@ Many items below trace back to the `points-deals` and `chatbot PH files` scoutin
 - **Copilot reference data — sweet spots + CPP + deals** _(source: `points-deals/lib/sweet-spots.json` 318 lines, `points-deals/lib/cpp.ts`, `points-deals/data/deals.json` ~15 deals)_. Import as `apps/web/src/data/*`, inject into `buildAskContext()`. Grounds redemption answers ("good QFF redemption?") and unlocks deal-stacking answers ("what deals stack with my Amex spend?"). Replaces the original "Copilot reference data" bullet — most of the work already exists. ~1h.
 - **Route × program × cabin matrix** _(source: `chatbot PH files/points-genie/backend/app/data/points_requirements.json`)_. Drop-in lookup table for "how many points SYD→HND J?" type questions. Stops model from hallucinating routings. ~1h.
 
+### P1.5 — voice-first mic refactor (resolved design, ~1.5 days)
+
+Decision made 2026-06-09: the home Copilot mic should be a **single
+unified surface** — every spoken utterance either fires a specific
+intent (and executes silently with brief voice ack) OR falls back to
+`/api/ask` for a conversational answer. No "didn't understand"
+dead-ends.
+
+**Full intent set in one shot:**
+
+- `'spend'` ✅ already exists
+- `'benefit'` ✅ already exists
+- `'question'` ✅ already exists (routes to `/api/ask`)
+- `'add_card'` 🆕 fuzzy-match spoken card name, run existing add-card engine, voice ack "Added X. What's the last four?"
+- `'cancel_card'` 🆕 fuzzy-match held card, run cancel flow
+- `'set_last4'` 🆕 update most-recently-mentioned card's last4 ("that one ends in 1234")
+- `'set_nickname'` 🆕 update most-recently-mentioned card's nickname ("call my westpac the travel card")
+
+**Key behaviour change:** when parser returns `'unknown'` OR `confidence: 'low'`, auto-route the original utterance to `/api/ask` instead of showing an error. The mic becomes a "ask anything, do anything" surface — no syntax to learn.
+
+**Confirmation style:** silent execution + brief voice ack. No "are you sure?" prompts (doubles interactions for marginal safety; user can undo via UI).
+
+**Disambiguation:** if fuzzy match returns multiple cards, Copilot voices the options and waits for the next utterance to disambiguate.
+
+**Files touched:**
+
+- `apps/web/src/app/api/parse/quick-update/route.ts` — extend `kind` enum + add `cardSearchTerm` / `last4Value` / `nicknameValue` fields
+- `apps/web/src/lib/card-matcher.ts` 🆕 — fuzzy match utility (single / multiple / none)
+- `apps/web/src/components/tab3/card-update-card.tsx` — route each intent to its execution path; track "most-recently-mentioned card" for last4/nickname reference
+
+Best paired with the P1 Perry system prompt lift — the fallback Copilot needs to be sharp because it'll catch more traffic.
+
 ### P2 — medium-value
 
 - **Deals tab** _(source: `points-deals` components: `deal-card`, `program-badge`, `program-logo`, `sweet-spot-tag`, `expiring-badge`)_. New `/deals` route in PH Copilot. Ports the atom components, rebuilds the page around our nav + Copilot UX. Skip `deals-browser`, `deal-matcher`, `hero`, `site-header/footer` (marketing chrome). ~half day. Edits needed: Tailwind v4 token names (`paper-warm`, `ink-soft`, `amber-deep`, `navy`, `rounded-card`) → our tokens; `@/lib/*` alias re-point.
