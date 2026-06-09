@@ -28,7 +28,7 @@ Many items below trace back to the `points-deals` and `chatbot PH files` scoutin
 
 ### P3 — medium-value with prep work
 
-- **Knowledge MDs as RAG corpus** _(source: `chatbot PH files/points-genie/backend/app/data/knowledge/{learning,programs,redemptions,seat-alerts,courses}/_.md`— with frontmatter schema`intents`, `programs`, `personas`)\*. Ingest as context for "how does X work?" beginner-education questions. ~half day + indexing.
+- **Knowledge MDs as RAG corpus** _(source: `chatbot PH files/points-genie/backend/app/data/knowledge/` — five subdirs `learning/`, `programs/`, `redemptions/`, `seat-alerts/`, `courses/`, each containing markdown files with frontmatter schema `intents`, `programs`, `personas`)_. Ingest as context for "how does X work?" beginner-education questions. ~half day + indexing.
 - **WP Courseware AFF content as supplementary RAG corpus** _(source: `chatbot PH files/wp-courseware/` — 11 XML exports ~3.4MB from `australianfrequentflyer.com.au`'s FF intro course)_. Strip WP-Courseware HTML tags before ingestion. ~1 day.
 - **Intent classification + slot extraction pattern** _(source: `chatbot PH files/points-genie/backend/app/engine/intent.py` + `slots.py`)_. Port the deterministic-state-machine-around-LLM pattern to TS. Borrow the _pattern_, not the 5-intent taxonomy (theirs is acquisition-funnel; we're portfolio-management).
 
