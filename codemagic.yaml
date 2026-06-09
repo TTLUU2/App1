@@ -29,7 +29,8 @@ workflows:
         XCODE_WORKSPACE: 'App.xcworkspace'
         XCODE_SCHEME: 'App'
         BUNDLE_ID: 'com.pointhacks.copilot'
-      node: 20.18.0
+      # Capacitor 8 CLI requires Node >= 22. Use current LTS.
+      node: 22.11.0
       xcode: latest
       cocoapods: default
 
