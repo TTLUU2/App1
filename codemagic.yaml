@@ -70,12 +70,29 @@ workflows:
 
       - name: Generate iOS project via Capacitor
         script: |
+          set -e
           cd apps/web
-          # cap add ios is idempotent-ish — re-runs are safe but slow.
-          # We rebuild from scratch each time so the iOS project
-          # matches the current capacitor.config.ts.
-          npx cap add ios || true
-          npx cap sync ios
+          # Clean any cached state from a previous build (Codemagic VMs
+          # are fresh, but defensive — cap add refuses to overwrite an
+          # existing ios/).
+          rm -rf ios
+          # Use `pnpm exec` not `npx` — in a pnpm workspace, npx can
+          # resolve differently depending on hoisting and miss the
+          # workspace-local @capacitor/cli. pnpm exec always uses the
+          # workspace-resolved binary.
+          pnpm exec cap add ios
+          pnpm exec cap sync ios
+          # Sanity check — if Podfile is missing, the iOS scaffolding
+          # didn't complete and CocoaPods will fail downstream. Print
+          # what we have for debugging.
+          if [ ! -f ios/App/Podfile ]; then
+            echo "ERROR: ios/App/Podfile missing after cap add ios"
+            echo "--- ios/ ---"
+            ls -la ios/ 2>&1 || echo "(ios/ does not exist)"
+            echo "--- ios/App/ ---"
+            ls -la ios/App/ 2>&1 || echo "(ios/App/ does not exist)"
+            exit 1
+          fi
 
       - name: Set bundle version + build number from Codemagic counter
         script: |
