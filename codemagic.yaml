@@ -118,9 +118,25 @@ workflows:
 
       - name: Set up code signing
         script: |
-          # Codemagic's App Store Connect integration auto-provisions
-          # the signing certificate + profile under the hood; this
-          # script asks the keychain to use them for the archive step.
+          # On a fresh Codemagic VM the keychain is empty and no
+          # provisioning profiles exist locally. We have to fetch them
+          # from App Store Connect via the API integration before
+          # xcodebuild can archive a signed build.
+          #
+          # 1. Initialize a fresh build-only keychain
+          keychain initialize
+          # 2. Fetch (or create if missing) the iOS App Store
+          #    distribution cert + provisioning profile for our bundle
+          #    ID. Auto-authenticates via the `pointhacks_appstore`
+          #    integration declared above. --create makes new artefacts
+          #    on first run; subsequent runs reuse the existing ones.
+          app-store-connect fetch-signing-files "$BUNDLE_ID" \
+            --type IOS_APP_STORE \
+            --create
+          # 3. Load the fetched cert into the build keychain so
+          #    xcodebuild can sign with it
+          keychain add-certificates
+          # 4. Wire the fetched provisioning profile into the xcodeproj
           xcode-project use-profiles
 
       - name: Archive + export .ipa
