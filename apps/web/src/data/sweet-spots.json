@@ -1,0 +1,312 @@
+[
+  {
+    "id": "qf-eco-syd-mel",
+    "program": "qantas",
+    "minPoints": 8000,
+    "label": "Economy SYD ↔ MEL",
+    "description": "Qantas Classic Reward: economy one-way between Sydney and Melbourne.",
+    "retailValue": 280,
+    "category": "flight",
+    "caveats": "Classic Reward availability required; taxes ~$25."
+  },
+  {
+    "id": "qf-eco-syd-bne",
+    "program": "qantas",
+    "minPoints": 18000,
+    "label": "Economy SYD ↔ BNE",
+    "description": "Qantas Classic Reward: economy one-way Sydney to Brisbane or reverse.",
+    "retailValue": 320,
+    "category": "flight",
+    "caveats": "Classic Reward availability required; taxes ~$30."
+  },
+  {
+    "id": "qf-eco-syd-lhr",
+    "program": "qantas",
+    "minPoints": 36000,
+    "label": "Economy SYD → London",
+    "description": "Qantas Classic Reward: economy one-way Sydney to London (LHR) — one of the best-value long-haul economy redemptions.",
+    "retailValue": 1900,
+    "category": "flight",
+    "caveats": "Classic Reward availability on QF; taxes/fees ~$350. Allow 11 months lead time."
+  },
+  {
+    "id": "qf-bus-syd-lax",
+    "program": "qantas",
+    "minPoints": 55000,
+    "label": "Business SYD → Los Angeles",
+    "description": "Qantas Classic Reward: Business class one-way Sydney to Los Angeles on QF.",
+    "retailValue": 3800,
+    "category": "flight",
+    "caveats": "Classic Reward availability on QF codeshare; taxes/fees ~$280."
+  },
+  {
+    "id": "qf-bus-syd-lhr",
+    "program": "qantas",
+    "minPoints": 80000,
+    "label": "Business SYD → London",
+    "description": "Qantas Classic Reward: Business class one-way Sydney to London — Dreamliner or A380.",
+    "retailValue": 7200,
+    "category": "flight",
+    "caveats": "Classic Reward availability on QF; taxes/fees ~$350. One of the highest-value redemptions available."
+  },
+  {
+    "id": "qf-bus-syd-nrt",
+    "program": "qantas",
+    "minPoints": 95000,
+    "label": "Business SYD → Tokyo",
+    "description": "Qantas Classic Reward: Business class one-way Sydney to Tokyo (NRT/HND) on QF or JL.",
+    "retailValue": 5200,
+    "category": "flight",
+    "caveats": "Classic Reward availability on QF or Japan Airlines; taxes/fees ~$250."
+  },
+  {
+    "id": "qf-bus-syd-jfk",
+    "program": "qantas",
+    "minPoints": 120000,
+    "label": "Business SYD → New York",
+    "description": "Qantas Classic Reward: Business class one-way Sydney to New York (JFK) via LA on QF.",
+    "retailValue": 9500,
+    "category": "flight",
+    "caveats": "Classic Reward availability on QF; taxes/fees ~$400. Book 330 days out."
+  },
+  {
+    "id": "qf-first-syd-lhr",
+    "program": "qantas",
+    "minPoints": 144000,
+    "label": "First Class SYD → London",
+    "description": "Qantas Classic Reward: First class one-way Sydney to London — the holy grail of Australian redemptions.",
+    "retailValue": 18000,
+    "category": "flight",
+    "caveats": "Extremely limited availability; taxes/fees ~$400. Requires 330-day lead time and persistence."
+  },
+  {
+    "id": "va-eco-mel-syd",
+    "program": "velocity",
+    "minPoints": 7800,
+    "label": "Economy MEL ↔ SYD",
+    "description": "Velocity Reward Seat: economy one-way between Melbourne and Sydney on Virgin Australia.",
+    "retailValue": 250,
+    "category": "flight",
+    "caveats": "Reward Seat availability required; taxes ~$20."
+  },
+  {
+    "id": "va-eco-mel-bne",
+    "program": "velocity",
+    "minPoints": 16000,
+    "label": "Economy MEL ↔ BNE",
+    "description": "Velocity Reward Seat: economy one-way between Melbourne and Brisbane on Virgin Australia.",
+    "retailValue": 300,
+    "category": "flight",
+    "caveats": "Reward Seat availability required; taxes ~$25."
+  },
+  {
+    "id": "va-pe-mel-lax",
+    "program": "velocity",
+    "minPoints": 54000,
+    "label": "Premium Economy MEL → LA",
+    "description": "Velocity Reward Seat: Premium Economy one-way Melbourne to Los Angeles on Virgin Australia.",
+    "retailValue": 3200,
+    "category": "flight",
+    "caveats": "Reward Seat availability on VA international; taxes/fees ~$350."
+  },
+  {
+    "id": "va-bus-mel-lax",
+    "program": "velocity",
+    "minPoints": 77400,
+    "label": "Business MEL → Los Angeles",
+    "description": "Velocity Reward Seat: Business class one-way Melbourne to Los Angeles on Virgin Australia.",
+    "retailValue": 6800,
+    "category": "flight",
+    "caveats": "Reward Seat availability on VA international; taxes/fees ~$350. Excellent value at ~8.8¢/pt."
+  },
+  {
+    "id": "va-bus-mel-lhr",
+    "program": "velocity",
+    "minPoints": 99000,
+    "label": "Business MEL → London",
+    "description": "Velocity Reward Seat: Business class one-way Melbourne to London via a partner airline.",
+    "retailValue": 8500,
+    "category": "flight",
+    "caveats": "Partner award availability varies; taxes/fees ~$400."
+  },
+  {
+    "id": "va-bus-mel-nrt",
+    "program": "velocity",
+    "minPoints": 107400,
+    "label": "Business MEL → Tokyo on ANA",
+    "description": "Velocity Reward: Business class one-way Melbourne to Tokyo on ANA — widely considered the best business class product in the sky.",
+    "retailValue": 9000,
+    "category": "flight",
+    "caveats": "ANA availability to Tokyo; taxes/fees ~$200. Book exactly 355 days out."
+  },
+  {
+    "id": "sq-bus-sin-bali",
+    "program": "kris-flyer",
+    "minPoints": 25000,
+    "label": "Business SIN → Bali",
+    "description": "KrisFlyer Saver Award: Business class one-way Singapore to Bali on SilkAir — great for positioning via Singapore.",
+    "retailValue": 1400,
+    "category": "flight",
+    "caveats": "Saver Award availability on SQ/MI; taxes ~$50."
+  },
+  {
+    "id": "sq-eco-syd-sin",
+    "program": "kris-flyer",
+    "minPoints": 33000,
+    "label": "Economy SYD → Singapore",
+    "description": "KrisFlyer Saver Award: economy one-way Sydney to Singapore on Singapore Airlines.",
+    "retailValue": 1100,
+    "category": "flight",
+    "caveats": "Saver Award availability on SQ; taxes/fees ~$150."
+  },
+  {
+    "id": "sq-bus-syd-sin",
+    "program": "kris-flyer",
+    "minPoints": 50500,
+    "label": "Business SYD → Singapore",
+    "description": "KrisFlyer Saver Award: Business class one-way Sydney to Singapore on Singapore Airlines.",
+    "retailValue": 4500,
+    "category": "flight",
+    "caveats": "Saver Award availability on SQ; taxes/fees ~$200."
+  },
+  {
+    "id": "sq-bus-syd-nrt",
+    "program": "kris-flyer",
+    "minPoints": 85000,
+    "label": "Business SYD → Tokyo",
+    "description": "KrisFlyer Saver Award: Business class one-way Sydney to Tokyo on Singapore Airlines via SIN.",
+    "retailValue": 6500,
+    "category": "flight",
+    "caveats": "Saver Award availability on SQ; taxes/fees ~$250."
+  },
+  {
+    "id": "sq-bus-syd-lhr",
+    "program": "kris-flyer",
+    "minPoints": 95000,
+    "label": "Business SYD → London",
+    "description": "KrisFlyer Saver Award: Business class one-way Sydney to London via Singapore on SQ.",
+    "retailValue": 9000,
+    "category": "flight",
+    "caveats": "Saver Award availability on SQ; taxes/fees ~$350."
+  },
+  {
+    "id": "cx-eco-syd-hkg",
+    "program": "asia-miles",
+    "minPoints": 17500,
+    "label": "Economy SYD → Hong Kong",
+    "description": "Asia Miles Reward: economy one-way Sydney to Hong Kong on Cathay Pacific.",
+    "retailValue": 950,
+    "category": "flight",
+    "caveats": "Saver Award availability on CX; taxes/fees ~$180."
+  },
+  {
+    "id": "cx-bus-syd-hkg",
+    "program": "asia-miles",
+    "minPoints": 40000,
+    "label": "Business SYD → Hong Kong",
+    "description": "Asia Miles Reward: Business class one-way Sydney to Hong Kong on Cathay Pacific — excellent Aria Suite product.",
+    "retailValue": 4200,
+    "category": "flight",
+    "caveats": "Saver Award availability on CX; taxes/fees ~$250."
+  },
+  {
+    "id": "cx-eco-syd-lhr",
+    "program": "asia-miles",
+    "minPoints": 60000,
+    "label": "Economy SYD → London",
+    "description": "Asia Miles Reward: economy one-way Sydney to London on Cathay Pacific via HKG.",
+    "retailValue": 2200,
+    "category": "flight",
+    "caveats": "Saver Award availability on CX; taxes/fees ~$400."
+  },
+  {
+    "id": "cx-bus-syd-lhr",
+    "program": "asia-miles",
+    "minPoints": 110000,
+    "label": "Business SYD → London",
+    "description": "Asia Miles Reward: Business class one-way Sydney to London on Cathay Pacific via HKG.",
+    "retailValue": 10000,
+    "category": "flight",
+    "caveats": "Saver Award availability on CX; taxes/fees ~$500."
+  },
+  {
+    "id": "mr-cat1-night",
+    "program": "marriott-bonvoy",
+    "minPoints": 17500,
+    "label": "1 night at a Category 1 hotel",
+    "description": "Marriott Bonvoy: one free night at a Category 1 property (e.g. Courtyard, Four Points) — solid city hotels globally.",
+    "retailValue": 180,
+    "category": "hotel",
+    "caveats": "Peak/off-peak pricing applies; hotel-specific availability required."
+  },
+  {
+    "id": "mr-cat4-night",
+    "program": "marriott-bonvoy",
+    "minPoints": 35000,
+    "label": "1 night at a Category 4 hotel",
+    "description": "Marriott Bonvoy: one free night at a Category 4 property (e.g. Sheraton, Le Méridien) — good mid-range option.",
+    "retailValue": 380,
+    "category": "hotel",
+    "caveats": "Peak/off-peak pricing applies; redemptions in popular cities offer the best value."
+  },
+  {
+    "id": "mr-cat6-night",
+    "program": "marriott-bonvoy",
+    "minPoints": 60000,
+    "label": "1 night at a JW Marriott",
+    "description": "Marriott Bonvoy: one free night at a Category 6 property (e.g. JW Marriott, W Hotels).",
+    "retailValue": 700,
+    "category": "hotel",
+    "caveats": "Peak pricing can push to 70k; check off-peak rates."
+  },
+  {
+    "id": "mr-cat7-night",
+    "program": "marriott-bonvoy",
+    "minPoints": 85000,
+    "label": "1 night at a Ritz-Carlton",
+    "description": "Marriott Bonvoy: one free night at a Category 7 property (e.g. Ritz-Carlton, St. Regis).",
+    "retailValue": 1200,
+    "category": "hotel",
+    "caveats": "Peak/off-peak pricing applies. Best value at resort properties in Asia."
+  },
+  {
+    "id": "mr-maldives-night",
+    "program": "marriott-bonvoy",
+    "minPoints": 120000,
+    "label": "1 night in the Maldives",
+    "description": "Marriott Bonvoy: one free night at a Maldives overwater villa (e.g. W Maldives, St. Regis Bora Bora).",
+    "retailValue": 2500,
+    "category": "hotel",
+    "caveats": "Availability is tight; book 12+ months out. Still requires flights and transfers."
+  },
+  {
+    "id": "hh-cat3-night",
+    "program": "hilton-honors",
+    "minPoints": 30000,
+    "label": "1 night at a mid-tier Hilton",
+    "description": "Hilton Honors: one free night at a Category 3–4 property (e.g. DoubleTree, Hilton Garden Inn).",
+    "retailValue": 280,
+    "category": "hotel",
+    "caveats": "Hilton uses dynamic pricing — value varies. Best for beach or resort properties."
+  },
+  {
+    "id": "hh-cat6-night",
+    "program": "hilton-honors",
+    "minPoints": 70000,
+    "label": "1 night at a premium Hilton",
+    "description": "Hilton Honors: one free night at a Category 5–6 property (e.g. Conrad, Curio Collection) in a major city.",
+    "retailValue": 700,
+    "category": "hotel",
+    "caveats": "Dynamic pricing means value can vary significantly; Bali and Thailand often deliver best value."
+  },
+  {
+    "id": "ihg-cat4-night",
+    "program": "ihg-one",
+    "minPoints": 30000,
+    "label": "1 night at an InterContinental",
+    "description": "IHG One Rewards: one free night at an InterContinental or Crowne Plaza in Asia.",
+    "retailValue": 450,
+    "category": "hotel",
+    "caveats": "IHG uses dynamic pricing. Asia Pacific properties offer the best points value."
+  }
+]

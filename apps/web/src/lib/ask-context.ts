@@ -10,6 +10,37 @@ import type {
 } from '@ph/shared';
 import { benefitStatusFor } from '@/lib/tab3-status';
 import { formatCurrency, formatDate, formatPoints } from '@/lib/format';
+import sweetSpotsRaw from '@/data/sweet-spots.json';
+import dealsRaw from '@/data/deals.json';
+import { CPP, PROGRAM_LABEL, type LoyaltyProgram } from '@/data/cpp';
+
+// Lightweight types over the raw JSON. We don't import the full points-deals
+// type system — just the fields we read.
+interface SweetSpot {
+  id: string;
+  program: LoyaltyProgram;
+  minPoints: number;
+  label: string;
+  description: string;
+  retailValue: number;
+  category: string;
+  caveats?: string;
+}
+
+interface Deal {
+  id: string;
+  dealType: string;
+  title: string;
+  description: string;
+  programs: LoyaltyProgram[];
+  retailer?: string;
+  chain?: string;
+  startDate: string;
+  endDate: string;
+}
+
+const SWEET_SPOTS = sweetSpotsRaw as SweetSpot[];
+const DEALS = dealsRaw as Deal[];
 
 export function buildAskContext(args: {
   heldCards: UserCardWithDetails[];
@@ -79,6 +110,53 @@ export function buildAskContext(args: {
     );
   }
   lines.push('');
+
+  // Points valuations — conservative AUD cents-per-point estimates so the
+  // Copilot can quote real numbers instead of guessing. Cite these as
+  // "approximately" / "about" — never as exact.
+  lines.push('## Points valuations (AUD cents per point, conservative estimates)');
+  for (const program of Object.keys(CPP) as LoyaltyProgram[]) {
+    lines.push(`- ${PROGRAM_LABEL[program]}: ${CPP[program]}¢ per point`);
+  }
+  lines.push('');
+
+  // Award sweet spots — notable redemption targets grouped by program.
+  // The Copilot can cite these by minPoints + retailValue to answer
+  // "is 90k QFF good for J to Japan?" type questions with real anchors.
+  lines.push('## Award sweet spots (notable redemptions)');
+  const spotsByProgram = new Map<LoyaltyProgram, SweetSpot[]>();
+  for (const spot of SWEET_SPOTS) {
+    const list = spotsByProgram.get(spot.program) ?? [];
+    list.push(spot);
+    spotsByProgram.set(spot.program, list);
+  }
+  for (const [program, spots] of spotsByProgram) {
+    lines.push(`### ${PROGRAM_LABEL[program]}`);
+    for (const spot of spots) {
+      lines.push(
+        `- ${formatPoints(spot.minPoints)} pts → ${spot.label} (worth ~${formatCurrency(spot.retailValue)})` +
+          (spot.caveats ? ` — ${spot.caveats}` : ''),
+      );
+    }
+  }
+  lines.push('');
+
+  // Active deals — only include deals where today falls in the
+  // [startDate, endDate] window. Stops Copilot from suggesting expired
+  // promos. Compares date strings directly (yyyy-MM-dd sorts correctly).
+  const activeDeals = DEALS.filter((d) => d.startDate <= args.today && args.today <= d.endDate);
+  if (activeDeals.length > 0) {
+    lines.push(`## Active deals (running ${args.today})`);
+    for (const deal of activeDeals) {
+      const where = deal.retailer ?? deal.chain ?? '';
+      const programs = deal.programs.map((p) => PROGRAM_LABEL[p]).join(', ');
+      lines.push(
+        `- ${deal.title}${where ? ` (${where})` : ''} — ${programs}, ends ${deal.endDate}`,
+      );
+      lines.push(`  ${deal.description}`);
+    }
+    lines.push('');
+  }
 
   return lines.join('\n');
 }
