@@ -109,6 +109,22 @@ workflows:
           else
             echo "capacitor-assets/{icon,splash}.png not found — skipping cap:assets (using Capacitor defaults)"
           fi
+          # Inject iOS permission usage descriptions into Info.plist.
+          # Capacitor regenerates Info.plist on every cap add ios run, so
+          # these must be re-injected on every build. Without them, iOS
+          # silently denies the WKWebView's mic + speech-recognition
+          # requests and the user sees "permission denied" with no prompt
+          # ever shown. PlistBuddy ships with macOS.
+          INFO_PLIST="ios/App/App/Info.plist"
+          MIC_DESC="PH Copilot uses your microphone for hands-free spend logging, card updates, and Copilot questions."
+          SR_DESC="PH Copilot uses speech recognition to convert what you say into card updates and Copilot questions."
+          /usr/libexec/PlistBuddy -c "Add :NSMicrophoneUsageDescription string $MIC_DESC" "$INFO_PLIST" 2>/dev/null \
+            || /usr/libexec/PlistBuddy -c "Set :NSMicrophoneUsageDescription $MIC_DESC" "$INFO_PLIST"
+          /usr/libexec/PlistBuddy -c "Add :NSSpeechRecognitionUsageDescription string $SR_DESC" "$INFO_PLIST" 2>/dev/null \
+            || /usr/libexec/PlistBuddy -c "Set :NSSpeechRecognitionUsageDescription $SR_DESC" "$INFO_PLIST"
+          echo "Injected iOS permission usage descriptions:"
+          /usr/libexec/PlistBuddy -c "Print :NSMicrophoneUsageDescription" "$INFO_PLIST"
+          /usr/libexec/PlistBuddy -c "Print :NSSpeechRecognitionUsageDescription" "$INFO_PLIST"
 
       - name: Set bundle version + build number from Codemagic counter
         script: |
