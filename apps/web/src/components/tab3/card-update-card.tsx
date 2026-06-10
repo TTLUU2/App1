@@ -15,10 +15,12 @@ import { AlertTriangle, CheckCircle2, Mic, MicOff, Pencil, Send, Undo2 } from 'l
 import clsx from 'clsx';
 import { getAllBenefits } from '@ph/shared';
 import {
+  catalogue,
   selectUserCardsWithDetails,
   selectRecommendations,
   useUserCardsStore,
 } from '@/store/user-cards';
+import { matchCardFromOcr } from '@/lib/match-card';
 import { useUserBenefitsStore } from '@/store/user-benefits';
 import { useUserPreferencesStore } from '@/store/user-preferences';
 import { buildAskContext } from '@/lib/ask-context';
@@ -68,6 +70,12 @@ export function CardUpdateCard() {
   const userCards = useUserCardsStore((s) => s.userCards);
   const loaded = useUserCardsStore((s) => s.loaded);
   const updateCard = useUserCardsStore((s) => s.updateCard);
+  const addCardAction = useUserCardsStore((s) => s.addCard);
+  // The most recently mentioned card via voice / mic interactions. Lets
+  // follow-up utterances refer back without naming the card again — e.g.
+  // "add my westpac altitude" then "that one ends in 1234". Reset only by
+  // navigating away or refreshing.
+  const [lastMentionedCardId, setLastMentionedCardId] = useState<string | null>(null);
   const markBenefitUsed = useUserBenefitsStore((s) => s.markUsed);
   const removeRedemption = useUserBenefitsStore((s) => s.removeRedemption);
 
@@ -233,11 +241,22 @@ export function CardUpdateCard() {
       });
       const json = (await res.json()) as
         | {
-            kind: 'spend' | 'benefit' | 'question' | 'unknown';
+            kind:
+              | 'spend'
+              | 'benefit'
+              | 'add_card'
+              | 'cancel_card'
+              | 'set_last4'
+              | 'set_nickname'
+              | 'question'
+              | 'unknown';
             amount: number | null;
             spendCardId: string | null;
             benefitUserCardId: string | null;
             benefitId: string | null;
+            cardSearchTerm: string | null;
+            last4Value: string | null;
+            nicknameValue: string | null;
             confidence: 'high' | 'medium' | 'low';
           }
         | { error: string };
@@ -287,6 +306,122 @@ export function CardUpdateCard() {
         await routeToCopilot();
         return;
       }
+
+      // ADD CARD — fuzzy-match the spoken term against the bundled
+      // catalogue, then call the same store action the visual Add Card
+      // flow uses. Voice ack names the card so the user knows we got
+      // the right one. Sets lastMentionedCardId so a follow-up
+      // "ends in 1234" can attach the last4 without naming the card.
+      if (json.kind === 'add_card' && json.cardSearchTerm) {
+        const allCards = catalogue.allCards();
+        const match = matchCardFromOcr({ productName: json.cardSearchTerm }, allCards);
+        if (!match || match.score < 0.4) {
+          // No confident match — let Copilot handle it (e.g. suggest
+          // similar cards, or ask the user to be more specific).
+          await routeToCopilot();
+          return;
+        }
+        const matched = allCards.find((c) => c.id === match.cardId);
+        if (!matched) {
+          await routeToCopilot();
+          return;
+        }
+        // Block double-adds. If the user already holds this card, say so.
+        const alreadyHeld = heldCards.some((uc) => uc.cardId === matched.id);
+        if (alreadyHeld) {
+          setLastAnswer({
+            question: utterance,
+            answer: `You already have a ${matched.name}.`,
+          });
+          void speak(`You already have a ${matched.name}.`);
+          setTranscript('');
+          setPhase('done');
+          return;
+        }
+        const today = todayIsoDate();
+        const newCard = await addCardAction({
+          cardId: matched.id,
+          applicationDate: today,
+          bonusReceived: false,
+        });
+        setLastMentionedCardId(newCard.id);
+        const ack = `Added ${matched.name}. Tap the card to set last four or other details.`;
+        setLastAnswer({ question: utterance, answer: ack });
+        void speak(ack);
+        setTranscript('');
+        setPhase('done');
+        return;
+      }
+
+      // CANCEL CARD — match the spoken term against HELD cards (not the
+      // whole catalogue), then set cancellationDate via updateCard. Same
+      // action the held-card row uses via tap.
+      if (json.kind === 'cancel_card' && json.cardSearchTerm) {
+        const heldCatalogueCards = heldCards.map((uc) => uc.card);
+        const match = matchCardFromOcr({ productName: json.cardSearchTerm }, heldCatalogueCards);
+        if (!match || match.score < 0.4) {
+          await routeToCopilot();
+          return;
+        }
+        const heldUserCard = heldCards.find((uc) => uc.cardId === match.cardId);
+        if (!heldUserCard) {
+          await routeToCopilot();
+          return;
+        }
+        await updateCard(heldUserCard.id, { cancellationDate: todayIsoDate() });
+        setLastMentionedCardId(heldUserCard.id);
+        const ack = `Cancelled ${heldUserCard.card.name}.`;
+        setLastAnswer({ question: utterance, answer: ack });
+        void speak(ack);
+        setTranscript('');
+        setPhase('done');
+        return;
+      }
+
+      // SET LAST 4 — needs a previously-mentioned card to attach to. If
+      // there isn't one (user opened the app and just said "ends in
+      // 1234"), let Copilot ask for clarification.
+      if (json.kind === 'set_last4' && json.last4Value && /^\d{4}$/.test(json.last4Value)) {
+        if (!lastMentionedCardId) {
+          await routeToCopilot();
+          return;
+        }
+        const uc = userCards.find((c) => c.id === lastMentionedCardId);
+        if (!uc) {
+          await routeToCopilot();
+          return;
+        }
+        await updateCard(uc.id, { last4: json.last4Value });
+        const cardName = heldCards.find((h) => h.id === uc.id)?.card.name ?? 'card';
+        const ack = `Last four set to ${json.last4Value} on your ${cardName}.`;
+        setLastAnswer({ question: utterance, answer: ack });
+        void speak(ack);
+        setTranscript('');
+        setPhase('done');
+        return;
+      }
+
+      // SET NICKNAME — same shape as set_last4 but writes the nickname
+      // field. No format check (any short string is fine).
+      if (json.kind === 'set_nickname' && json.nicknameValue) {
+        if (!lastMentionedCardId) {
+          await routeToCopilot();
+          return;
+        }
+        const uc = userCards.find((c) => c.id === lastMentionedCardId);
+        if (!uc) {
+          await routeToCopilot();
+          return;
+        }
+        await updateCard(uc.id, { nickname: json.nicknameValue });
+        const ack = `Named it ${json.nicknameValue}.`;
+        setLastAnswer({ question: utterance, answer: ack });
+        void speak(ack);
+        setTranscript('');
+        setPhase('done');
+        return;
+      }
+
       if (json.kind === 'spend' && json.spendCardId && json.amount != null) {
         const uc = heldCards.find((c) => c.id === json.spendCardId);
         if (!uc) {
@@ -294,6 +429,8 @@ export function CardUpdateCard() {
           setPhase('error');
           return;
         }
+        // Track for follow-up "ends in 1234" / "call it travel" utterances.
+        setLastMentionedCardId(uc.id);
         // Don't write yet — drop into the gov-check step so the user can
         // exclude any direct gov payments before we commit the amount.
         setPendingSpend({
@@ -310,6 +447,8 @@ export function CardUpdateCard() {
           setPhase('error');
           return;
         }
+        // Track for follow-up utterances ("ends in 1234" etc).
+        setLastMentionedCardId(uc.id);
         const record = await markBenefitUsed({
           userCardId: uc.id,
           benefit,
@@ -429,7 +568,7 @@ export function CardUpdateCard() {
               ? phase === 'answering'
                 ? 'Asking Copilot…'
                 : 'Working…'
-              : 'Log spend, mark a benefit, or ask anything'}
+              : 'Log spend, add or cancel a card, mark a benefit, or ask anything'}
         </p>
         {!supported && (
           <p className="text-center text-[11px] text-zinc-500">
