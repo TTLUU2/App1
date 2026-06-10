@@ -108,12 +108,16 @@ export async function POST(req: NextRequest) {
         'The user could be: ' +
         '(1) LOGGING A SPEND — "add 250 to amex plat" → kind=spend, fill amount + spendCardId. ' +
         '(2) MARKING A BENEFIT USED — "used my hotel credit" → kind=benefit, fill benefit fields. ' +
-        '(3) ASKING A QUESTION — "when does my westpac fee hit?", "should I cancel my amex?", ' +
-        '"what should my next card be?", "how am I tracking on min spend?" → kind=question, all ' +
-        'spend/benefit fields null (the client will pass the original utterance to Copilot). ' +
-        'Prefer "question" over "unknown" whenever the utterance is interrogative or seeking ' +
-        'advice/info, even if it mentions cards by name. Only use "unknown" for genuinely ' +
-        'off-topic or garbled input.',
+        '(3) ANYTHING ELSE — kind=question. The client routes question utterances to the ' +
+        'Copilot, which handles greetings, off-topic redirects, advice requests, fact ' +
+        'questions, etc. Examples: "hi how are you", "what should my next card be?", ' +
+        '"when does my westpac fee hit?", "should I cancel my amex?", "what\'s good to eat in ' +
+        'sydney" (Copilot will polite-redirect off-topic), "tell me about velocity" — ALL of ' +
+        'these are kind=question. ' +
+        'STRONG PREFERENCE: when in doubt, choose kind=question. The Copilot handles ' +
+        'gracefully. Use kind=unknown ONLY for completely garbled / unparseable input ' +
+        '(random characters, single non-word fragments). Never use kind=unknown for ' +
+        'coherent English, even if off-topic or conversational.',
       userText: `Held cards:\n${heldList}\n\nBenefits on held cards:\n${benefitList}\n\nUtterance: ${parsed.data.utterance}`,
     });
     return NextResponse.json(output);

@@ -244,10 +244,14 @@ export function CardUpdateCard() {
       if (!res.ok || 'error' in json) {
         throw new Error('error' in json ? json.error : 'Parse failed');
       }
-      if (json.kind === 'question') {
-        // Route to the Copilot. Inline answer panel below the mic; also
-        // spoken aloud via the global TTS toggle (the speak() call
-        // respects the user's voice-mute preference).
+      // Helper: route any utterance to the Copilot Q&A pipeline. Used for
+      // both kind='question' (parser confident it's a question) and as the
+      // catch-all fallback for kind='unknown' or partial matches that don't
+      // resolve to a spend/benefit action. Copilot's system prompt handles
+      // greetings, off-topic redirects, advice refusals, etc. — so the mic
+      // is a true single surface: every coherent utterance gets a response,
+      // never a dead-end error.
+      const routeToCopilot = async () => {
         setPhase('answering');
         try {
           const context = buildAskContext({
@@ -277,6 +281,10 @@ export function CardUpdateCard() {
           setError(err instanceof Error ? err.message : String(err));
           setPhase('error');
         }
+      };
+
+      if (json.kind === 'question') {
+        await routeToCopilot();
         return;
       }
       if (json.kind === 'spend' && json.spendCardId && json.amount != null) {
@@ -316,10 +324,12 @@ export function CardUpdateCard() {
         setTranscript('');
         setPhase('done');
       } else {
-        setError(
-          "Couldn't tell what you wanted. Try again with an amount, a benefit name, or a question.",
-        );
-        setPhase('error');
+        // Fallback: parser couldn't confidently classify as spend/benefit/
+        // question (kind='unknown', or partial fields missing). Route to
+        // Copilot so the user gets a conversational answer instead of an
+        // error. Copilot's system prompt handles greetings, off-topic
+        // redirects, and graceful "I'm not sure what you meant" responses.
+        await routeToCopilot();
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
