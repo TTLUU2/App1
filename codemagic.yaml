@@ -176,8 +176,11 @@ workflows:
       app_store_connect:
         auth: integration
         submit_to_testflight: true
-        # Auto-share to the internal testers group on every successful
-        # build. External groups need manual review per build the first
-        # few times, then beta-app review becomes near-instant.
-        beta_groups:
-          - Internal Testers
+        # No `beta_groups` entry. App Store Connect API explicitly rejects
+        # assigning builds to INTERNAL groups via this field — internal
+        # testers see every processed build automatically (no per-build
+        # assignment needed). Previously had `beta_groups: [Internal Testers]`
+        # which caused the build to finish "yellow" with the warning
+        # "Cannot add internal group to a build" on every run.
+        # When we add EXTERNAL beta groups in future, add them here —
+        # those DO use this field, plus need first-build Beta App Review.
