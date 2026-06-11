@@ -3,6 +3,7 @@ import { TabBar } from '@/components/tab-bar';
 import { StoreHydrator } from '@/components/store-hydrator';
 import { ThemeToggle, THEME_INIT_SCRIPT } from '@/components/theme-toggle';
 import { VoiceToggle } from '@/components/voice-toggle';
+import { PerryFAB } from '@/components/perry-fab';
 import './globals.css';
 
 export const metadata: Metadata = {
@@ -59,6 +60,9 @@ export default function RootLayout({
 
         <div className="mx-auto flex min-h-dvh max-w-md flex-col pb-24">{children}</div>
         <TabBar />
+        {/* Perry — universal Copilot entry point. Floats bottom-left on
+            every screen except /ask (hides itself there). */}
+        <PerryFAB />
       </body>
     </html>
   );
