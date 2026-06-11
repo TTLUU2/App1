@@ -368,16 +368,29 @@ export function DealMatcher({ deals }: DealMatcherProps) {
   return (
     <section className="mx-auto max-w-2xl">
       {/* Page-level header (Gift icon + "Deals" + subtitle) is rendered
-          by /deals/page.tsx — matches the other tabs' header pattern.
-          The matcher's old centred-serif h1 was removed so the styling
-          stays consistent with the rest of the app. */}
-      <ChipRow picks={picks} totalSteps={TOTAL_QUESTIONS} onRemove={removePickFrom} />
+          by /deals/page.tsx. The picks summary used to sit here above
+          the wizard but felt out of place — it now lives inside each
+          step/done container under the eyebrow as a subtle PicksLine. */}
 
       {currentStep && (
-        <QuestionView key={currentStep.index} config={currentStep} onPick={pickOption} />
+        <QuestionView
+          key={currentStep.index}
+          config={currentStep}
+          picks={picks}
+          totalSteps={TOTAL_QUESTIONS}
+          onPick={pickOption}
+          onRemovePick={removePickFrom}
+        />
       )}
 
-      {done && <DonePanel onAdjust={() => removePickFrom(TOTAL_QUESTIONS)} />}
+      {done && (
+        <DonePanel
+          picks={picks}
+          totalSteps={TOTAL_QUESTIONS}
+          onAdjust={() => removePickFrom(TOTAL_QUESTIONS)}
+          onRemovePick={removePickFrom}
+        />
+      )}
 
       {/* Deals list — same DealCard layout as the rest of the app.
           Wizard provides the picks-driven filter + slide animations;
@@ -406,7 +419,13 @@ export function DealMatcher({ deals }: DealMatcherProps) {
 
 /* ─── Chip row ──────────────────────────────────────────────────────────── */
 
-function ChipRow({
+// Subtle picks row — sits under the step eyebrow inside QuestionView /
+// DonePanel rather than as its own block above the wizard. Renders
+// nothing when there are no picks yet (no "your picks land here..."
+// placeholder). Picked chips are smaller + lower-contrast than the
+// option chips so they read as already-chosen context, not as the
+// active choice.
+function PicksLine({
   picks,
   totalSteps,
   onRemove,
@@ -415,42 +434,32 @@ function ChipRow({
   totalSteps: number;
   onRemove: (stepIndex: number) => void;
 }) {
+  if (picks.length === 0) return null;
   return (
-    <div className="mb-5 min-h-[36px]">
-      <div className="flex flex-wrap items-center gap-1.5">
-        {picks.length === 0 && (
-          <span className="text-[11px] font-medium uppercase tracking-wide text-ink-mute">
-            Your picks land here as you go
-          </span>
-        )}
-        {picks.map((pick) => {
-          const Icon = pick.icon;
-          return (
-            <button
-              key={`${pick.stepIndex}-${pick.value}`}
-              type="button"
-              onClick={() => onRemove(pick.stepIndex)}
-              style={{ viewTransitionName: vtName(pick.stepIndex, pick.value) } as CSSProperties}
-              className={cn(
-                'vt-pick group inline-flex items-center gap-1.5 rounded-full border border-brand bg-brand-soft px-2.5 py-1 text-xs font-medium text-brand-deep transition',
-                'hover:bg-brand hover:text-paper focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/30',
-              )}
-              aria-label={`Remove ${pick.chipLabel}`}
-            >
-              <Icon size={12} strokeWidth={2} />
-              <span>{pick.chipLabel}</span>
-              <X
-                size={10}
-                strokeWidth={2.5}
-                className="ml-0.5 opacity-50 group-hover:opacity-100"
-              />
-            </button>
-          );
-        })}
-        <span className="ml-auto text-[11px] font-medium uppercase tracking-wide text-ink-mute">
-          {picks.length}/{totalSteps}
-        </span>
-      </div>
+    <div className="mt-2 flex flex-wrap items-center gap-1">
+      {picks.map((pick) => {
+        const Icon = pick.icon;
+        return (
+          <button
+            key={`${pick.stepIndex}-${pick.value}`}
+            type="button"
+            onClick={() => onRemove(pick.stepIndex)}
+            style={{ viewTransitionName: vtName(pick.stepIndex, pick.value) } as CSSProperties}
+            className={cn(
+              'vt-pick group inline-flex items-center gap-1 rounded-full border border-brand/40 bg-brand-soft/60 px-2 py-0.5 text-[10px] font-medium text-brand-deep transition',
+              'hover:border-brand hover:bg-brand hover:text-paper focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/30',
+            )}
+            aria-label={`Remove ${pick.chipLabel}`}
+          >
+            <Icon size={10} strokeWidth={2} />
+            <span>{pick.chipLabel}</span>
+            <X size={9} strokeWidth={2.5} className="opacity-50 group-hover:opacity-100" />
+          </button>
+        );
+      })}
+      <span className="ml-auto text-[10px] font-medium tracking-wide text-ink-mute">
+        {picks.length}/{totalSteps}
+      </span>
     </div>
   );
 }
@@ -459,10 +468,16 @@ function ChipRow({
 
 function QuestionView<T extends string>({
   config,
+  picks,
+  totalSteps,
   onPick,
+  onRemovePick,
 }: {
   config: StepConfig<T>;
+  picks: Pick[];
+  totalSteps: number;
   onPick: (stepIndex: 1 | 2 | 3, option: ChipOption<T>) => void;
+  onRemovePick: (stepIndex: number) => void;
 }) {
   return (
     <div
@@ -470,7 +485,10 @@ function QuestionView<T extends string>({
       style={{ viewTransitionName: `vt-question-step-${config.index}` } as CSSProperties}
     >
       <p className="text-[11px] font-medium uppercase tracking-wide text-brand">{config.eyebrow}</p>
-      <h2 className="mt-1.5 font-serif text-2xl leading-tight text-ink sm:text-[1.65rem]">
+      {/* Subtle picks line under the step eyebrow — shows what's been
+          chosen so far without competing with the active question. */}
+      <PicksLine picks={picks} totalSteps={totalSteps} onRemove={onRemovePick} />
+      <h2 className="mt-3 font-serif text-2xl leading-tight text-ink sm:text-[1.65rem]">
         {config.question}
       </h2>
       <div className="mt-4 flex flex-wrap gap-2">
@@ -518,11 +536,23 @@ function ChipButton({
 
 /* ─── Done panel ────────────────────────────────────────────────────────── */
 
-function DonePanel({ onAdjust }: { onAdjust: () => void }) {
+function DonePanel({
+  picks,
+  totalSteps,
+  onAdjust,
+  onRemovePick,
+}: {
+  picks: Pick[];
+  totalSteps: number;
+  onAdjust: () => void;
+  onRemovePick: (stepIndex: number) => void;
+}) {
   return (
     <div className="mb-8" style={{ viewTransitionName: 'vt-question-done' } as CSSProperties}>
       <p className="text-[11px] font-medium uppercase tracking-wide text-brand">All set</p>
-      <h2 className="mt-1.5 font-serif text-2xl leading-tight text-ink sm:text-[1.65rem]">
+      {/* Picks under the eyebrow — same subtle treatment as during steps. */}
+      <PicksLine picks={picks} totalSteps={totalSteps} onRemove={onRemovePick} />
+      <h2 className="mt-3 font-serif text-2xl leading-tight text-ink sm:text-[1.65rem]">
         Here&apos;s your top match
       </h2>
       <p className="mt-1 text-sm text-ink-soft">

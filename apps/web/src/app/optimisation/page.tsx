@@ -100,6 +100,10 @@ export default function OptimisationPage() {
           Card Optimisation
         </h1>
       </TripleTapHeader>
+      <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">
+        Track spend against minimum-spend targets, mark benefits as used, and ask Copilot anything
+        about your active cards.
+      </p>
 
       {!loaded && <p className="mt-6 text-sm text-zinc-500">Loading your cards…</p>}
 
