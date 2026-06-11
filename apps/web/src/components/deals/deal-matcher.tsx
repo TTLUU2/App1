@@ -51,6 +51,7 @@ import {
   Zap,
 } from 'lucide-react';
 import { DealCard } from './deal-card';
+import { EmptyState } from './empty-state';
 import { ProgramLogo } from './program-logo';
 import { SweetSpotTag } from './sweet-spot-tag';
 import { cn } from './cn';
@@ -323,7 +324,11 @@ export function DealMatcher({ deals }: DealMatcherProps) {
     () => filterAndSortDeals(deals, filters, 'ending-soonest'),
     [deals, filters],
   );
-  const [topDeal, ...restDeals] = visible;
+
+  // Stable string hash of the current picks. Used as part of each deal
+  // card's React key so changing picks re-mounts the cards and the
+  // .reveal-up stagger animation plays on every transition.
+  const picksKey = useMemo(() => picks.map((p) => `${p.stepIndex}:${p.value}`).join('|'), [picks]);
 
   const stackingByDealId = useMemo(() => {
     const byId = new Map(visible.map((d) => [d.id, d]));
@@ -374,35 +379,26 @@ export function DealMatcher({ deals }: DealMatcherProps) {
 
       {done && <DonePanel onAdjust={() => removePickFrom(TOTAL_QUESTIONS)} />}
 
-      <Toolbar
-        visibleCount={visible.length}
-        savedCount={savedIds.size}
-        onReset={reset}
-        hasPicks={picks.length > 0}
-      />
-
-      <GoalBar goal={goal} onSetGoal={setGoal} />
-
-      {!topDeal && <NoMatch onReset={reset} />}
-      {topDeal && (
-        <>
-          <LivePreview
-            deal={topDeal}
-            goal={goal}
-            isSaved={isSaved(topDeal.id)}
-            onToggleSave={() => toggleSaved(topDeal.id)}
-            stackingWith={stackingByDealId.get(topDeal.id)}
-          />
-          {restDeals.length > 0 && (
-            <MoreMatches
-              deals={restDeals}
-              goal={goal}
-              isSaved={isSaved}
-              toggleSaved={toggleSaved}
-              stackingByDealId={stackingByDealId}
-            />
-          )}
-        </>
+      {/* Deals list — same DealCard layout as the rest of the app.
+          Wizard provides the picks-driven filter + slide animations;
+          the deals themselves render as our standard cards with the
+          .reveal-up stagger when picks change. */}
+      {visible.length === 0 ? (
+        <div className="mt-6">
+          <EmptyState onClear={reset} />
+        </div>
+      ) : (
+        <div className="mt-6 flex flex-col gap-3">
+          {visible.map((d, i) => (
+            <div
+              key={`${d.id}-${picksKey}`}
+              className="reveal-up"
+              style={{ animationDelay: `${Math.min(i * 35, 350)}ms` }}
+            >
+              <DealCard deal={d} />
+            </div>
+          ))}
+        </div>
       )}
     </section>
   );
