@@ -4,12 +4,51 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useMemo, useState } from 'react';
 import { CancelCardConfirm } from '@/components/cancel-card-confirm';
-import { ChevronLeft, BookOpen, CheckCircle2, X, Info, ExternalLink } from 'lucide-react';
-import type { CardWithIssuer } from '@ph/shared';
+import {
+  ChevronLeft,
+  BookOpen,
+  CheckCircle2,
+  X,
+  Info,
+  ExternalLink,
+  Plane,
+  Hotel,
+  Receipt,
+  Utensils,
+  Shield,
+  TrendingUp,
+} from 'lucide-react';
+import type { CardWithIssuer, BenefitCategory } from '@ph/shared';
+import { getBenefitsForCard } from '@ph/shared';
 import { catalogue, selectEligibilityForCard, useUserCardsStore } from '@/store/user-cards';
 import { CardArt } from '@/components/card-art';
 import { StatusChip } from '@/components/status-chip';
 import { formatCurrency, formatDate, formatPoints, formatRelativeDays } from '@/lib/format';
+
+// Icon per benefit category so the list scans visually as well as
+// reads textually. lucide icons keep us in the no-emoji house style.
+const BENEFIT_ICON: Record<BenefitCategory, typeof Plane> = {
+  travel_credit: Plane,
+  hotel_credit: Hotel,
+  statement_credit: Receipt,
+  dining_credit: Utensils,
+  insurance: Shield,
+};
+
+const BENEFIT_LABEL: Record<BenefitCategory, string> = {
+  travel_credit: 'Travel credit',
+  hotel_credit: 'Hotel credit',
+  statement_credit: 'Statement credit',
+  dining_credit: 'Dining credit',
+  insurance: 'Insurance',
+};
+
+const PERIOD_LABEL: Record<string, string> = {
+  annual: 'per year',
+  quarterly: 'per quarter',
+  monthly: 'per month',
+  one_time: 'one-time',
+};
 
 /**
  * PRD §10.3 per-card detail. Always rendered as a Client Component because
@@ -82,6 +121,107 @@ export function CardDetail({ card }: { card: CardWithIssuer }) {
           </span>
         </div>
       </div>
+
+      {/* Card highlights — earn rate, bonus, fee laid out as a small
+          stat grid so the user can read the headline numbers at a
+          glance. Lives between the hero and the eligibility verdict
+          since "what does this card actually do" is the most important
+          detail after "can I get the bonus". */}
+      <section
+        aria-labelledby="highlights-heading"
+        className="mt-5 rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm dark:border-zinc-800 dark:bg-zinc-900"
+      >
+        <h2 id="highlights-heading" className="text-sm font-semibold">
+          Card highlights
+        </h2>
+        <dl className="mt-3 grid grid-cols-3 gap-3 text-center">
+          <div className="rounded-lg bg-zinc-50 p-2 dark:bg-zinc-950/40">
+            <dt className="text-[10px] uppercase tracking-wide text-zinc-500">Earn rate</dt>
+            <dd className="mt-1 text-sm font-semibold">
+              {card.earnRatePer1Aud != null ? (
+                <>
+                  {card.earnRatePer1Aud}
+                  <span className="text-xs font-normal text-zinc-500"> pt / $1</span>
+                </>
+              ) : (
+                <span className="text-zinc-400">—</span>
+              )}
+            </dd>
+          </div>
+          <div className="rounded-lg bg-zinc-50 p-2 dark:bg-zinc-950/40">
+            <dt className="text-[10px] uppercase tracking-wide text-zinc-500">Bonus</dt>
+            <dd className="mt-1 text-sm font-semibold">
+              {card.bonusPoints != null ? (
+                <>
+                  {formatPoints(card.bonusPoints)}
+                  <span className="text-xs font-normal text-zinc-500"> pts</span>
+                </>
+              ) : (
+                <span className="text-zinc-400">—</span>
+              )}
+            </dd>
+          </div>
+          <div className="rounded-lg bg-zinc-50 p-2 dark:bg-zinc-950/40">
+            <dt className="text-[10px] uppercase tracking-wide text-zinc-500">Annual fee</dt>
+            <dd className="mt-1 text-sm font-semibold">{formatCurrency(card.annualFee)}</dd>
+          </div>
+        </dl>
+        {/* Footnote — earn rate is the headline rate per issuer marketing.
+            Tiered rates (groceries / gov / etc.) aren't modelled yet; on
+            the TODO. */}
+        <p className="mt-2 text-[10px] text-zinc-500">
+          Headline earn rate on everyday spend. Some cards have lower rates on government, BPAY, or
+          specific category spend.
+        </p>
+      </section>
+
+      {/* Card benefits — travel credit, hotel credit, lounge access etc.
+          Pulled from getBenefitsForCard(). Hidden when the card has no
+          tracked benefits (most basic / no-fee cards). */}
+      {(() => {
+        const cardBenefits = getBenefitsForCard(card.id);
+        if (cardBenefits.length === 0) return null;
+        return (
+          <section
+            aria-labelledby="benefits-heading"
+            className="mt-4 rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm dark:border-zinc-800 dark:bg-zinc-900"
+          >
+            <h2 id="benefits-heading" className="text-sm font-semibold">
+              Travel + benefits
+            </h2>
+            <ul className="mt-2 divide-y divide-zinc-100 dark:divide-zinc-800">
+              {cardBenefits.map((b) => {
+                const Icon = BENEFIT_ICON[b.category] ?? TrendingUp;
+                const periodSuffix = PERIOD_LABEL[b.period] ?? b.period;
+                return (
+                  <li key={b.id} className="flex items-start gap-3 py-2.5">
+                    <span className="mt-0.5 grid h-8 w-8 flex-none place-items-center rounded-full bg-zinc-100 text-zinc-700 dark:bg-zinc-800 dark:text-zinc-300">
+                      <Icon className="h-4 w-4" aria-hidden />
+                    </span>
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-baseline justify-between gap-2">
+                        <p className="text-sm font-medium">{b.name}</p>
+                        <p className="flex-none text-xs font-semibold text-[var(--color-ph-red)]">
+                          {formatCurrency(b.valueAud)}
+                          <span className="font-normal text-zinc-500"> {periodSuffix}</span>
+                        </p>
+                      </div>
+                      <p className="mt-0.5 text-[11px] uppercase tracking-wide text-zinc-500">
+                        {BENEFIT_LABEL[b.category] ?? b.category}
+                      </p>
+                      {b.description && (
+                        <p className="mt-1 text-xs leading-snug text-zinc-600 dark:text-zinc-400">
+                          {b.description}
+                        </p>
+                      )}
+                    </div>
+                  </li>
+                );
+              })}
+            </ul>
+          </section>
+        );
+      })()}
 
       {/* Eligibility verdict */}
       <section
