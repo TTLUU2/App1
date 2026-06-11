@@ -249,9 +249,18 @@ function ExpiryInline({ endDate, now }: { endDate: string; now?: Date }) {
 
 interface DealMatcherProps {
   deals: Deal[];
+  /**
+   * Set of loyalty programs the user actually earns into based on their
+   * held cards (derived from card.rewardsProgram in the user-cards
+   * store). Used to pick the personalised "Top Match" — a deal in this
+   * set scored at the top of the wizard-filtered list. Empty set means
+   * the user has no cards yet; matcher falls back to a non-personalised
+   * top-by-weight result.
+   */
+  userPrograms?: Set<LoyaltyProgram>;
 }
 
-export function DealMatcher({ deals }: DealMatcherProps) {
+export function DealMatcher({ deals, userPrograms }: DealMatcherProps) {
   const [picks, setPicks] = useState<Pick[]>([]);
   // Saved-state stub — see file header. A future Zustand slice will back this.
   const [savedIds, setSavedIds] = useState<Set<string>>(() => new Set());
@@ -330,6 +339,26 @@ export function DealMatcher({ deals }: DealMatcherProps) {
   // .reveal-up stagger animation plays on every transition.
   const picksKey = useMemo(() => picks.map((p) => `${p.stepIndex}:${p.value}`).join('|'), [picks]);
 
+  // Top Match — best-by-program-overlap when the user has cards, else
+  // just the first visible deal (graceful fallback). visible[] is
+  // already sorted by ending-soonest.
+  const hasPrograms = !!userPrograms && userPrograms.size > 0;
+  const topMatch = useMemo(() => {
+    if (!hasPrograms || !userPrograms) return visible[0] ?? null;
+    return visible.find((d) => d.programs.some((p) => userPrograms.has(p))) ?? visible[0] ?? null;
+  }, [visible, userPrograms, hasPrograms]);
+  const restDeals = useMemo(
+    () => (topMatch ? visible.filter((d) => d.id !== topMatch.id) : visible),
+    [visible, topMatch],
+  );
+  // Names of the programs that drove the Top Match (used in the "Why
+  // this match" microcopy). Only matters when the match is actually
+  // personalised (hasPrograms + at least one program overlap).
+  const topMatchReasonPrograms = useMemo(() => {
+    if (!hasPrograms || !userPrograms || !topMatch) return [] as LoyaltyProgram[];
+    return topMatch.programs.filter((p) => userPrograms.has(p));
+  }, [topMatch, userPrograms, hasPrograms]);
+
   const stackingByDealId = useMemo(() => {
     const byId = new Map(visible.map((d) => [d.id, d]));
     const result = new Map<string, Array<{ id: string; title: string }>>();
@@ -392,27 +421,61 @@ export function DealMatcher({ deals }: DealMatcherProps) {
         />
       )}
 
-      {/* Deals list — same DealCard layout as the rest of the app.
-          Wizard provides the picks-driven filter + slide animations;
-          the deals themselves render as our standard cards with the
-          .reveal-up stagger when picks change. */}
-      {visible.length === 0 ? (
+      {/* Top Match — highlighted card surfaced above the rest of the
+          list. Personalised by the user's held-card programs when
+          available (passed in from the page). Falls back to the top
+          visible deal when the user has no cards. */}
+      {topMatch && (
+        <div className="mt-6">
+          <div
+            key={`top-${topMatch.id}-${picksKey}`}
+            className="reveal-up rounded-card border border-brand/30 bg-brand-soft/40 p-3 shadow-sm"
+            style={{ animationDelay: '0ms' }}
+          >
+            <div className="mb-2 flex items-center justify-between">
+              <span className="inline-flex items-center gap-1 rounded-full bg-brand px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-white">
+                Top match
+              </span>
+              {hasPrograms && topMatchReasonPrograms.length > 0 && (
+                <span className="text-[10px] uppercase tracking-wide text-ink-mute">
+                  Picked for your{' '}
+                  {topMatchReasonPrograms
+                    .slice(0, 2)
+                    .map((p) => PROGRAM_SHORT[p])
+                    .join(' + ')}{' '}
+                  card{topMatchReasonPrograms.length > 1 ? 's' : ''}
+                </span>
+              )}
+              {!hasPrograms && (
+                <span className="text-[10px] uppercase tracking-wide text-ink-mute">
+                  Add cards on Optimise for personalised matches
+                </span>
+              )}
+            </div>
+            <DealCard deal={topMatch} />
+          </div>
+        </div>
+      )}
+
+      {/* Rest of the matched deals — standard DealCard list with the
+          staggered .reveal-up animation when picks change. */}
+      {restDeals.length === 0 && !topMatch ? (
         <div className="mt-6">
           <EmptyState onClear={reset} />
         </div>
-      ) : (
-        <div className="mt-6 flex flex-col gap-3">
-          {visible.map((d, i) => (
+      ) : restDeals.length > 0 ? (
+        <div className="mt-4 flex flex-col gap-3">
+          {restDeals.map((d, i) => (
             <div
               key={`${d.id}-${picksKey}`}
               className="reveal-up"
-              style={{ animationDelay: `${Math.min(i * 35, 350)}ms` }}
+              style={{ animationDelay: `${Math.min((i + 1) * 35, 350)}ms` }}
             >
               <DealCard deal={d} />
             </div>
           ))}
         </div>
-      )}
+      ) : null}
     </section>
   );
 }
