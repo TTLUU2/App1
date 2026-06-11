@@ -19,7 +19,8 @@
  *   - Empty state has a "Clear filters" affordance.
  */
 
-import { useMemo, useState } from 'react';
+import { useMemo, useState, type CSSProperties } from 'react';
+import { flushSync } from 'react-dom';
 import { Gift } from 'lucide-react';
 import { cn } from '@/components/deals/cn';
 import dealsRaw from '@/data/deals.json';
@@ -47,6 +48,41 @@ const EXPIRING_OPTIONS: { value: ExpiringWindow; label: string }[] = [
   { value: '30d', label: '30 days' },
   { value: '7d', label: '7 days' },
 ];
+
+// Wrap a React state update in document.startViewTransition() so the
+// browser captures before/after snapshots and FLIP-morphs every element
+// with a `view-transition-name` from old position to new. This is what
+// gives the filter chips their slide animation when toggled — the chip
+// "flies" from its current spot to its post-state-change spot, and any
+// re-ordered card stack cross-fades during the same window.
+//
+// flushSync forces React to apply the state update synchronously inside
+// the transition callback so the browser sees the new layout immediately.
+//
+// Graceful fallback: browsers without the API (Firefox today) just call
+// update() directly — no animation, but functionality unchanged.
+interface BrowserViewTransition {
+  finished: Promise<void>;
+  ready: Promise<void>;
+}
+type StartViewTransition = (cb: () => void) => BrowserViewTransition;
+
+function runWithTransition(update: () => void) {
+  if (typeof document === 'undefined') {
+    update();
+    return;
+  }
+  const startVT = (document as { startViewTransition?: StartViewTransition }).startViewTransition;
+  if (typeof startVT === 'function') {
+    const transition = startVT.call(document, () => {
+      flushSync(update);
+    });
+    transition.finished.catch(() => {});
+    transition.ready.catch(() => {});
+  } else {
+    update();
+  }
+}
 
 function toggleDealType(state: FilterState, t: DealType): FilterState {
   const next = state.dealTypes.includes(t)
@@ -98,7 +134,11 @@ export default function DealsPage() {
       </header>
 
       {/* Primary filter row — deal type chips. Always visible because
-          deal type is the most common cut. */}
+          deal type is the most common cut. Each chip carries a unique
+          viewTransitionName + the 'vt-pick' className so the browser
+          FLIP-morphs it from old to new position when the filter state
+          changes. State change is wrapped in runWithTransition() so the
+          browser captures the snapshot. */}
       <div className="mb-2 flex flex-wrap items-center gap-1.5">
         {DEAL_TYPES.map((t) => {
           const active = filter.dealTypes.includes(t);
@@ -106,10 +146,11 @@ export default function DealsPage() {
             <button
               key={t}
               type="button"
-              onClick={() => setFilter((f) => toggleDealType(f, t))}
+              onClick={() => runWithTransition(() => setFilter((f) => toggleDealType(f, t)))}
               aria-pressed={active}
+              style={{ viewTransitionName: `vt-pick-dealtype-${t}` } as CSSProperties}
               className={cn(
-                'rounded-full border px-3 py-1 text-xs font-medium transition-all duration-150 active:scale-95',
+                'vt-pick rounded-full border px-3 py-1 text-xs font-medium transition-all duration-150 active:scale-95',
                 active
                   ? 'border-brand bg-brand text-white shadow-sm'
                   : 'border-line bg-paper text-ink-soft hover:border-brand/40 hover:text-ink',
@@ -132,10 +173,13 @@ export default function DealsPage() {
             <button
               key={opt.value}
               type="button"
-              onClick={() => setFilter((f) => ({ ...f, expiringWindow: opt.value }))}
+              onClick={() =>
+                runWithTransition(() => setFilter((f) => ({ ...f, expiringWindow: opt.value })))
+              }
               aria-pressed={active}
+              style={{ viewTransitionName: `vt-pick-expiring-${opt.value}` } as CSSProperties}
               className={cn(
-                'rounded-full border px-2.5 py-1 text-[11px] font-medium transition-all duration-150 active:scale-95',
+                'vt-pick rounded-full border px-2.5 py-1 text-[11px] font-medium transition-all duration-150 active:scale-95',
                 active
                   ? 'border-navy bg-navy text-white shadow-sm'
                   : 'border-line bg-paper text-ink-soft hover:border-navy/40 hover:text-ink',
@@ -148,10 +192,10 @@ export default function DealsPage() {
         <div className="ml-auto flex items-center gap-2">
           <FilterSheet
             filters={filter}
-            onChange={setFilter}
-            onClear={() => setFilter(EMPTY_FILTERS)}
+            onChange={(next) => runWithTransition(() => setFilter(next))}
+            onClear={() => runWithTransition(() => setFilter(EMPTY_FILTERS))}
           />
-          <SortSelect value={sort} onChange={setSort} />
+          <SortSelect value={sort} onChange={(next) => runWithTransition(() => setSort(next))} />
         </div>
       </div>
 

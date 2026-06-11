@@ -115,4 +115,37 @@
       animation: none;
     }
   }
+
+  /* View Transitions (Chrome, Edge, Safari 18+) — power the FLIP morph
+     slide animation on filter pills. When the user taps a chip, the
+     state changes inside document.startViewTransition() and the browser
+     interpolates each element with a unique view-transition-name from
+     its old position to its new one. The deals stagger-reveal too via
+     the root cross-fade.
+
+     Each filter chip gets `vt-pick` className + a per-chip
+     viewTransitionName via inline style (see /deals/page.tsx).
+
+     Tuned slow enough that the FLIP morph + slide read clearly. */
+  ::view-transition-group(*) {
+    animation-duration: 520ms;
+    animation-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
+  }
+  ::view-transition-old(root),
+  ::view-transition-new(root) {
+    animation-duration: 360ms;
+    animation-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
+  }
+  /* The flying chip sits above the cross-fading rest of the page. */
+  ::view-transition-group(.vt-pick) {
+    z-index: 50;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    ::view-transition-group(*),
+    ::view-transition-old(root),
+    ::view-transition-new(root) {
+      animation-duration: 1ms;
+    }
+  }
 }
