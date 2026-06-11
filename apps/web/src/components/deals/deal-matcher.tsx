@@ -362,14 +362,10 @@ export function DealMatcher({ deals }: DealMatcherProps) {
 
   return (
     <section className="mx-auto max-w-2xl">
-      <header className="mb-6 text-center">
-        <p className="text-xs font-medium uppercase tracking-wide text-ink-mute">Deal matcher</p>
-        <h1 className="mt-1.5 flex items-center justify-center gap-2 font-serif text-2xl leading-tight text-ink sm:text-3xl">
-          <Gift className="h-5 w-5 text-[var(--color-ph-red)]" aria-hidden />
-          {done ? 'Your matches are below' : 'Find your next bonus'}
-        </h1>
-      </header>
-
+      {/* Page-level header (Gift icon + "Deals" + subtitle) is rendered
+          by /deals/page.tsx — matches the other tabs' header pattern.
+          The matcher's old centred-serif h1 was removed so the styling
+          stays consistent with the rest of the app. */}
       <ChipRow picks={picks} totalSteps={TOTAL_QUESTIONS} onRemove={removePickFrom} />
 
       {currentStep && (
