@@ -535,11 +535,11 @@ export function DealMatcher({ deals, userPrograms }: DealMatcherProps) {
 /* ─── Chip row ──────────────────────────────────────────────────────────── */
 
 // Subtle picks row — sits under the step eyebrow inside QuestionView /
-// DonePanel rather than as its own block above the wizard. Renders
-// nothing when there are no picks yet (no "your picks land here..."
-// placeholder). Picked chips are smaller + lower-contrast than the
-// option chips so they read as already-chosen context, not as the
-// active choice.
+// DonePanel rather than as its own block above the wizard. When no
+// picks have been made yet (step 1, fresh start), shows a quiet
+// placeholder line so the user knows where their picks will land.
+// Picked chips are smaller + lower-contrast than the option chips so
+// they read as already-chosen context, not as the active choice.
 function PicksLine({
   picks,
   totalSteps,
@@ -549,7 +549,13 @@ function PicksLine({
   totalSteps: number;
   onRemove: (stepIndex: number) => void;
 }) {
-  if (picks.length === 0) return null;
+  if (picks.length === 0) {
+    return (
+      <p className="mt-1.5 text-[10px] tracking-wide text-ink-mute italic">
+        Your picks will land here as you go
+      </p>
+    );
+  }
   return (
     <div className="mt-2 flex flex-wrap items-center gap-1">
       {picks.map((pick) => {

@@ -77,8 +77,8 @@ export default function DealsPage() {
           Deals
         </h1>
         <p className="mt-1 text-xs text-ink-soft">
-          Answer three quick questions and we&apos;ll match you to the best current deals. Tap a
-          card for the source link, or ask Copilot how to maximise.
+          Matched to the best current deals. Tap a card for the source link, or ask Copilot how to
+          maximise.
         </p>
         <p className="mt-1.5 inline-flex items-center gap-1 text-[10px] uppercase tracking-wide text-ink-mute">
           <RefreshCw className="h-3 w-3" aria-hidden />
