@@ -46,18 +46,11 @@ export function BenefitsFlow() {
     return out;
   }, [heldCards]);
 
-  // Screen-mount greeting — fires once when /benefits loads. Says nothing
-  // if there are no benefit-bearing cards yet, since the empty state on
-  // screen already explains. No cleanup because StrictMode double-fire
-  // would kill the audio mid-greeting.
-  const greetedRef = useRef(false);
-  useEffect(() => {
-    if (greetedRef.current || !loaded) return;
-    greetedRef.current = true;
-    if (benefitOptions.length > 0) {
-      void speak('Which benefit have you used?');
-    }
-  }, [loaded, benefitOptions.length]);
+  // NO screen-mount greeting. Per user feedback, the spoken greeting
+  // should only fire on Tab 3 (Optimisation) — that's the home Copilot
+  // surface. /benefits is reached via the FAB sub-action from any tab;
+  // surprise audio when changing surfaces is jarring. Voice is reactive
+  // here: speak only in response to user actions.
 
   const [phase, setPhase] = useState<'idle' | 'submitting' | 'confirm' | 'disambiguate' | 'error'>(
     'idle',

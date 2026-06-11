@@ -38,20 +38,11 @@ export function SpendFlow() {
     return all.filter((c) => !c.cancellationDate);
   }, [userCards, loaded]);
 
-  // Screen-mount greeting — fires once when user lands on /spend so they
-  // hear the prompt without having to tap the mic first. Held until cards
-  // load so we don't greet then immediately say "no cards". No cleanup
-  // because StrictMode double-fire would kill the audio mid-greeting.
-  const greetedRef = useRef(false);
-  useEffect(() => {
-    if (greetedRef.current || !loaded) return;
-    greetedRef.current = true;
-    if (heldCards.length === 0) {
-      void speak("You don't have any active cards yet. Add one first using the plus button.");
-    } else {
-      void speak('How much did you spend, and on which card?');
-    }
-  }, [loaded, heldCards.length]);
+  // NO screen-mount greeting. Per user feedback, the spoken greeting should
+  // only fire on Tab 3 (Optimisation) — that's the home Copilot surface.
+  // /spend is reached via the FAB sub-action from any tab; surprise audio
+  // when changing surfaces is jarring. Voice is reactive here: speak only
+  // in response to user actions (the parse result, etc.).
 
   // Local UX state machine: idle → submitting → (confirm | disambiguate | error)
   const [phase, setPhase] = useState<'idle' | 'submitting' | 'confirm' | 'disambiguate' | 'error'>(

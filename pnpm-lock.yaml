@@ -47,6 +47,9 @@ importers:
       '@capacitor/push-notifications':
         specifier: ^8.1.1
         version: 8.1.1(@capacitor/core@8.4.0)
+      '@capacitor/splash-screen':
+        specifier: ^8.0.1
+        version: 8.0.1(@capacitor/core@8.4.0)
       '@neondatabase/serverless':
         specifier: ^1.1.0
         version: 1.1.0
@@ -266,6 +269,11 @@ packages:
 
   '@capacitor/push-notifications@8.1.1':
     resolution: {integrity: sha512-WqzjPKIbYbARMN+GC0XMAJcxJpUUzqgzS/Ny8RODLrro38pQhm3GXYwX2Mwd+LZlLY39rGImkCkrKyQSNfuikA==}
+    peerDependencies:
+      '@capacitor/core': '>=8.0.0'
+
+  '@capacitor/splash-screen@8.0.1':
+    resolution: {integrity: sha512-c/ew/Z3eA7z8l06WoRAtzVF16VwYYrExmHmfGq1Cg675pVzaC/yuucB8/1xG1vhEfnW4fZ1KhSf/kzR1RiVYgg==}
     peerDependencies:
       '@capacitor/core': '>=8.0.0'
 
@@ -5244,6 +5252,10 @@ snapshots:
       '@capacitor/core': 8.4.0
 
   '@capacitor/push-notifications@8.1.1(@capacitor/core@8.4.0)':
+    dependencies:
+      '@capacitor/core': 8.4.0
+
+  '@capacitor/splash-screen@8.0.1(@capacitor/core@8.4.0)':
     dependencies:
       '@capacitor/core': 8.4.0
 

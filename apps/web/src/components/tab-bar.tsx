@@ -53,7 +53,12 @@ export function TabBar() {
     <>
       <nav
         aria-label="Primary"
-        className="fixed inset-x-0 bottom-0 z-30 mx-auto max-w-md border-t border-zinc-200 bg-white/95 backdrop-blur pb-[env(safe-area-inset-bottom)] dark:border-zinc-800 dark:bg-zinc-950/95"
+        // pb is doubled-up: an explicit pb-3 guarantees baseline padding
+        // even when env(safe-area-inset-bottom) returns 0 (some Capacitor
+        // contentInset modes squash the safe-area env value to 0). On
+        // iPhones with a home indicator, the env() adds the device's
+        // native indicator height (~34px) on top of the explicit pb-3.
+        className="fixed inset-x-0 bottom-0 z-30 mx-auto max-w-md border-t border-zinc-200 bg-white/95 pb-[calc(0.75rem+env(safe-area-inset-bottom))] backdrop-blur dark:border-zinc-800 dark:bg-zinc-950/95"
       >
         <ul role="tablist" className="grid grid-cols-4 items-end">
           {TABS.map((tab, i) => {
@@ -69,13 +74,13 @@ export function TabBar() {
                   // doesn't linger on the destination route).
                   onClick={() => setFanOpen(false)}
                   className={clsx(
-                    // pt-2 pb-2.5 (instead of justify-center) lifts the
-                    // label off the bottom edge. On iPhones the safe-area
-                    // inset-bottom adds padding under the nav, but in
-                    // testing the label still felt cramped against the
-                    // home-indicator strip — explicit pb-2.5 gives the
-                    // text proper breathing room.
-                    'flex h-16 flex-col items-center gap-1 pt-2 pb-2.5 text-xs font-medium transition-colors',
+                    // pt-2 pb-3 puts the icon+label near the top of the
+                    // 64px tab. Combined with the nav's
+                    // pb-[calc(0.75rem+env(safe-area-inset-bottom))], the
+                    // label sits well above the iPhone home indicator on
+                    // TestFlight. Previous pb-2.5 wasn't enough breathing
+                    // room on real-device testing.
+                    'flex h-16 flex-col items-center gap-1 pt-2 pb-3 text-xs font-medium transition-colors',
                     active
                       ? 'text-[var(--color-ph-red)]'
                       : 'text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100',
