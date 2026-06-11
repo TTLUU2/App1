@@ -10,4 +10,27 @@
 @theme {
   --color-ph-red: #d62828;
   --color-ph-red-dark: #a51d1d;
+
+  /* ── Deals tokens (lifted from points-deals/app/globals.css) ──────────
+   * Tailwind v4 auto-generates utility classes from these (e.g.
+   * --color-paper-warm → bg-paper-warm). Brand colours are remapped to
+   * PH Copilot's red, not the source repo's red. */
+  --color-ink: oklch(0.18 0.04 260);
+  --color-ink-soft: oklch(0.36 0.03 260);
+  --color-ink-mute: oklch(0.55 0.02 260);
+  --color-paper: oklch(0.99 0.003 250);
+  --color-paper-warm: oklch(0.975 0.01 85);
+  --color-line: oklch(0.92 0.005 260);
+  --color-navy: oklch(0.3 0.07 260);
+  --color-navy-deep: oklch(0.22 0.07 260);
+  --color-amber: oklch(0.83 0.16 85);
+  --color-amber-deep: oklch(0.72 0.18 70);
+  --color-mint: oklch(0.78 0.1 165);
+  --color-rose: oklch(0.72 0.13 25);
+  /* PH brand red — overrides the source repo's brand red. */
+  --color-brand: #d62828;
+  --color-brand-deep: #a51d1d;
+  --color-brand-soft: oklch(0.96 0.025 25);
+
+  --radius-card: 0.875rem;
 }
