@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { CreditCard, Gift, TrendingUp, Sparkles, Plus } from 'lucide-react';
 import clsx from 'clsx';
 import { FanActions, type FanActionId } from './fan-actions';
@@ -36,6 +36,18 @@ export function TabBar() {
     }
     // 'spend' / 'benefits' / 'ask' route via <Link> inside FanActions, no JS needed
   }
+
+  // Allow other parts of the app to open the Add Card modal without prop
+  // drilling. The Copilot mic dispatches `ph:open-add-card` when the user
+  // says generic "add a card" (no specific catalogue card named) — we want
+  // to surface the same flow the FAB triggers instead of a verbal hint.
+  useEffect(() => {
+    function handler() {
+      setAddCardOpen(true);
+    }
+    window.addEventListener('ph:open-add-card', handler);
+    return () => window.removeEventListener('ph:open-add-card', handler);
+  }, []);
 
   return (
     <>

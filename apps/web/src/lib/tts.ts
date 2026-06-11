@@ -17,6 +17,81 @@ export interface SpeakOptions {
   voiceId?: string;
 }
 
+// Airport / city codes the TTS otherwise spells out letter-by-letter
+// ("S-Y-D" instead of "Sydney"). UI text keeps the codes (compact, scan-
+// friendly); we expand only the audio path. Add codes here as Copilot /
+// sweet-spots data introduces them. Match is word-boundary-only so we
+// don't replace inside "syd-mel" hyphenated tokens (those get split too).
+const AIRPORT_PRONUNCIATIONS: Record<string, string> = {
+  // Australia
+  SYD: 'Sydney',
+  MEL: 'Melbourne',
+  BNE: 'Brisbane',
+  PER: 'Perth',
+  ADL: 'Adelaide',
+  CBR: 'Canberra',
+  HBA: 'Hobart',
+  CNS: 'Cairns',
+  OOL: 'Gold Coast',
+  // Asia
+  HND: 'Tokyo Haneda',
+  NRT: 'Tokyo Narita',
+  KIX: 'Osaka',
+  HKG: 'Hong Kong',
+  SIN: 'Singapore',
+  ICN: 'Seoul',
+  PEK: 'Beijing',
+  PVG: 'Shanghai',
+  TPE: 'Taipei',
+  BKK: 'Bangkok',
+  KUL: 'Kuala Lumpur',
+  DPS: 'Bali',
+  // Europe
+  LHR: 'London Heathrow',
+  LGW: 'London Gatwick',
+  CDG: 'Paris Charles de Gaulle',
+  FRA: 'Frankfurt',
+  AMS: 'Amsterdam',
+  FCO: 'Rome',
+  ZRH: 'Zurich',
+  // Americas
+  LAX: 'Los Angeles',
+  SFO: 'San Francisco',
+  JFK: 'New York J F K',
+  ORD: 'Chicago',
+  DFW: 'Dallas',
+  YVR: 'Vancouver',
+  YYZ: 'Toronto',
+  // Middle East / Africa
+  DXB: 'Dubai',
+  DOH: 'Doha',
+  AUH: 'Abu Dhabi',
+  JNB: 'Johannesburg',
+  // Oceania
+  AKL: 'Auckland',
+  WLG: 'Wellington',
+  CHC: 'Christchurch',
+  NAN: 'Nadi',
+  NOU: 'Noumea',
+};
+
+// Pre-built regex covering every code as a word-with-boundary match.
+// `\b` doesn't fire on hyphens in JS regex (it sees - as a non-word), so
+// "SYD-MEL" matches both halves naturally.
+const AIRPORT_CODE_RE = new RegExp(
+  '\\b(' + Object.keys(AIRPORT_PRONUNCIATIONS).join('|') + ')\\b',
+  'g',
+);
+
+/**
+ * Expand 3-letter airport / city codes to spoken names. Used by the TTS
+ * path so "SYD to HND" speaks as "Sydney to Tokyo Haneda" instead of
+ * "S-Y-D to H-N-D". UI display strings are not affected.
+ */
+export function expandAirportCodes(text: string): string {
+  return text.replace(AIRPORT_CODE_RE, (code) => AIRPORT_PRONUNCIATIONS[code] ?? code);
+}
+
 export function cancelSpeech(): void {
   currentCtrl?.abort();
   currentCtrl = null;
@@ -38,8 +113,13 @@ export async function speak(text: string, opts: SpeakOptions = {}): Promise<void
   if (!isVoiceOutputEnabled()) return;
   cancelSpeech();
 
+  // Expand 3-letter airport codes so the audio path says "Sydney" not
+  // "S-Y-D". UI strings stay compact. Done before the native fallback
+  // branch so both paths benefit.
+  const spokenText = expandAirportCodes(text);
+
   if (opts.forceNative) {
-    speakNative(text);
+    speakNative(spokenText);
     return;
   }
 
@@ -50,7 +130,7 @@ export async function speak(text: string, opts: SpeakOptions = {}): Promise<void
     const res = await fetch('/api/tts', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ text, voiceId: opts.voiceId }),
+      body: JSON.stringify({ text: spokenText, voiceId: opts.voiceId }),
       signal: ctrl.signal,
     });
 
@@ -83,7 +163,7 @@ export async function speak(text: string, opts: SpeakOptions = {}): Promise<void
     if (err instanceof Error && err.name === 'AbortError') return;
     // Quietly fall back so voice prompts still work without an ElevenLabs
     // key. Browser console will show the network error for diagnostics.
-    if (isSpeechSynthesisAvailable()) speakNative(text);
+    if (isSpeechSynthesisAvailable()) speakNative(spokenText);
   }
 }
 

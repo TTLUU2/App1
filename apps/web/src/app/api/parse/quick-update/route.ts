@@ -38,25 +38,16 @@ const REQUEST_SCHEMA = z.object({
 
 const PARSE_SCHEMA = z.object({
   kind: z
-    .enum([
-      'spend',
-      'benefit',
-      'add_card',
-      'cancel_card',
-      'set_last4',
-      'set_nickname',
-      'question',
-      'unknown',
-    ])
+    .enum(['spend', 'benefit', 'add_card', 'cancel_card', 'set_nickname', 'question', 'unknown'])
     .describe(
       'spend = logging a transaction amount against a card ("add 250 to amex"). ' +
         'benefit = used/redeemed a card benefit ("used my hotel credit"). ' +
         'add_card = asking to add a card to their portfolio ("add my westpac altitude black", ' +
-        '"i just got the amex platinum"). Fill cardSearchTerm with the catalogue name fragment. ' +
+        '"i just got the amex platinum", or generic "add a card" / "add new card" with no ' +
+        'specific card named). Fill cardSearchTerm with the catalogue name fragment if the ' +
+        'user named a card; leave null if they just said "add a card" generically. ' +
         'cancel_card = asking to cancel one of their held cards ("cancel my old amex", ' +
         '"close the citi rewards"). Fill cardSearchTerm. ' +
-        'set_last4 = telling us the last four digits of a card ("that one ends in 1234", ' +
-        '"last four is four two seven five"). Fill last4Value with exactly 4 digits. ' +
         'set_nickname = naming a card for reference ("call my westpac the travel card", ' +
         '"nickname the amex daily"). Fill nicknameValue. ' +
         'question = asking the Copilot anything — questions, greetings, off-topic redirects, ' +
@@ -91,15 +82,6 @@ const PARSE_SCHEMA = z.object({
       'For add_card / cancel_card: the spoken card name fragment used to fuzzy-match a card. ' +
         'Keep the relevant words (issuer + product, e.g. "westpac altitude black", "amex ' +
         'platinum"); strip filler ("add my", "cancel the", "i just got"). Null for other kinds.',
-    ),
-  last4Value: z
-    .string()
-    .nullable()
-    .describe(
-      'For set_last4: exactly 4 digits as a string ("1234", "4275"). Strip everything else ' +
-        'including hyphens, spaces, "ends in", "the last four". Spoken digits ("one two three ' +
-        'four", "four two seven five") must be converted. Null for other kinds OR if not ' +
-        'exactly 4 digits could be extracted.',
     ),
   nicknameValue: z
     .string()
@@ -156,10 +138,7 @@ export async function POST(req: NextRequest) {
         'fragment (strip "add my" / "i just got" / "new card:" filler).\n' +
         '(4) CANCEL CARD — "cancel my old amex", "close the citi rewards", "i cancelled my ' +
         'westpac" → kind=cancel_card, fill cardSearchTerm.\n' +
-        '(5) LAST 4 — "that one ends in 1234", "last four is four two seven five", "the digits ' +
-        'are 8 7 6 5" → kind=set_last4, fill last4Value (convert spoken digits to a 4-char ' +
-        "string; null if you can't extract exactly 4 digits).\n" +
-        '(6) NICKNAME — "call my westpac the travel card", "nickname the amex daily", "name it ' +
+        '(5) NICKNAME — "call my westpac the travel card", "nickname the amex daily", "name it ' +
         'groceries" → kind=set_nickname, fill nicknameValue (strip "call it" / "nickname it ' +
         'as" / "the" filler).\n' +
         'CONVERSATION (the user wants an answer):\n' +
@@ -173,7 +152,7 @@ export async function POST(req: NextRequest) {
         'always ask the user to clarify. A wrong action fires a real mutation.\n' +
         '- Use kind=unknown ONLY for completely garbled / unparseable input (random ' +
         'characters, fragments). Never for coherent English.\n' +
-        "- For set_last4 and set_nickname, the user doesn't need to name the card — the " +
+        "- For set_nickname, the user doesn't need to name the card — the " +
         'client applies the change to the most-recently-mentioned card. Just extract the ' +
         'value.',
       userText: `Held cards:\n${heldList}\n\nBenefits on held cards:\n${benefitList}\n\nUtterance: ${parsed.data.utterance}`,

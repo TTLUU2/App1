@@ -52,11 +52,34 @@ export function AskFlow() {
   // Greet on screen-mount (not on mic tap). User lands here knowing they
   // chose Copilot; spoken prompt frames the conversation. No cleanup:
   // StrictMode double-fire would kill the audio between effect runs.
+  //
+  // ALSO checks for a 'ph:ask-seed' handoff from the Tab 3 home Copilot
+  // — when the user taps "Continue in chat" on an inline answer, the Q+A
+  // gets stashed in sessionStorage; we pick it up here as the first turn
+  // so the conversation appears to continue rather than starting over.
+  // If a seed is present, we suppress the spoken greeting (we're picking
+  // up mid-conversation, not opening a fresh chat).
   const greetedRef = useRef(false);
   useEffect(() => {
     if (greetedRef.current) return;
     greetedRef.current = true;
-    void speak('Hi, what would you like to ask about your cards?');
+    let seeded = false;
+    try {
+      const raw = sessionStorage.getItem('ph:ask-seed');
+      if (raw) {
+        const seed = JSON.parse(raw) as { question?: string; answer?: string };
+        if (seed.question && seed.answer) {
+          setTurns([{ question: seed.question, answer: seed.answer, inScope: true }]);
+          seeded = true;
+        }
+        sessionStorage.removeItem('ph:ask-seed');
+      }
+    } catch {
+      /* malformed seed — ignore, fall through to normal greeting */
+    }
+    if (!seeded) {
+      void speak('Hi, what would you like to ask about your cards?');
+    }
   }, []);
 
   async function ask(question: string) {

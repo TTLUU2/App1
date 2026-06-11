@@ -11,6 +11,7 @@
 // text input fallback.
 
 import { useEffect, useMemo, useRef, useState } from 'react';
+import Link from 'next/link';
 import { AlertTriangle, CheckCircle2, Mic, MicOff, Pencil, Send, Undo2 } from 'lucide-react';
 import clsx from 'clsx';
 import { getAllBenefits } from '@ph/shared';
@@ -112,7 +113,15 @@ export function CardUpdateCard() {
   const [pendingSpend, setPendingSpend] = useState<PendingSpend | null>(null);
   // Copilot answer for inline question-routing. Set when kind === 'question'
   // in the parse response. Cleared on next voice/text submission.
-  const [lastAnswer, setLastAnswer] = useState<{ question: string; answer: string } | null>(null);
+  // lastAnswer.kind distinguishes a real Copilot response ('copilot' —
+  // expandable to /ask via "Continue in chat") from an action ack
+  // ('action' — e.g. "Added Westpac Altitude" — nothing to continue,
+  // just a confirmation that fades on next utterance).
+  const [lastAnswer, setLastAnswer] = useState<{
+    question: string;
+    answer: string;
+    kind: 'copilot' | 'action';
+  } | null>(null);
 
   // Extra context for the Copilot answer path. Cancelled cards + the full
   // recommendation list + preferences let buildAskContext produce the same
@@ -246,7 +255,6 @@ export function CardUpdateCard() {
               | 'benefit'
               | 'add_card'
               | 'cancel_card'
-              | 'set_last4'
               | 'set_nickname'
               | 'question'
               | 'unknown';
@@ -255,7 +263,6 @@ export function CardUpdateCard() {
             benefitUserCardId: string | null;
             benefitId: string | null;
             cardSearchTerm: string | null;
-            last4Value: string | null;
             nicknameValue: string | null;
             confidence: 'high' | 'medium' | 'low';
           }
@@ -292,7 +299,7 @@ export function CardUpdateCard() {
           if (!askRes.ok || 'error' in askJson) {
             throw new Error('error' in askJson ? askJson.error : 'Ask failed');
           }
-          setLastAnswer({ question: utterance, answer: askJson.answer });
+          setLastAnswer({ question: utterance, answer: askJson.answer, kind: 'copilot' });
           void speak(askJson.answer);
           setTranscript('');
           setPhase('done');
@@ -307,37 +314,62 @@ export function CardUpdateCard() {
         return;
       }
 
-      // ADD CARD — fuzzy-match the spoken term against the bundled
-      // catalogue, then call the same store action the visual Add Card
-      // flow uses. Voice ack names the card so the user knows we got
-      // the right one. Sets lastMentionedCardId so a follow-up
-      // "ends in 1234" can attach the last4 without naming the card.
-      if (json.kind === 'add_card' && json.cardSearchTerm) {
-        const allCards = catalogue.allCards();
-        const match = matchCardFromOcr({ productName: json.cardSearchTerm }, allCards);
-        if (!match || match.score < 0.4) {
-          // No confident match — let Copilot handle it (e.g. suggest
-          // similar cards, or ask the user to be more specific).
-          await routeToCopilot();
-          return;
-        }
-        const matched = allCards.find((c) => c.id === match.cardId);
-        if (!matched) {
-          await routeToCopilot();
-          return;
-        }
-        // Block double-adds. If the user already holds this card, say so.
-        const alreadyHeld = heldCards.some((uc) => uc.cardId === matched.id);
-        if (alreadyHeld) {
-          setLastAnswer({
-            question: utterance,
-            answer: `You already have a ${matched.name}.`,
-          });
-          void speak(`You already have a ${matched.name}.`);
+      // ADD CARD — three behaviours depending on what we got:
+      //   1. No card named ("add a card") → open the visual Add Card
+      //      modal so the user picks from the list. Brief voice ack.
+      //   2. Card named + confident catalogue match → add silently with
+      //      voice ack naming the card. Tracks lastMentionedCardId so
+      //      follow-ups ("call it travel") attach to the just-added card.
+      //   3. Card named + already in the user's portfolio → tell them.
+      if (json.kind === 'add_card') {
+        // Case 1: no specific card — kick off the visual flow.
+        if (!json.cardSearchTerm) {
+          if (typeof window !== 'undefined') {
+            window.dispatchEvent(new CustomEvent('ph:open-add-card'));
+          }
+          const ack = 'Opening add card.';
+          setLastAnswer({ question: utterance, answer: ack, kind: 'action' });
+          void speak(ack);
           setTranscript('');
           setPhase('done');
           return;
         }
+        // Cases 2/3: specific card named — fuzzy match against catalogue.
+        const allCards = catalogue.allCards();
+        const match = matchCardFromOcr({ productName: json.cardSearchTerm }, allCards);
+        if (!match || match.score < 0.4) {
+          // Low-confidence match — open the visual flow so the user can
+          // pick from the list instead of guessing wrong silently.
+          if (typeof window !== 'undefined') {
+            window.dispatchEvent(new CustomEvent('ph:open-add-card'));
+          }
+          const ack = `I couldn't tell which card you meant. Opening the picker.`;
+          setLastAnswer({ question: utterance, answer: ack, kind: 'action' });
+          void speak(ack);
+          setTranscript('');
+          setPhase('done');
+          return;
+        }
+        const matched = allCards.find((c) => c.id === match.cardId);
+        if (!matched) {
+          if (typeof window !== 'undefined') {
+            window.dispatchEvent(new CustomEvent('ph:open-add-card'));
+          }
+          setTranscript('');
+          setPhase('done');
+          return;
+        }
+        // Case 3: already held — don't double-add.
+        const alreadyHeld = heldCards.some((uc) => uc.cardId === matched.id);
+        if (alreadyHeld) {
+          const ack = `You already have a ${matched.name}.`;
+          setLastAnswer({ question: utterance, answer: ack, kind: 'action' });
+          void speak(ack);
+          setTranscript('');
+          setPhase('done');
+          return;
+        }
+        // Case 2: clean add.
         const today = todayIsoDate();
         const newCard = await addCardAction({
           cardId: matched.id,
@@ -345,8 +377,8 @@ export function CardUpdateCard() {
           bonusReceived: false,
         });
         setLastMentionedCardId(newCard.id);
-        const ack = `Added ${matched.name}. Tap the card to set last four or other details.`;
-        setLastAnswer({ question: utterance, answer: ack });
+        const ack = `Added ${matched.name}. Tap the card to set details.`;
+        setLastAnswer({ question: utterance, answer: ack, kind: 'action' });
         void speak(ack);
         setTranscript('');
         setPhase('done');
@@ -371,38 +403,15 @@ export function CardUpdateCard() {
         await updateCard(heldUserCard.id, { cancellationDate: todayIsoDate() });
         setLastMentionedCardId(heldUserCard.id);
         const ack = `Cancelled ${heldUserCard.card.name}.`;
-        setLastAnswer({ question: utterance, answer: ack });
+        setLastAnswer({ question: utterance, answer: ack, kind: 'action' });
         void speak(ack);
         setTranscript('');
         setPhase('done');
         return;
       }
 
-      // SET LAST 4 — needs a previously-mentioned card to attach to. If
-      // there isn't one (user opened the app and just said "ends in
-      // 1234"), let Copilot ask for clarification.
-      if (json.kind === 'set_last4' && json.last4Value && /^\d{4}$/.test(json.last4Value)) {
-        if (!lastMentionedCardId) {
-          await routeToCopilot();
-          return;
-        }
-        const uc = userCards.find((c) => c.id === lastMentionedCardId);
-        if (!uc) {
-          await routeToCopilot();
-          return;
-        }
-        await updateCard(uc.id, { last4: json.last4Value });
-        const cardName = heldCards.find((h) => h.id === uc.id)?.card.name ?? 'card';
-        const ack = `Last four set to ${json.last4Value} on your ${cardName}.`;
-        setLastAnswer({ question: utterance, answer: ack });
-        void speak(ack);
-        setTranscript('');
-        setPhase('done');
-        return;
-      }
-
-      // SET NICKNAME — same shape as set_last4 but writes the nickname
-      // field. No format check (any short string is fine).
+      // SET NICKNAME — apply nickname to the most-recently-mentioned card.
+      // No format check (any short string is fine).
       if (json.kind === 'set_nickname' && json.nicknameValue) {
         if (!lastMentionedCardId) {
           await routeToCopilot();
@@ -415,7 +424,7 @@ export function CardUpdateCard() {
         }
         await updateCard(uc.id, { nickname: json.nicknameValue });
         const ack = `Named it ${json.nicknameValue}.`;
-        setLastAnswer({ question: utterance, answer: ack });
+        setLastAnswer({ question: utterance, answer: ack, kind: 'action' });
         void speak(ack);
         setTranscript('');
         setPhase('done');
@@ -568,7 +577,7 @@ export function CardUpdateCard() {
               ? phase === 'answering'
                 ? 'Asking Copilot…'
                 : 'Working…'
-              : 'Log spend, add or cancel a card, mark a benefit, or ask anything'}
+              : 'Log spend, add or cancel a card, mark a benefit, name a card, or ask anything'}
         </p>
         {!supported && (
           <p className="text-center text-[11px] text-zinc-500">
@@ -702,9 +711,15 @@ export function CardUpdateCard() {
         </div>
       )}
 
-      {/* Inline Copilot answer — appears when the parse routed the
-          utterance to a question. Stays visible until the user dismisses
-          or asks something else. Spoken aloud via speak() above. */}
+      {/* Inline Copilot panel — appears after any voice/text submission
+          that produced a response. Two shapes:
+          - kind: 'copilot' — a real Copilot answer to a question. Shows a
+            "Continue in chat" link that seeds /ask with the Q+A so the
+            user can keep the conversation going with history.
+          - kind: 'action' — a brief ack for an action that was just
+            performed ("Added Westpac Altitude"). No expansion needed.
+          Stays visible until the user dismisses or fires another utterance.
+          Already spoken aloud via speak() at the call site. */}
       {lastAnswer && (
         <div className="mt-3 rounded-lg border border-zinc-200 bg-zinc-50 p-3 text-xs dark:border-zinc-800 dark:bg-zinc-950/40">
           <div className="flex items-start gap-2">
@@ -719,6 +734,33 @@ export function CardUpdateCard() {
               <p className="mt-1 leading-snug text-zinc-700 dark:text-zinc-300">
                 {lastAnswer.answer}
               </p>
+              {lastAnswer.kind === 'copilot' && (
+                <Link
+                  href="/ask"
+                  onClick={() => {
+                    // Seed the /ask page with this Q+A so it shows up as the
+                    // first turn of the chat. The page reads + clears this
+                    // key on mount.
+                    if (typeof window !== 'undefined') {
+                      try {
+                        sessionStorage.setItem(
+                          'ph:ask-seed',
+                          JSON.stringify({
+                            question: lastAnswer.question,
+                            answer: lastAnswer.answer,
+                          }),
+                        );
+                      } catch {
+                        /* sessionStorage disabled — fail silent, user
+                           lands on /ask with the normal greeting */
+                      }
+                    }
+                  }}
+                  className="mt-2 inline-block text-[11px] font-medium text-[var(--color-ph-red)] hover:underline"
+                >
+                  Continue in chat →
+                </Link>
+              )}
             </div>
             <button
               type="button"
