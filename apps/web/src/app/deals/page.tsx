@@ -71,6 +71,19 @@ export default function DealsPage() {
     [filter, sort],
   );
 
+  // Hash of the active filter + sort. Used to force-remount the deal
+  // cards on filter/sort change so the .reveal-up stagger animation
+  // re-fires for the new visible set.
+  const filterKey = useMemo(() => {
+    return [
+      sort,
+      filter.expiringWindow,
+      filter.dealTypes.join(','),
+      filter.programs.join(','),
+      filter.flyerSubtypes.join(','),
+    ].join('|');
+  }, [filter, sort]);
+
   return (
     <main className="px-4 pt-4 pb-24">
       <header className="mb-4">
@@ -145,9 +158,20 @@ export default function DealsPage() {
       {visible.length === 0 ? (
         <EmptyState onClear={() => setFilter(EMPTY_FILTERS)} />
       ) : (
+        // filterKey is a hash of the active filter + sort state. Used as
+        // part of each card's React key so changing filters/sort re-mounts
+        // the cards and re-plays the .reveal-up stagger animation. Without
+        // this, React reuses card instances across filter changes and the
+        // staggered slide-in never re-fires.
         <div className="flex flex-col gap-3">
-          {visible.map((d) => (
-            <DealCard key={d.id} deal={d} />
+          {visible.map((d, i) => (
+            <div
+              key={`${d.id}-${filterKey}`}
+              className="reveal-up"
+              style={{ animationDelay: `${Math.min(i * 35, 350)}ms` }}
+            >
+              <DealCard deal={d} />
+            </div>
           ))}
         </div>
       )}
