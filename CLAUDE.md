@@ -21,6 +21,8 @@ Point Hacks Copilot — AU credit-card eligibility & points-optimisation assista
 
 If a user asks for a deploy, confirm the scope in your reply before running the command — don't just deploy.
 
+**For visible feature changes (new UI surfaces, mascots, tabs, big behaviour shifts), ASK before deploying to production.** Bug fixes and quality lifts can deploy reactively; new visible features may collide with a planned demo or staged rollout. Don't infer "we built it so we should ship it." The user's plans aren't visible to you.
+
 ### Build / dev
 
 - **Webpack only, no Turbopack.** Turbopack kills the user's local machine. `next dev --webpack` and `next build` (defaults to webpack in this setup).
