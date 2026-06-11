@@ -69,7 +69,13 @@ export function TabBar() {
                   // doesn't linger on the destination route).
                   onClick={() => setFanOpen(false)}
                   className={clsx(
-                    'flex h-16 flex-col items-center justify-center gap-1 text-xs font-medium transition-colors',
+                    // pt-2 pb-2.5 (instead of justify-center) lifts the
+                    // label off the bottom edge. On iPhones the safe-area
+                    // inset-bottom adds padding under the nav, but in
+                    // testing the label still felt cramped against the
+                    // home-indicator strip — explicit pb-2.5 gives the
+                    // text proper breathing room.
+                    'flex h-16 flex-col items-center gap-1 pt-2 pb-2.5 text-xs font-medium transition-colors',
                     active
                       ? 'text-[var(--color-ph-red)]'
                       : 'text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100',
