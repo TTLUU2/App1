@@ -43,12 +43,15 @@ function programsFor(rp: RewardsProgram): LoyaltyProgram[] {
   }
 }
 
-// Last-refresh marker for the deals catalogue. Bump this each time the
-// bundled deals.json gets a refresh until we wire up a daily Vercel Cron
-// job that fetches the upstream list automatically (see docs/TODO.md
-// "Daily deals refresh"). The Cron job will write this constant via a
-// build step at that point; for now it's manual.
-const DEALS_LAST_UPDATED = '12 June 2026';
+// Last-refresh marker for the deals catalogue.
+//
+// MANUAL: I hand-bump this string whenever I edit deals.json. There is
+// NO daily auto-refresh wired up yet — that's a deferred item in
+// docs/TODO.md ("Daily deals refresh via Vercel Cron"). When we wire
+// the cron, this string will be replaced by a server-rendered timestamp
+// of the last successful fetch from the upstream Point Hacks weekly
+// gift-card offers page.
+const DEALS_LAST_UPDATED = '12 June 2026, 7:30 am AEST';
 
 export default function DealsPage() {
   // Held-card-aware Top Match. Subscribes to the user-cards store so when

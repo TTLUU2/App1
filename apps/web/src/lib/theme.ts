@@ -49,25 +49,29 @@ export function statusVisual(status: EligibilityStatus): StatusVisual {
   switch (status) {
     case 'eligible':
       return {
-        label: 'Eligible',
+        // User feedback: "Eligible" alone is ambiguous (credit eligibility
+        // vs sign-up bonus eligibility). We model BONUS eligibility — the
+        // 18-month / churn / once-per-card rules — so the label spells
+        // that out. Same reasoning for the other statuses below.
+        label: 'Bonus eligible',
         chipClass: 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-200',
         icon: 'check',
       };
     case 'waiting':
       return {
-        label: 'Waiting',
+        label: 'In cooldown',
         chipClass: 'bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-200',
         icon: 'clock',
       };
     case 'grey_area':
       return {
-        label: 'Grey area',
+        label: 'Edge case',
         chipClass: 'bg-zinc-200 text-zinc-800 dark:bg-zinc-800 dark:text-zinc-200',
         icon: 'alert',
       };
     case 'not_eligible':
       return {
-        label: 'Not eligible',
+        label: 'Not bonus eligible',
         chipClass: 'bg-rose-100 text-rose-800 dark:bg-rose-950 dark:text-rose-200',
         icon: 'x',
       };

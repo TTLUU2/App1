@@ -279,7 +279,12 @@ export function DealMatcher({ deals, userPrograms }: DealMatcherProps) {
 
   const skipNextSync = useRef(true);
 
-  // Restore picks from URL on mount (shareable links).
+  // Restore picks on mount. Two sources, in order:
+  //   1. URL query params (shareable links).
+  //   2. sessionStorage (preserves picks when navigating to another tab
+  //      and back). Storage key 'ph:deals-picks' holds JSON-encoded
+  //      Pick[] minus the icon (icons are recovered from the step
+  //      configs by value).
   useEffect(() => {
     if (typeof window === 'undefined') return;
     const sp = new URLSearchParams(window.location.search);
@@ -302,8 +307,50 @@ export function DealMatcher({ deals, userPrograms }: DealMatcherProps) {
       if (opt)
         initial.push({ stepIndex: 3, value: opt.value, chipLabel: opt.chipLabel, icon: opt.icon });
     }
+    // Fall back to sessionStorage when no URL params (i.e. user returned
+    // to this tab from another tab — the URL was reset by the router).
+    if (initial.length === 0) {
+      try {
+        const raw = sessionStorage.getItem('ph:deals-picks');
+        if (raw) {
+          const stored = JSON.parse(raw) as Array<{
+            stepIndex: 1 | 2 | 3;
+            value: string;
+          }>;
+          for (const s of stored) {
+            const cfg = [STEP_1, STEP_2, STEP_3][s.stepIndex - 1] as StepConfig<string> | undefined;
+            const opt = cfg?.options.find((o) => o.value === s.value);
+            if (opt && initial.length === s.stepIndex - 1) {
+              initial.push({
+                stepIndex: s.stepIndex,
+                value: opt.value,
+                chipLabel: opt.chipLabel,
+                icon: opt.icon,
+              });
+            }
+          }
+        }
+      } catch {
+        /* malformed storage — ignore */
+      }
+    }
     if (initial.length > 0) setPicks(initial);
   }, []);
+
+  // Persist picks to sessionStorage so navigating away and back keeps
+  // them in scope. Icon refs aren't serialisable so we strip them; the
+  // mount effect above recovers icons from the step configs by value.
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    try {
+      sessionStorage.setItem(
+        'ph:deals-picks',
+        JSON.stringify(picks.map((p) => ({ stepIndex: p.stepIndex, value: p.value }))),
+      );
+    } catch {
+      /* sessionStorage disabled — fail silent */
+    }
+  }, [picks]);
 
   // Sync picks → URL.
   useEffect(() => {
@@ -438,12 +485,17 @@ export function DealMatcher({ deals, userPrograms }: DealMatcherProps) {
               </span>
               {hasPrograms && topMatchReasonPrograms.length > 0 && (
                 <span className="text-[10px] uppercase tracking-wide text-ink-mute">
-                  Picked for your{' '}
+                  {/* Don't claim the user has a specific program-branded
+                      card — Amex MR earners ("flexible") can transfer
+                      into multiple programs without actually holding
+                      e.g. a Velocity card. Say what's true: they earn
+                      into the program. */}
+                  Earns into your{' '}
                   {topMatchReasonPrograms
                     .slice(0, 2)
                     .map((p) => PROGRAM_SHORT[p])
                     .join(' + ')}{' '}
-                  card{topMatchReasonPrograms.length > 1 ? 's' : ''}
+                  points
                 </span>
               )}
               {!hasPrograms && (
@@ -551,7 +603,10 @@ function QuestionView<T extends string>({
       {/* Subtle picks line under the step eyebrow — shows what's been
           chosen so far without competing with the active question. */}
       <PicksLine picks={picks} totalSteps={totalSteps} onRemove={onRemovePick} />
-      <h2 className="mt-3 font-serif text-2xl leading-tight text-ink sm:text-[1.65rem]">
+      {/* Question heading — dropped the previous font-serif text-2xl in
+          favour of the app's default sans + smaller size so it reads
+          consistent with the other tabs' h1/h2 (and lighter on phones). */}
+      <h2 className="mt-3 text-base font-semibold leading-snug text-ink sm:text-lg">
         {config.question}
       </h2>
       <div className="mt-4 flex flex-wrap gap-2">
@@ -586,12 +641,16 @@ function ChipButton({
       onClick={onClick}
       style={{ viewTransitionName: vtName } as CSSProperties}
       className={cn(
-        'vt-pick inline-flex items-center gap-2 rounded-full border-2 border-line bg-paper px-3.5 py-2 text-sm font-medium text-ink transition-shadow duration-200',
-        'hover:border-brand hover:shadow-[0_8px_20px_-12px_rgba(168,30,30,0.35)]',
+        // Smaller chips than the source — polished to match the rest of
+        // the app's filter-chip scale (Tab 4 status chips etc.) without
+        // shouting. Border thinned from 2 → 1px, padding pulled in,
+        // text dropped to xs.
+        'vt-pick inline-flex items-center gap-1.5 rounded-full border border-line bg-paper px-3 py-1.5 text-xs font-medium text-ink transition-shadow duration-200',
+        'hover:border-brand hover:shadow-[0_6px_14px_-10px_rgba(168,30,30,0.35)]',
         'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/30 focus-visible:ring-offset-2 focus-visible:ring-offset-paper',
       )}
     >
-      <Icon size={15} strokeWidth={1.75} className="shrink-0 text-ink-soft" />
+      <Icon size={13} strokeWidth={1.75} className="shrink-0 text-ink-soft" />
       <span>{label}</span>
     </button>
   );
@@ -615,7 +674,7 @@ function DonePanel({
       <p className="text-[11px] font-medium uppercase tracking-wide text-brand">All set</p>
       {/* Picks under the eyebrow — same subtle treatment as during steps. */}
       <PicksLine picks={picks} totalSteps={totalSteps} onRemove={onRemovePick} />
-      <h2 className="mt-3 font-serif text-2xl leading-tight text-ink sm:text-[1.65rem]">
+      <h2 className="mt-3 text-base font-semibold leading-snug text-ink sm:text-lg">
         Here&apos;s your top match
       </h2>
       <p className="mt-1 text-sm text-ink-soft">

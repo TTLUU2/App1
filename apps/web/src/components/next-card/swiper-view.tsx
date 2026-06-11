@@ -55,7 +55,7 @@ export function SwiperView({ items }: Props) {
   if (items.length === 0) {
     return (
       <div className="mt-4 rounded-2xl border border-dashed border-zinc-300 bg-white p-6 text-center text-sm text-zinc-500 dark:border-zinc-700 dark:bg-zinc-900">
-        No eligible cards under your current preferences.
+        No bonus-eligible cards under your current preferences.
       </div>
     );
   }

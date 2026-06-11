@@ -42,7 +42,7 @@ export function EligibilityBanner({ allCards, recommendations }: Props) {
   const parts: string[] = [];
   parts.push(`${active} active`);
   if (cancelled > 0) parts.push(`${cancelled} cancelled`);
-  parts.push(`${eligibleNow} eligible now`);
+  parts.push(`${eligibleNow} bonus eligible`);
   if (nextUnlock) parts.push(`next unlock ${formatDate(nextUnlock)}`);
 
   return (

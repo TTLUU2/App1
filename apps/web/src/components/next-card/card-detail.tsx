@@ -230,7 +230,7 @@ export function CardDetail({ card }: { card: CardWithIssuer }) {
       >
         <div className="flex items-center justify-between">
           <h2 id="eligibility-heading" className="text-sm font-semibold">
-            Eligibility
+            Bonus eligibility
           </h2>
           <ConfidenceChip level={eligibility.confidenceLevel} />
         </div>

@@ -92,6 +92,16 @@ export default function OptimisationPage() {
     }
   }, [loaded, heldCards.length]);
 
+  // Cancel any in-flight greeting when the user navigates away from
+  // Tab 3. Without this, the audio kept playing for ~3-4 seconds on
+  // another tab — disorienting because the visible mic was no longer
+  // there. Cleanup fires on unmount only (no deps).
+  useEffect(() => {
+    return () => {
+      cancelSpeech();
+    };
+  }, []);
+
   return (
     <main className="flex-1 px-4 pb-6 pt-4">
       <TripleTapHeader>

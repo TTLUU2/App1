@@ -50,7 +50,7 @@ export function EligibleSummary({
         id="eligible-summary-heading"
         className="px-1 text-[10px] font-semibold uppercase tracking-widest text-zinc-500"
       >
-        Eligible cards
+        Bonus eligible cards
       </h2>
 
       <div className="mt-2 grid grid-cols-3 gap-2">
