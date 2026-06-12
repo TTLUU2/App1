@@ -125,10 +125,14 @@ workflows:
             # in storyboard's 0..1 RGB space.
             echo "--- Storyboards present under ios/ ---"
             find ios -name "*.storyboard" -type f
-            echo "--- Patching contentMode + background colour ---"
+            echo "--- Patching background colour (scaleAspectFill kept) ---"
+            # User feedback: no bars allowed, prefer some plane crop over
+            # navy strips top/bottom. Keep the template's scaleAspectFill
+            # (fills the screen, crops the source to match aspect ratio).
+            # Set the storyboard view bg to navy anyway in case the image
+            # doesn't fully cover during the very first paint frame.
             find ios -name "*.storyboard" -type f -exec \
               sed -i '' \
-                -e 's/contentMode="scaleAspectFill"/contentMode="scaleAspectFit"/g' \
                 -e 's|<color key="backgroundColor" systemColor="systemBackgroundColor"/>|<color key="backgroundColor" red="0.10196" green="0.30588" blue="0.41961" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>|g' \
                 {} \;
             echo "--- Verifying patch ---"
