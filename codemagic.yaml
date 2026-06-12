@@ -108,21 +108,30 @@ workflows:
             pnpm cap:assets
             # Patch the iOS splash storyboard so the splash image fills
             # the entire screen instead of letterboxing.
-            # @capacitor/assets generates a Splash.storyboard whose
-            # imageView uses contentMode="scaleAspectFit" — that keeps
-            # the image's aspect ratio but leaves bars on whichever axis
-            # doesn't match the device. scaleAspectFill instead fills
-            # the whole screen and crops outside the safe area, which
-            # is what the user wants (splash subject is centred in the
-            # source, so cropping is acceptable).
-            STORYBOARD="ios/App/App/Assets.xcassets/Splash.imageset/.storyboard"
-            STORYBOARD_ALT="ios/App/App/Splash.storyboard"
-            for f in "$STORYBOARD" "$STORYBOARD_ALT"; do
-              if [ -f "$f" ]; then
-                sed -i '' 's/contentMode="scaleAspectFit"/contentMode="scaleAspectFill"/g' "$f"
-                echo "Patched $f: scaleAspectFit -> scaleAspectFill"
-              fi
-            done
+            #
+            # Capacitor 8 generates LaunchScreen.storyboard at
+            # ios/App/App/Base.lproj/LaunchScreen.storyboard with
+            # contentMode="scaleAspectFit" — keeps the image's aspect
+            # ratio but leaves bars on whichever axis doesn't match the
+            # device. We flip every .storyboard file under ios/ to
+            # scaleAspectFill (image fills the whole screen, crops
+            # outside the safe area, which is fine because the splash
+            # subject is centred in the source artwork).
+            #
+            # Use `find` rather than hardcoded paths so we catch
+            # LaunchScreen.storyboard, Splash.storyboard, or whatever
+            # else Capacitor / @capacitor/assets may generate now or
+            # later. Log what we find so future debugging is cheap.
+            echo "--- Storyboards present under ios/ ---"
+            find ios -name "*.storyboard" -type f
+            echo "--- Patching contentMode -> scaleAspectFill ---"
+            find ios -name "*.storyboard" -type f -exec \
+              sed -i '' 's/contentMode="scaleAspectFit"/contentMode="scaleAspectFill"/g' {} \;
+            echo "--- Verifying patch ---"
+            find ios -name "*.storyboard" -type f -exec \
+              grep -l 'scaleAspectFill' {} \; | while read f; do
+                echo "PATCHED: $f"
+              done
           else
             echo "capacitor-assets/{icon,splash}.png not found — skipping cap:assets (using Capacitor defaults)"
           fi
