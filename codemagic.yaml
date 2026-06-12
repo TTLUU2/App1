@@ -103,8 +103,8 @@ workflows:
           # Generate iOS icon + splash sets from capacitor-assets/ if
           # source files are present. Skipped silently when missing so
           # the build still succeeds on fresh repos without artwork.
-          if [ -f capacitor-assets/icon.png ] && [ -f capacitor-assets/splash.png ]; then
-            echo "Found capacitor-assets/{icon,splash}.png — generating iOS variants"
+          if [ -f capacitor-assets/icon-only.png ] && [ -f capacitor-assets/splash.png ]; then
+            echo "Found capacitor-assets/{icon-only,splash}.png — generating iOS variants"
             pnpm cap:assets
             # Patch the iOS splash storyboard so the splash image fills
             # the entire screen instead of letterboxing.
