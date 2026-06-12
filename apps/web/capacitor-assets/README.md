@@ -7,7 +7,7 @@ variants from these files on every `mobile/*` push.
 
 | File              | Purpose                                | Size          | Notes                                                                                                                                            |
 | ----------------- | -------------------------------------- | ------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `icon.png`        | App icon (Home Screen, Settings, etc.) | **1024×1024** | iOS auto-rounds the corners. Subject should fill ~70% of the frame to survive at the small sizes (60×60).                                        |
+| `icon-only.png`   | App icon (Home Screen, Settings, etc.) | **1024×1024** | iOS auto-rounds the corners. Subject should fill ~70% of the frame to survive at the small sizes (60×60).                                        |
 | `splash.png`      | Splash screen (shown on launch)        | **2732×2732** | Subject is centred and scaled to fit. Background pixels outside the safe area get clipped on smaller devices, so keep important content centred. |
 | `splash-dark.png` | Optional dark-mode splash              | **2732×2732** | If absent, `splash.png` is used in both light + dark.                                                                                            |
 
