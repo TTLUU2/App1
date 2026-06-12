@@ -106,32 +106,36 @@ workflows:
           if [ -f capacitor-assets/icon-only.png ] && [ -f capacitor-assets/splash.png ]; then
             echo "Found capacitor-assets/{icon-only,splash}.png — generating iOS variants"
             pnpm cap:assets
-            # Patch the iOS splash storyboard so the splash image fills
-            # the entire screen instead of letterboxing.
+            # Patch the iOS splash storyboard so the WHOLE splash image
+            # is visible (no cropping) and the surrounding space blends
+            # into the splash artwork's own navy background.
             #
-            # Capacitor 8 generates LaunchScreen.storyboard at
-            # ios/App/App/Base.lproj/LaunchScreen.storyboard with
-            # contentMode="scaleAspectFit" — keeps the image's aspect
-            # ratio but leaves bars on whichever axis doesn't match the
-            # device. We flip every .storyboard file under ios/ to
-            # scaleAspectFill (image fills the whole screen, crops
-            # outside the safe area, which is fine because the splash
-            # subject is centred in the source artwork).
+            # The Capacitor 8 template has contentMode="scaleAspectFill"
+            # which fills the screen but CROPS the source 2732x2732 to
+            # match the device aspect ratio — so the airplane (centred
+            # in source) ends up offset/cropped on tall phones.
             #
-            # Use `find` rather than hardcoded paths so we catch
-            # LaunchScreen.storyboard, Splash.storyboard, or whatever
-            # else Capacitor / @capacitor/assets may generate now or
-            # later. Log what we find so future debugging is cheap.
+            # Switch to scaleAspectFit so the whole image fits inside
+            # the screen with NO crop, then set the root view background
+            # colour to #1a4e6b (navy from splash.png) so the "extra"
+            # space top/bottom on tall phones looks like a continuation
+            # of the splash, not as bars.
+            #
+            # #1a4e6b = rgb(26, 78, 107) = (0.10196, 0.30588, 0.41961)
+            # in storyboard's 0..1 RGB space.
             echo "--- Storyboards present under ios/ ---"
             find ios -name "*.storyboard" -type f
-            echo "--- Patching contentMode -> scaleAspectFill ---"
+            echo "--- Patching contentMode + background colour ---"
             find ios -name "*.storyboard" -type f -exec \
-              sed -i '' 's/contentMode="scaleAspectFit"/contentMode="scaleAspectFill"/g' {} \;
+              sed -i '' \
+                -e 's/contentMode="scaleAspectFill"/contentMode="scaleAspectFit"/g' \
+                -e 's|<color key="backgroundColor" systemColor="systemBackgroundColor"/>|<color key="backgroundColor" red="0.10196" green="0.30588" blue="0.41961" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>|g' \
+                {} \;
             echo "--- Verifying patch ---"
-            find ios -name "*.storyboard" -type f -exec \
-              grep -l 'scaleAspectFill' {} \; | while read f; do
-                echo "PATCHED: $f"
-              done
+            find ios -name "*.storyboard" -type f | while read f; do
+              echo "=== $f ==="
+              grep -E 'contentMode|backgroundColor' "$f" | head -6
+            done
           else
             echo "capacitor-assets/{icon,splash}.png not found — skipping cap:assets (using Capacitor defaults)"
           fi
