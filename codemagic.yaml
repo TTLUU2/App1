@@ -139,9 +139,104 @@ workflows:
             || /usr/libexec/PlistBuddy -c "Set :NSMicrophoneUsageDescription $MIC_DESC" "$INFO_PLIST"
           /usr/libexec/PlistBuddy -c "Add :NSSpeechRecognitionUsageDescription string $SR_DESC" "$INFO_PLIST" 2>/dev/null \
             || /usr/libexec/PlistBuddy -c "Set :NSSpeechRecognitionUsageDescription $SR_DESC" "$INFO_PLIST"
-          echo "Injected iOS permission usage descriptions:"
+
+          # Mark the app as using only exempt encryption (HTTPS only).
+          # Without this, App Store Connect either asks each upload OR
+          # silently rejects the binary (depending on enforcement era).
+          # We don't implement any custom cryptography — every secure
+          # call goes via iOS's URLSession over TLS.
+          /usr/libexec/PlistBuddy -c "Add :ITSAppUsesNonExemptEncryption bool false" "$INFO_PLIST" 2>/dev/null \
+            || /usr/libexec/PlistBuddy -c "Set :ITSAppUsesNonExemptEncryption false" "$INFO_PLIST"
+
+          echo "Injected iOS permission usage descriptions + encryption flag:"
           /usr/libexec/PlistBuddy -c "Print :NSMicrophoneUsageDescription" "$INFO_PLIST"
           /usr/libexec/PlistBuddy -c "Print :NSSpeechRecognitionUsageDescription" "$INFO_PLIST"
+          /usr/libexec/PlistBuddy -c "Print :ITSAppUsesNonExemptEncryption" "$INFO_PLIST"
+
+          # Inject PrivacyInfo.xcprivacy manifest. Required by Apple as
+          # of May 2024 for apps using "Required Reason APIs" — silent
+          # processing rejection if missing. Capacitor + WKWebView
+          # touch all four of: UserDefaults (CA92.1), file timestamps
+          # (C617.1), system boot time (35F9.1), disk space (E174.1).
+          # See https://developer.apple.com/documentation/bundleresources/privacy_manifest_files/describing_use_of_required_reason_api
+          PRIVACY_MANIFEST="ios/App/App/PrivacyInfo.xcprivacy"
+          # python3 (ships with macOS) for clean indented XML output —
+          # avoids YAML/heredoc indentation parsing pitfalls.
+          python3 - "$PRIVACY_MANIFEST" <<'PYEOF'
+          import sys
+          path = sys.argv[1]
+          with open(path, "w", encoding="utf-8") as f:
+              f.write(
+                  '<?xml version="1.0" encoding="UTF-8"?>\n'
+                  '<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" '
+                  '"http://www.apple.com/DTDs/PropertyList-1.0.dtd">\n'
+                  '<plist version="1.0">\n'
+                  '<dict>\n'
+                  '  <key>NSPrivacyTracking</key>\n'
+                  '  <false/>\n'
+                  '  <key>NSPrivacyTrackingDomains</key>\n'
+                  '  <array/>\n'
+                  '  <key>NSPrivacyCollectedDataTypes</key>\n'
+                  '  <array/>\n'
+                  '  <key>NSPrivacyAccessedAPITypes</key>\n'
+                  '  <array>\n'
+                  '    <dict>\n'
+                  '      <key>NSPrivacyAccessedAPIType</key>\n'
+                  '      <string>NSPrivacyAccessedAPICategoryUserDefaults</string>\n'
+                  '      <key>NSPrivacyAccessedAPITypeReasons</key>\n'
+                  '      <array><string>CA92.1</string></array>\n'
+                  '    </dict>\n'
+                  '    <dict>\n'
+                  '      <key>NSPrivacyAccessedAPIType</key>\n'
+                  '      <string>NSPrivacyAccessedAPICategoryFileTimestamp</string>\n'
+                  '      <key>NSPrivacyAccessedAPITypeReasons</key>\n'
+                  '      <array><string>C617.1</string></array>\n'
+                  '    </dict>\n'
+                  '    <dict>\n'
+                  '      <key>NSPrivacyAccessedAPIType</key>\n'
+                  '      <string>NSPrivacyAccessedAPICategorySystemBootTime</string>\n'
+                  '      <key>NSPrivacyAccessedAPITypeReasons</key>\n'
+                  '      <array><string>35F9.1</string></array>\n'
+                  '    </dict>\n'
+                  '    <dict>\n'
+                  '      <key>NSPrivacyAccessedAPIType</key>\n'
+                  '      <string>NSPrivacyAccessedAPICategoryDiskSpace</string>\n'
+                  '      <key>NSPrivacyAccessedAPITypeReasons</key>\n'
+                  '      <array><string>E174.1</string></array>\n'
+                  '    </dict>\n'
+                  '  </array>\n'
+                  '</dict>\n'
+                  '</plist>\n'
+              )
+          PYEOF
+          echo "Wrote $PRIVACY_MANIFEST"
+
+          # Add the privacy manifest to the App target's resources via
+          # the xcodeproj Ruby gem. Without this step the file sits in
+          # the source tree but never reaches the .ipa bundle. The gem
+          # ships with Codemagic Mac VMs (or installs in seconds).
+          gem list -i xcodeproj > /dev/null 2>&1 || gem install xcodeproj --no-document
+          ruby <<'RUBY'
+            require "xcodeproj"
+            proj_path = "ios/App/App.xcodeproj"
+            project = Xcodeproj::Project.open(proj_path)
+            target = project.targets.find { |t| t.name == "App" }
+            raise "App target not found" unless target
+
+            # Find or create the file reference at App/PrivacyInfo.xcprivacy.
+            app_group = project.main_group.find_subpath("App", true)
+            existing = app_group.files.find { |f| f.path == "PrivacyInfo.xcprivacy" }
+            file_ref = existing || app_group.new_file("PrivacyInfo.xcprivacy")
+
+            # Add to the target's Copy Bundle Resources phase if not
+            # already there.
+            resources = target.resources_build_phase
+            already = resources.files.any? { |bf| bf.file_ref == file_ref }
+            resources.add_file_reference(file_ref) unless already
+
+            project.save
+            puts "Added PrivacyInfo.xcprivacy to App target resources"
+          RUBY
 
       - name: Set bundle version + build number from Codemagic counter
         script: |
