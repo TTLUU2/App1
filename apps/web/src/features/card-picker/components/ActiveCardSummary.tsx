@@ -43,22 +43,26 @@ function getDisplayProgram(card: Card): string {
 function getLogoUrl(card: Card): string {
   const program = getDisplayProgram(card);
   if (program === 'Velocity' || program === 'Velocity Frequent Flyer')
-    return '/images/programs-small/velocity.png';
-  if (program === 'Qantas') return '/images/programs-small/qantas.png';
+    return 'https://pointhacks-spa-tools.fly.dev/images/programs-small/velocity.png';
+  if (program === 'Qantas')
+    return 'https://pointhacks-spa-tools.fly.dev/images/programs-small/qantas.png';
   if (
     program === 'American Express Membership Rewards' ||
     program === 'Membership Rewards Ascent Premium'
   )
-    return '/images/programs-small/amex-mr.png';
+    return 'https://pointhacks-spa-tools.fly.dev/images/programs-small/amex-mr.png';
   if (program === 'Westpac Altitude Rewards' || program === 'Altitude Rewards')
-    return '/images/programs-small/altitude.png';
-  if (program === 'NAB Rewards') return '/images/programs-small/nab-rewards.png';
+    return 'https://pointhacks-spa-tools.fly.dev/images/programs-small/altitude.png';
+  if (program === 'NAB Rewards')
+    return 'https://pointhacks-spa-tools.fly.dev/images/programs-small/nab-rewards.png';
   if (program === 'ANZ Rewards' || program === 'ANZ Business Rewards')
-    return '/images/programs-small/anz-rewards.png';
-  if (program === 'Amplify Rewards') return '/images/programs-small/amplify.png';
+    return 'https://pointhacks-spa-tools.fly.dev/images/programs-small/anz-rewards.png';
+  if (program === 'Amplify Rewards')
+    return 'https://pointhacks-spa-tools.fly.dev/images/programs-small/amplify.png';
   if (program === 'MyCard' || program.startsWith('MyCard Rewards'))
-    return '/images/programs-small/mycard.png';
-  if (program === 'Star Alliance') return '/images/programs-small/star-alliance.png';
+    return 'https://pointhacks-spa-tools.fly.dev/images/programs-small/mycard.png';
+  if (program === 'Star Alliance')
+    return 'https://pointhacks-spa-tools.fly.dev/images/programs-small/star-alliance.png';
   return '';
 }
 

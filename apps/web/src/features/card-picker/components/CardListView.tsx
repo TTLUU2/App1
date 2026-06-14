@@ -18,7 +18,7 @@ export function CardListView({
   pinnedCardId,
 }: CardListViewProps) {
   return (
-    <div className="pt-1 pb-10 space-y-[10px] md:space-y-6">
+    <div className="pt-1 space-y-[10px] md:space-y-6 pb-[calc(10rem+env(safe-area-inset-bottom))]">
       {filteredCards.length > 0 ? (
         filteredCards.map((card, index) => (
           <CardTile

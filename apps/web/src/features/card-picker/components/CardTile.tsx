@@ -61,10 +61,10 @@ function getCardBranding(card: Card) {
   const program = getDisplayProgram(card);
 
   if (program === 'Velocity' || program === 'Velocity Frequent Flyer') {
-    logoUrl = '/images/programs-large/velocity.png';
+    logoUrl = 'https://pointhacks-spa-tools.fly.dev/images/programs-large/velocity.png';
     programColor = '#512698';
   } else if (program === 'Qantas') {
-    logoUrl = '/images/programs-large/qantas.png';
+    logoUrl = 'https://pointhacks-spa-tools.fly.dev/images/programs-large/qantas.png';
     programColor = '#DF0000';
     mobileLogoClass = 'h-[13px]';
     desktopLogoClass = 'h-[21px]';
@@ -72,29 +72,29 @@ function getCardBranding(card: Card) {
     program === 'American Express Membership Rewards' ||
     program === 'Membership Rewards Ascent Premium'
   ) {
-    logoUrl = '/images/programs-large/amex-mr.png';
+    logoUrl = 'https://pointhacks-spa-tools.fly.dev/images/programs-large/amex-mr.png';
     programColor = '#016FD0';
     mobileLogoClass = 'h-[13px]';
     desktopLogoClass = 'h-[15px]';
   } else if (program === 'Westpac Altitude Rewards' || program === 'Altitude Rewards') {
-    logoUrl = '/images/programs-large/altitude.png';
+    logoUrl = 'https://pointhacks-spa-tools.fly.dev/images/programs-large/altitude.png';
     programColor = '#DF0000';
     mobileLogoClass = 'h-[13px]';
     desktopLogoClass = 'h-[17px]';
   } else if (program === 'NAB Rewards') {
-    logoUrl = '/images/programs-large/nab-rewards.png';
+    logoUrl = 'https://pointhacks-spa-tools.fly.dev/images/programs-large/nab-rewards.png';
     programColor = '#C20000';
   } else if (program === 'ANZ Rewards' || program === 'ANZ Business Rewards') {
-    logoUrl = '/images/programs-large/anz-rewards.png';
+    logoUrl = 'https://pointhacks-spa-tools.fly.dev/images/programs-large/anz-rewards.png';
     programColor = '#007DBA';
   } else if (program === 'Amplify Rewards') {
-    logoUrl = '/images/programs-large/amplify.png';
+    logoUrl = 'https://pointhacks-spa-tools.fly.dev/images/programs-large/amplify.png';
     programColor = '#78BE20';
   } else if (program === 'MyCard' || program.startsWith('MyCard Rewards')) {
-    logoUrl = '/images/programs-large/mycard.png';
+    logoUrl = 'https://pointhacks-spa-tools.fly.dev/images/programs-large/mycard.png';
     programColor = '#573232';
   } else if (program === 'Star Alliance') {
-    logoUrl = '/images/programs-large/star-alliance.png';
+    logoUrl = 'https://pointhacks-spa-tools.fly.dev/images/programs-large/star-alliance.png';
     programColor = '#5B5C5E';
   }
 

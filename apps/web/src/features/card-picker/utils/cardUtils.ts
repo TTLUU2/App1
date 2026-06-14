@@ -27,40 +27,40 @@ export function getProgramBranding(programName: string): ProgramBranding {
     case 'Velocity':
     case 'Velocity Frequent Flyer':
       return {
-        logo: '/images/programs-small/velocity.png',
+        logo: 'https://pointhacks-spa-tools.fly.dev/images/programs-small/velocity.png',
         color: '#512698',
       };
     case 'Qantas':
       return {
-        logo: '/images/programs-small/qantas.png',
+        logo: 'https://pointhacks-spa-tools.fly.dev/images/programs-small/qantas.png',
         color: '#DF0000',
       };
     case 'American Express Membership Rewards':
     case 'Membership Rewards Ascent Premium':
       return {
-        logo: '/images/programs-small/amex-mr.png',
+        logo: 'https://pointhacks-spa-tools.fly.dev/images/programs-small/amex-mr.png',
         color: '#016FD0',
       };
     case 'Westpac Altitude Rewards':
     case 'Altitude Rewards':
       return {
-        logo: '/images/programs-small/altitude.png',
+        logo: 'https://pointhacks-spa-tools.fly.dev/images/programs-small/altitude.png',
         color: '#DF0000',
       };
     case 'ANZ Rewards':
     case 'ANZ Business Rewards':
       return {
-        logo: '/images/programs-small/anz-rewards.png',
+        logo: 'https://pointhacks-spa-tools.fly.dev/images/programs-small/anz-rewards.png',
         color: '#007DBA',
       };
     case 'Amplify Rewards':
       return {
-        logo: '/images/programs-small/amplify.png',
+        logo: 'https://pointhacks-spa-tools.fly.dev/images/programs-small/amplify.png',
         color: '#78BE20',
       };
     case 'NAB Rewards':
       return {
-        logo: '/images/programs-small/nab-rewards.png',
+        logo: 'https://pointhacks-spa-tools.fly.dev/images/programs-small/nab-rewards.png',
         color: '#C20000',
       };
     case 'MyCard':
@@ -68,12 +68,12 @@ export function getProgramBranding(programName: string): ProgramBranding {
     case 'MyCard Rewards Premier':
     case 'MyCard Rewards Prestige':
       return {
-        logo: '/images/programs-small/mycard.png',
+        logo: 'https://pointhacks-spa-tools.fly.dev/images/programs-small/mycard.png',
         color: '#333333',
       };
     case 'Star Alliance':
       return {
-        logo: '/images/programs-small/star-alliance.png',
+        logo: 'https://pointhacks-spa-tools.fly.dev/images/programs-small/star-alliance.png',
         color: '#5B5C5E',
       };
     default:

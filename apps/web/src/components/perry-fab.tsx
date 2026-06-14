@@ -59,8 +59,11 @@ export function PerryFAB() {
   }, []);
 
   // Hide when already on the chat surface — no reason to surface an
-  // entry point when you're inside the destination.
-  if (pathname === '/ask' || pathname.startsWith('/ask/')) return null;
+  // entry point when you're inside the destination. Also hide on
+  // /matching where the card-picker wizard already uses the full
+  // viewport (red FAB + Show quick view chip + tab bar) and Perry
+  // crowds the layout.
+  if (pathname === '/ask' || pathname.startsWith('/ask/') || pathname === '/matching') return null;
 
   return (
     <>

@@ -16,10 +16,26 @@ export interface FeeFilterOption {
 
 /** Program filter: only Qantas, Velocity, AMEX, and All (All last). */
 export const PROGRAM_FILTER_OPTIONS: FilterOption[] = [
-  { label: 'Qantas', value: 'Qantas', img: '/images/programs-small/qantas.png' },
-  { label: 'Velocity', value: 'Velocity', img: '/images/programs-small/velocity.png' },
-  { label: 'AMEX', value: 'AMEX', img: '/images/programs-small/amex-mr.png' },
-  { label: 'All', value: 'All', img: '/images/icons/all-programs.png' },
+  {
+    label: 'Qantas',
+    value: 'Qantas',
+    img: 'https://pointhacks-spa-tools.fly.dev/images/programs-small/qantas.png',
+  },
+  {
+    label: 'Velocity',
+    value: 'Velocity',
+    img: 'https://pointhacks-spa-tools.fly.dev/images/programs-small/velocity.png',
+  },
+  {
+    label: 'AMEX',
+    value: 'AMEX',
+    img: 'https://pointhacks-spa-tools.fly.dev/images/programs-small/amex-mr.png',
+  },
+  {
+    label: 'All',
+    value: 'All',
+    img: 'https://pointhacks-spa-tools.fly.dev/images/icons/all-programs.png',
+  },
 ];
 
 /** Map filter value to the currency names that should match in conversionRates / transfer partners. */
@@ -104,13 +120,25 @@ export function cardMatchesProgramFilter(card: Card, filterValue: string): boole
 }
 
 export const PERK_OPTIONS: PerkOption[] = [
-  { id: 'lounge', name: 'Lounge Access', icon: '/images/perks/lounge-access.png' },
-  { id: 'credit', name: 'Travel Credit', icon: '/images/perks/travel-credit.png' },
-  { id: 'insurance', name: 'Travel Insurance', icon: '/images/perks/travel-insurance.png' },
+  {
+    id: 'lounge',
+    name: 'Lounge Access',
+    icon: 'https://pointhacks-spa-tools.fly.dev/images/perks/lounge-access.png',
+  },
+  {
+    id: 'credit',
+    name: 'Travel Credit',
+    icon: 'https://pointhacks-spa-tools.fly.dev/images/perks/travel-credit.png',
+  },
+  {
+    id: 'insurance',
+    name: 'Travel Insurance',
+    icon: 'https://pointhacks-spa-tools.fly.dev/images/perks/travel-insurance.png',
+  },
   {
     id: 'no_intl_fees',
     name: 'No International Transaction Fees',
-    icon: '/images/perks/no-international-fees.png',
+    icon: 'https://pointhacks-spa-tools.fly.dev/images/perks/no-international-fees.png',
   },
 ];
 
@@ -129,9 +157,21 @@ export const FEE_FILTER_OPTIONS: FeeFilterOption[] = [
 ];
 
 export const SORT_OPTIONS: SortOption[] = [
-  { label: 'Highest Points', value: 'points_high', img: '/images/icons/highest-points.png' },
-  { label: 'Lowest Fee', value: 'fee_low', img: '/images/icons/lowest-fee.png' },
-  { label: 'Highest Earn Rate', value: 'earn_high', img: '/images/icons/highest-earn-rate.png' },
+  {
+    label: 'Highest Points',
+    value: 'points_high',
+    img: 'https://pointhacks-spa-tools.fly.dev/images/icons/highest-points.png',
+  },
+  {
+    label: 'Lowest Fee',
+    value: 'fee_low',
+    img: 'https://pointhacks-spa-tools.fly.dev/images/icons/lowest-fee.png',
+  },
+  {
+    label: 'Highest Earn Rate',
+    value: 'earn_high',
+    img: 'https://pointhacks-spa-tools.fly.dev/images/icons/highest-earn-rate.png',
+  },
 ];
 
 export const INCOME_OPTIONS: IncomeOption[] = [
@@ -148,55 +188,80 @@ const STGEORGE_GROUP_PROVIDERS = ['St.George', 'BankSA', 'Bank of Melbourne'];
 export const BANK_OPTIONS: BankOption[] = [
   {
     name: 'American Express',
-    logo: '/images/banks/amex.png',
+    logo: 'https://pointhacks-spa-tools.fly.dev/images/banks/amex.png',
     exclusion: 'Within 18 Months',
     provider: 'Amex',
   },
-  { name: 'ANZ', logo: '/images/banks/anz.png', exclusion: 'Within 24 Months' },
+  {
+    name: 'ANZ',
+    logo: 'https://pointhacks-spa-tools.fly.dev/images/banks/anz.png',
+    exclusion: 'Within 24 Months',
+  },
   {
     name: 'Bank of Melbourne',
-    logo: '/images/banks/bank-of-melbourne.png',
+    logo: 'https://pointhacks-spa-tools.fly.dev/images/banks/bank-of-melbourne.png',
     exclusion: 'Within 24 Months',
     provider: 'Bank of Melbourne',
     excludeProviders: STGEORGE_GROUP_PROVIDERS,
   },
   {
     name: 'BankSA',
-    logo: '/images/banks/banksa.png',
+    logo: 'https://pointhacks-spa-tools.fly.dev/images/banks/banksa.png',
     exclusion: 'Within 24 Months',
     provider: 'BankSA',
     excludeProviders: STGEORGE_GROUP_PROVIDERS,
   },
-  { name: 'HSBC', logo: '/images/banks/hsbc.png', exclusion: 'Within 18 Months' },
+  {
+    name: 'HSBC',
+    logo: 'https://pointhacks-spa-tools.fly.dev/images/banks/hsbc.png',
+    exclusion: 'Within 18 Months',
+  },
   {
     name: 'MyCard',
-    logo: '/images/banks/mycard.png',
+    logo: 'https://pointhacks-spa-tools.fly.dev/images/banks/mycard.png',
     exclusion: 'Currently Hold',
     provider: 'MyCard',
   },
-  { name: 'NAB', logo: '/images/banks/nab.png', exclusion: 'Within 24 Months', provider: 'NAB' },
+  {
+    name: 'NAB',
+    logo: 'https://pointhacks-spa-tools.fly.dev/images/banks/nab.png',
+    exclusion: 'Within 24 Months',
+    provider: 'NAB',
+  },
   {
     name: 'Qantas Money',
-    logo: '/images/banks/qantas-money.png',
+    logo: 'https://pointhacks-spa-tools.fly.dev/images/banks/qantas-money.png',
     exclusion: 'Currently Hold',
     provider: 'Qantas Money',
   },
   {
     name: 'St.George',
-    logo: '/images/banks/st-george.png',
+    logo: 'https://pointhacks-spa-tools.fly.dev/images/banks/st-george.png',
     exclusion: 'Within 24 Months',
     excludeProviders: STGEORGE_GROUP_PROVIDERS,
   },
   {
     name: 'Westpac',
-    logo: '/images/banks/westpac.png',
+    logo: 'https://pointhacks-spa-tools.fly.dev/images/banks/westpac.png',
     exclusion: 'Within 24 Months',
     provider: 'Westpac',
   },
 ];
 
 export const CARD_TYPE_OPTIONS: CardTypeOption[] = [
-  { label: 'Personal', value: 'Personal', img: '/images/icons/personal.png' },
-  { label: 'Business', value: 'Business', img: '/images/icons/business.png' },
-  { label: 'All', value: 'All', img: '/images/icons/all-card-types.png' },
+  {
+    label: 'Personal',
+    value: 'Personal',
+    img: 'https://pointhacks-spa-tools.fly.dev/images/icons/personal.png',
+  },
+  {
+    label: 'Business',
+    value: 'Business',
+    img: 'https://pointhacks-spa-tools.fly.dev/images/icons/business.png',
+  },
+  {
+    label: 'All',
+    value: 'All',
+    img: 'https://pointhacks-spa-tools.fly.dev/images/icons/all-card-types.png',
+  },
 ];
