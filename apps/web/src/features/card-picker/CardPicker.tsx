@@ -1240,11 +1240,14 @@ export function CardPicker() {
             </span>
           </button>
         </div>
-        {/* Toggle view button in list view */}
+        {/* Toggle view button in list view. Pinned above the centre red
+            FAB — the FAB itself sits at bottom: calc(2.25rem + safe-area)
+            with ~3.5rem height, so this chip needs at least 7rem from
+            the safe-area baseline to clear it without overlapping. */}
         {currentStep === 5 && !isListFalling && (
           <div
             className="fixed left-1/2 -translate-x-1/2 z-[100]"
-            style={{ bottom: 'calc(5rem + env(safe-area-inset-bottom))' }}
+            style={{ bottom: 'calc(7rem + env(safe-area-inset-bottom))' }}
           >
             <button
               type="button"

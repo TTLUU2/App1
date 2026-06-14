@@ -272,9 +272,13 @@ export function CardTile({
         />
 
         <div className="ml-4 p-2 sm:p-4 border-b border-gray-200 pr-4">
-          <div className="flex justify-between items-center md:hidden">
-            <h2 className="text-[11px] font-bold text-gray-900 truncate mr-2 flex-grow">
-              {card.name}
+          <div className="flex justify-between items-start md:hidden gap-2">
+            {/* Mobile title: bumped from text-[11px] truncate to text-xs
+                line-clamp-2 so long card names like "American Express
+                Velocity Platinum Business Card" wrap instead of getting
+                ellipsised mid-word. Prefer short_name when available. */}
+            <h2 className="text-xs font-bold text-gray-900 line-clamp-2 leading-tight flex-grow">
+              {card.short_name || card.name}
             </h2>
             {logoUrl ? (
               <img
