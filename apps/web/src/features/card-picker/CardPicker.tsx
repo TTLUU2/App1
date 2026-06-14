@@ -1295,32 +1295,11 @@ export function CardPicker() {
             )}
           </div>
         </div>
-        {/* Toggle view button fixed at bottom in list view */}
-        {currentStep === 5 && !isListFalling && (
-          <div
-            className="fixed left-1/2 -translate-x-1/2 z-[100]"
-            style={{ bottom: 'calc(5rem + env(safe-area-inset-bottom))' }}
-          >
-            <button
-              type="button"
-              onClick={() => handleToggleView()}
-              onTouchStart={onButtonTouchStart}
-              onTouchEnd={onButtonTouchEnd}
-              style={
-                {
-                  touchAction: 'manipulation',
-                  WebkitTapHighlightColor: 'transparent',
-                } as React.CSSProperties
-              }
-              className="text-[10px] md:text-[11.5px] text-red-600 hover:text-red-700 font-bold flex items-center transition-all px-4 md:px-5 py-2 md:py-2.5 bg-white rounded-full whitespace-nowrap shadow-xl border border-slate-100 hover:bg-slate-50 ring-1 ring-slate-900/5 active:scale-95 transform-gpu cursor-pointer select-none"
-            >
-              <span className="relative z-10 flex items-center pointer-events-none">
-                <ArrowUpWideNarrow className="w-3.5 h-3.5 md:w-4 md:h-4 mr-1.5" />
-                Show quick view
-              </span>
-            </button>
-          </div>
-        )}
+        {/* Duplicate 'Show quick view' toggle removed — the source had
+            two identical fixed-position copies both conditional on
+            currentStep === 5 && !isListFalling, so they rendered on top
+            of each other. The single instance lives above the list-view
+            block, lifted to 7rem from safe-area to clear the FAB. */}
       </main>
 
       {isFilterModalOpen && (

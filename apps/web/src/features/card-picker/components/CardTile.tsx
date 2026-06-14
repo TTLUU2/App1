@@ -283,8 +283,18 @@ export function CardTile({
             {logoUrl ? (
               <img
                 src={logoUrl}
-                alt={`${displayProgram || 'Program'} Logo`}
-                className={mobileLogoClass + ' flex-shrink-0'}
+                alt=""
+                aria-hidden
+                className={mobileLogoClass + ' flex-shrink-0 max-w-[40px] object-contain'}
+                onError={(e) => {
+                  // Hide broken program-logo images so the alt text doesn't
+                  // expand and blow out the row (we saw multi-line "American
+                  // Express Membership Rewards Logo" text fill the header
+                  // when the upstream image 404'd). Alt is empty + aria-hidden
+                  // so screen readers ignore it; the card name above carries
+                  // the program info anyway.
+                  e.currentTarget.style.display = 'none';
+                }}
               />
             ) : null}
           </div>
@@ -295,8 +305,12 @@ export function CardTile({
             {logoUrl ? (
               <img
                 src={logoUrl}
-                alt={`${displayProgram || 'Program'} Logo`}
-                className={desktopLogoClass + ' flex-shrink-0'}
+                alt=""
+                aria-hidden
+                className={desktopLogoClass + ' flex-shrink-0 max-w-[60px] object-contain'}
+                onError={(e) => {
+                  e.currentTarget.style.display = 'none';
+                }}
               />
             ) : null}
           </div>
