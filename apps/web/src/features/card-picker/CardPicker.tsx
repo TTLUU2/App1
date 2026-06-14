@@ -550,21 +550,19 @@ export function CardPicker() {
         </div>
       )}
 
-      {/* Header */}
-      <div className="pt-4 pb-2 md:pt-3 md:pb-1 flex items-center justify-center">
-        <div className="w-full max-w-md md:max-w-xl mx-auto relative flex items-center justify-center px-1">
-          <button
-            onClick={() => setIsFilterModalOpen(true)}
-            className="absolute right-1 top-1/2 -translate-y-1/2 md:fixed md:top-4 md:right-4 md:translate-y-0 md:z-[200] flex items-center justify-center bg-white border border-slate-200 rounded-full h-5 px-2.5 md:h-8 md:px-3.5 text-red-600 hover:text-red-700 hover:bg-red-50 transition-colors shadow-sm"
-            aria-label="Filters"
-          >
-            <span className="text-[8px] md:text-[10px] font-bold mr-1 md:mr-1.5 whitespace-nowrap">
-              More Filters
-            </span>
-            <SlidersHorizontal className="w-2.5 h-2.5 md:w-3.5 md:h-3.5" />
-          </button>
-        </div>
-      </div>
+      {/* More Filters chip — floats at top-right of the CardPicker area
+          (page-level header lives in /matching/page.tsx and provides the
+          tab title + subtitle, replacing the previous empty header band
+          this chip used to sit inside). Desktop keeps the viewport-fixed
+          positioning so the chip stays anchored on wider layouts. */}
+      <button
+        onClick={() => setIsFilterModalOpen(true)}
+        className="absolute right-0 top-0 md:fixed md:top-4 md:right-4 md:z-[200] z-20 flex items-center justify-center bg-white border border-slate-200 rounded-full h-7 px-2.5 md:h-8 md:px-3.5 text-red-600 hover:text-red-700 hover:bg-red-50 transition-colors shadow-sm"
+        aria-label="Filters"
+      >
+        <span className="text-[10px] font-bold mr-1 md:mr-1.5 whitespace-nowrap">More Filters</span>
+        <SlidersHorizontal className="w-3 h-3 md:w-3.5 md:h-3.5" />
+      </button>
 
       {/* Selection slots */}
       <div className="overflow-hidden relative">
