@@ -78,7 +78,7 @@ export function FilterModal({
   if (!isOpen) return null;
 
   return (
-    <div className="absolute inset-0 z-50 flex items-start justify-center pt-4 sm:pt-8">
+    <div className="fixed inset-0 z-[60] flex items-start justify-center pt-4 sm:pt-8">
       <div
         className="absolute inset-0 bg-black/50 backdrop-blur-sm transition-opacity min-h-full"
         onClick={onClose}

@@ -654,7 +654,7 @@ export function CardPicker() {
         </div>
       </div>
 
-      <main className="max-w-md md:max-w-xl mx-auto px-4 w-full relative z-50">
+      <main className="max-w-md md:max-w-xl mx-auto px-4 w-full relative">
         {/* Step wizard */}
         <div
           className={`relative mt-0 mb-0 transition-all duration-700 ease-in-out ${currentStep === 5 && editingFilterStep === null ? 'min-h-0 h-0 opacity-0 overflow-hidden' : 'min-h-[110px] md:min-h-[120px] opacity-100'}`}
