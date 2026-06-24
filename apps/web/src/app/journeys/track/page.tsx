@@ -53,7 +53,6 @@ import {
 
 const CABINS: CabinClass[] = ['Economy', 'Premium Economy', 'Business', 'First'];
 const TRIP_TYPES: TripType[] = ['Return', 'One-way'];
-const PAX_OPTIONS = [1, 2, 3, 4] as const;
 
 /** Placeholder target-points bands, per-person. Anchored to typical
  *  AU Business-class redemption costs; swap in your real ranges. */
@@ -420,21 +419,17 @@ function Step2Configure({
         </p>
       </section>
 
-      <FieldGroup label="Passengers" Icon={Users}>
-        <SegmentedControl
-          value={pax}
-          options={PAX_OPTIONS}
-          onChange={onPax}
-          format={(n) => (n === 4 ? '4+' : String(n))}
-        />
-      </FieldGroup>
+      <div className="mt-4 grid grid-cols-2 gap-3">
+        <FieldGroup label="Passengers" Icon={Users} flush>
+          <PaxStepper value={pax} onChange={onPax} />
+        </FieldGroup>
+        <FieldGroup label="Cabin" Icon={Plane} flush>
+          <SelectControl value={cabin} options={CABINS} onChange={onCabin} />
+        </FieldGroup>
+      </div>
 
       <FieldGroup label="Trip" Icon={ArrowLeftRight}>
         <SegmentedControl value={tripType} options={TRIP_TYPES} onChange={onTripType} />
-      </FieldGroup>
-
-      <FieldGroup label="Cabin" Icon={Plane}>
-        <SegmentedControl value={cabin} options={CABINS} onChange={onCabin} />
       </FieldGroup>
 
       <FieldGroup label="Redeem with" Icon={Coins}>
@@ -625,19 +620,89 @@ function FieldGroup({
   label,
   Icon,
   children,
+  flush,
 }: {
   label: string;
   Icon: typeof Users;
   children: React.ReactNode;
+  /** Drop the top margin — for use inside a grid that already
+   *  manages spacing (e.g. two-up Pax + Cabin row). */
+  flush?: boolean;
 }) {
   return (
-    <div className="mt-4">
+    <div className={flush ? '' : 'mt-4'}>
       <p className="mb-1.5 flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wide text-zinc-500">
         <Icon className="h-3 w-3" aria-hidden />
         {label}
       </p>
       {children}
     </div>
+  );
+}
+
+function PaxStepper({ value, onChange }: { value: number; onChange: (next: number) => void }) {
+  const dec = () => onChange(Math.max(1, value - 1));
+  const inc = () => onChange(Math.min(9, value + 1));
+  return (
+    <div className="flex items-center rounded-xl border border-zinc-200 bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-900">
+      <StepperButton onClick={dec} disabled={value <= 1} ariaLabel="Decrease passengers">
+        −
+      </StepperButton>
+      <span aria-live="polite" className="flex-1 text-center text-sm font-bold tabular-nums">
+        {value}
+      </span>
+      <StepperButton onClick={inc} disabled={value >= 9} ariaLabel="Increase passengers">
+        +
+      </StepperButton>
+    </div>
+  );
+}
+
+function StepperButton({
+  onClick,
+  disabled,
+  ariaLabel,
+  children,
+}: {
+  onClick: () => void;
+  disabled?: boolean;
+  ariaLabel: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={disabled}
+      aria-label={ariaLabel}
+      className="grid h-9 w-9 flex-none place-items-center rounded-lg text-base font-bold text-zinc-700 hover:bg-white disabled:cursor-not-allowed disabled:opacity-30 dark:text-zinc-200 dark:hover:bg-zinc-800"
+    >
+      {children}
+    </button>
+  );
+}
+
+function SelectControl<T extends string>({
+  value,
+  options,
+  onChange,
+}: {
+  value: T;
+  options: readonly T[];
+  onChange: (v: T) => void;
+}) {
+  return (
+    <select
+      value={value}
+      onChange={(e) => onChange(e.target.value as T)}
+      className="h-9 w-full rounded-xl border border-zinc-200 bg-zinc-50 px-3 text-sm font-bold shadow-none focus:border-[var(--color-ph-red)] focus:outline-none dark:border-zinc-700 dark:bg-zinc-900"
+    >
+      {options.map((opt) => (
+        <option key={opt} value={opt}>
+          {opt}
+        </option>
+      ))}
+    </select>
   );
 }
 

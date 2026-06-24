@@ -76,6 +76,19 @@ const FORWARD_DOMAIN = 'phcopilot.app';
 const FORWARD_SLUG = 'aurora-fox-7301';
 const FORWARD_ADDRESS = `${FORWARD_SLUG}@${FORWARD_DOMAIN}`;
 
+/** Compact elapsed-time label for the meta row — keeps the line
+ *  short so it doesn't wrap on narrow phones. */
+function formatElapsed(iso: string): string {
+  const then = new Date(iso).getTime();
+  if (Number.isNaN(then)) return iso;
+  const days = Math.floor((Date.now() - then) / 86_400_000);
+  if (days <= 0) return 'today';
+  if (days === 1) return 'yesterday';
+  if (days < 7) return `${days}d ago`;
+  if (days < 30) return `${Math.floor(days / 7)}w ago`;
+  return `${Math.floor(days / 30)}mo ago`;
+}
+
 /** Sender domains we know how to parse. UI uses this to show
  *  per-program filter instructions. */
 const PROGRAM_SENDERS: Record<string, { from: string; subjectHint: string }> = {
@@ -327,17 +340,17 @@ function ProgramRow({ program }: { program: ProgramBalance }) {
         <div className="min-w-0 flex-1">
           <p className="truncate text-sm font-semibold">{program.name}</p>
           {!editing && (
-            <div className="mt-0.5 flex items-center gap-1.5 text-[11px] text-zinc-500">
+            <div className="mt-0.5 flex items-center gap-1 truncate text-[11px] text-zinc-500">
               {autoSyncEligible ? (
-                <>
-                  <Zap className="h-3 w-3 text-[var(--color-ph-red)]" aria-hidden />
-                  <span>Auto-sync ready</span>
-                </>
-              ) : (
-                <span>Manual only</span>
-              )}
-              {program.updatedAt && <span aria-hidden> · </span>}
-              {program.updatedAt && <span>Updated {program.updatedAt}</span>}
+                <Zap
+                  className="h-3 w-3 flex-none text-[var(--color-ph-red)]"
+                  aria-label="Auto-sync ready"
+                />
+              ) : null}
+              <span className="truncate">
+                {autoSyncEligible ? 'Auto-sync' : 'Manual'}
+                {program.updatedAt ? ` · ${formatElapsed(program.updatedAt)}` : ''}
+              </span>
             </div>
           )}
         </div>
