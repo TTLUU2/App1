@@ -15,16 +15,56 @@ export interface DestinationOption {
   country: string;
   /** Approximate Business return target in points across major AU programs. */
   pointsBusinessReturn: number;
+  /** Geographic position — drives the SVG map pin location in Step 1. */
+  lat: number;
+  lng: number;
 }
 
-/** Static catalogue shown in step 1 of the wizard. */
+/** Static catalogue shown in step 1 of the wizard. lat/lng are
+ *  approximate airport coordinates, used for the inline world-map
+ *  pin placement (equirectangular projection). */
 export const DESTINATION_CATALOGUE: DestinationOption[] = [
-  { id: 'nrt', city: 'Tokyo', country: 'Japan', pointsBusinessReturn: 216_000 },
-  { id: 'lhr', city: 'London', country: 'UK', pointsBusinessReturn: 288_000 },
-  { id: 'cdg', city: 'Paris', country: 'France', pointsBusinessReturn: 288_000 },
-  { id: 'lax', city: 'Los Angeles', country: 'USA', pointsBusinessReturn: 196_000 },
-  { id: 'sin', city: 'Singapore', country: 'Singapore', pointsBusinessReturn: 108_000 },
-  { id: 'hkg', city: 'Hong Kong', country: 'Hong Kong', pointsBusinessReturn: 120_000 },
+  {
+    id: 'nrt',
+    city: 'Tokyo',
+    country: 'Japan',
+    pointsBusinessReturn: 216_000,
+    lat: 35.6,
+    lng: 139.7,
+  },
+  { id: 'lhr', city: 'London', country: 'UK', pointsBusinessReturn: 288_000, lat: 51.5, lng: -0.1 },
+  {
+    id: 'cdg',
+    city: 'Paris',
+    country: 'France',
+    pointsBusinessReturn: 288_000,
+    lat: 48.9,
+    lng: 2.4,
+  },
+  {
+    id: 'lax',
+    city: 'Los Angeles',
+    country: 'USA',
+    pointsBusinessReturn: 196_000,
+    lat: 34.0,
+    lng: -118.4,
+  },
+  {
+    id: 'sin',
+    city: 'Singapore',
+    country: 'Singapore',
+    pointsBusinessReturn: 108_000,
+    lat: 1.3,
+    lng: 103.8,
+  },
+  {
+    id: 'hkg',
+    city: 'Hong Kong',
+    country: 'Hong Kong',
+    pointsBusinessReturn: 120_000,
+    lat: 22.3,
+    lng: 114.2,
+  },
 ];
 
 export interface TrackedJourney {
@@ -33,6 +73,8 @@ export interface TrackedJourney {
   destinationCity: string;
   tripType: TripType;
   cabin: CabinClass;
+  /** Number of passengers — multiplies the per-person target. */
+  pax: number;
   targetPoints: number;
   /** Departure month, ISO yyyy-MM. null = flexible. */
   departureMonth: string | null;
