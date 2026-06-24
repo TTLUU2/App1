@@ -4,6 +4,9 @@ import { useEffect } from 'react';
 import { useUserCardsStore } from '@/store/user-cards';
 import { useUserBenefitsStore } from '@/store/user-benefits';
 import { useUserPreferencesStore } from '@/store/user-preferences';
+import { useBalancesStore } from '@/store/balances';
+import { useAlertsStore } from '@/store/alerts';
+import { useJourneysStore } from '@/store/journeys';
 
 /**
  * Loads all client-side stores on first mount. UserCards and benefit
@@ -17,6 +20,9 @@ export function StoreHydrator() {
     void useUserCardsStore.getState().load();
     void useUserBenefitsStore.getState().load();
     useUserPreferencesStore.getState().hydrate();
+    useBalancesStore.getState().hydrate();
+    useAlertsStore.getState().hydrate();
+    useJourneysStore.getState().hydrate();
   }, []);
   return null;
 }
