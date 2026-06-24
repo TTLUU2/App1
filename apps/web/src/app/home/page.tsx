@@ -3,24 +3,24 @@
 /**
  * /home — Daily Brief. Two views switched by a segmented control at
  * the top, per design "Home toggle":
- *   - Optimisation score (H-D): score ring + 3-stat strip + DO TODAY
- *     list + momentum cue
- *   - Journeys: wallet (per-program balances) + "Where you can go"
- *     destinations + tracked journeys + Track-a-journey CTA
+ *   - Today (H-D): the "now" view — optimisation score ring +
+ *     3-stat strip + DO TODAY list + momentum cue
+ *   - Journeys: the "later" view — wallet (per-program balances) +
+ *     "Where you can go" destinations + tracked journeys + Track CTA
  *
  * Both modes share the greeting header. Switching modes is local
  * state only — no URL change — so the back button doesn't get
  * littered with toggle bounces. The standalone /journeys route still
  * exists for the wizard's back-navigation target.
  *
- * v1 numbers in the score view (score, spend-to-go, momentum) are
+ * v1 numbers in the Today view (score, spend-to-go, momentum) are
  * mocked constants — we'll wire them to real spend / portfolio data
  * once the screens settle.
  */
 
 import { useMemo, useState } from 'react';
 import Link from 'next/link';
-import { ArrowRight, BarChart3, Plane, TrendingUp } from 'lucide-react';
+import { ArrowRight, BarChart3, Gauge, Plane, TrendingUp } from 'lucide-react';
 import { formatCurrency, formatPoints } from '@/lib/format';
 import { useAlertsStore, type FiredAlert } from '@/store/alerts';
 import {
@@ -83,10 +83,10 @@ export default function HomePage() {
 function ViewToggle({ value, onChange }: { value: HomeView; onChange: (v: HomeView) => void }) {
   return (
     <div className="mb-4 grid grid-cols-2 rounded-xl border border-zinc-200 bg-zinc-50 p-1 dark:border-zinc-700 dark:bg-zinc-900">
-      <ToggleButton active={value === 'score'} onClick={() => onChange('score')}>
-        Optimisation score
+      <ToggleButton active={value === 'score'} onClick={() => onChange('score')} Icon={Gauge}>
+        Today
       </ToggleButton>
-      <ToggleButton active={value === 'journeys'} onClick={() => onChange('journeys')}>
+      <ToggleButton active={value === 'journeys'} onClick={() => onChange('journeys')} Icon={Plane}>
         Journeys
       </ToggleButton>
     </div>
@@ -96,10 +96,12 @@ function ViewToggle({ value, onChange }: { value: HomeView; onChange: (v: HomeVi
 function ToggleButton({
   active,
   onClick,
+  Icon,
   children,
 }: {
   active: boolean;
   onClick: () => void;
+  Icon: typeof Gauge;
   children: React.ReactNode;
 }) {
   return (
@@ -110,16 +112,17 @@ function ToggleButton({
       onClick={onClick}
       className={
         active
-          ? 'rounded-lg bg-white px-3 py-2 text-xs font-bold shadow-sm dark:bg-zinc-950'
-          : 'rounded-lg px-3 py-2 text-xs font-medium text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100'
+          ? 'flex items-center justify-center gap-1.5 rounded-lg bg-white px-3 py-2 text-xs font-bold shadow-sm dark:bg-zinc-950'
+          : 'flex items-center justify-center gap-1.5 rounded-lg px-3 py-2 text-xs font-medium text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100'
       }
     >
+      <Icon className="h-3.5 w-3.5" aria-hidden />
       {children}
     </button>
   );
 }
 
-/* ─────────────────────────  SCORE VIEW (H-D)  ───────────────────────── */
+/* ─────────────────────────  TODAY VIEW (H-D)  ───────────────────────── */
 
 function ScoreView() {
   const totalPoints = useBalancesStore(selectTotalPoints);
