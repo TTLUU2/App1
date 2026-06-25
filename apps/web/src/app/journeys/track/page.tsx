@@ -320,7 +320,7 @@ function RegionPicker({ onPick }: { onPick: (id: RegionId) => void }) {
               onClick={() => onPick(r.id)}
               className="block w-full overflow-hidden rounded-xl bg-white text-left ring-1 ring-zinc-200 transition-colors hover:ring-[var(--color-ph-red)] dark:bg-zinc-900 dark:ring-zinc-800"
             >
-              <div className="bg-emerald-50/60 dark:bg-emerald-500/10">
+              <div className="bg-slate-100/60 dark:bg-slate-800/40">
                 <RegionPreview region={r} />
               </div>
               <div className="p-3">

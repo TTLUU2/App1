@@ -33,30 +33,38 @@ export interface RegionDef {
   bbox: { x: number; y: number; w: number; h: number };
 }
 
+/** Each region's bbox is tight enough that the cities sit clearly
+ *  apart in the frame (not all clumped in a single spot when zoomed
+ *  out to a whole continent). Coords are in the WorldMap viewBox
+ *  (x = lng+180, y = 90−lat) so the zoom math is one line. */
 export const REGIONS: RegionDef[] = [
   {
     id: 'asia-pacific',
     label: 'Asia & Pacific',
     blurb: 'Tokyo, Singapore, Hong Kong',
-    bbox: { x: 220, y: 20, w: 130, h: 130 },
+    // East/SE Asia: lng 95° → 150°, lat 40°N → 0°
+    bbox: { x: 275, y: 50, w: 55, h: 50 },
   },
   {
     id: 'europe',
     label: 'Europe',
     blurb: 'London, Paris',
-    bbox: { x: 160, y: 10, w: 70, h: 60 },
+    // Western Europe: lng −15° → 20°, lat 60°N → 38°N
+    bbox: { x: 165, y: 30, w: 35, h: 25 },
   },
   {
     id: 'americas',
     label: 'Americas',
     blurb: 'Los Angeles',
-    bbox: { x: 10, y: 10, w: 140, h: 140 },
+    // West Coast US: lng −130° → −100°, lat 50°N → 25°N
+    bbox: { x: 50, y: 40, w: 35, h: 30 },
   },
   {
     id: 'mea',
     label: 'Middle East & Africa',
     blurb: 'Coming soon',
-    bbox: { x: 165, y: 50, w: 80, h: 90 },
+    // Middle East focus: lng −10° → 60°, lat 40°N → −10°S
+    bbox: { x: 170, y: 50, w: 70, h: 60 },
   },
 ];
 

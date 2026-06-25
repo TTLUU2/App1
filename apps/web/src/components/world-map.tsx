@@ -128,14 +128,14 @@ export function WorldMap({
   const offsetY = (WORLD_VIEW.h - target.h * scale) / 2 - target.y * scale;
 
   return (
-    <div className="overflow-hidden rounded-2xl bg-white p-3 ring-1 ring-zinc-200 dark:bg-zinc-900 dark:ring-zinc-800">
+    <div className="overflow-hidden rounded-2xl bg-slate-50 p-3 ring-1 ring-slate-200 dark:bg-slate-900 dark:ring-slate-800">
       <style>{PIN_CSS}</style>
-      <div className="mb-2 flex items-center justify-between text-[10px] font-bold uppercase tracking-wide text-zinc-500">
+      <div className="mb-2 flex items-center justify-between text-[10px] font-bold uppercase tracking-wide text-slate-500 dark:text-slate-400">
         {onBack ? (
           <button
             type="button"
             onClick={onBack}
-            className="hover:text-zinc-900 dark:hover:text-zinc-100"
+            className="hover:text-slate-900 dark:hover:text-slate-100"
           >
             ← All regions
           </button>
@@ -160,10 +160,15 @@ export function WorldMap({
             transition: 'transform 1.1s cubic-bezier(0.65, 0, 0.35, 1)',
           }}
         >
+          {/* Land silhouette — cool blue-grey so the red pins pop.
+              A thin slate-400 outline at 1/scale viewBox-units defines
+              the coastline without competing visually. */}
           <path
             d={LAND_PATH_D}
             fillRule="evenodd"
-            className="fill-emerald-400/55 dark:fill-emerald-500/30"
+            className="fill-slate-300 stroke-slate-400/60 dark:fill-slate-700 dark:stroke-slate-500/40"
+            strokeWidth={0.25 / scale}
+            strokeLinejoin="round"
           />
 
           {destinations.map((d) => {
