@@ -19,10 +19,13 @@
 import { Plane, X } from 'lucide-react';
 import { CityIllustration } from '@/components/city-illustration';
 import { formatPoints } from '@/lib/format';
-import type { CabinClass, CabinPoints, DestinationOption } from '@/store/journeys';
+import type { CabinClass, CabinPoints, DestinationOption, OriginPort } from '@/store/journeys';
 
 interface CityDetailModalProps {
   destination: DestinationOption | null;
+  /** AU departure port — surfaced in the route line and the points
+   *  blurb so the cabin points read in context. */
+  origin: OriginPort;
   onClose: () => void;
   onTrack: (id: string) => void;
 }
@@ -40,9 +43,10 @@ const CABIN_ROWS: CabinRow[] = [
   { cabin: 'First', key: 'first', blurb: 'Top of the chart, top of the cabin' },
 ];
 
-export function CityDetailModal({ destination, onClose, onTrack }: CityDetailModalProps) {
+export function CityDetailModal({ destination, origin, onClose, onTrack }: CityDetailModalProps) {
   if (!destination) return null;
   const code = destination.id.toUpperCase();
+  const originCode = origin.id.toUpperCase();
 
   return (
     <div
@@ -92,7 +96,8 @@ export function CityDetailModal({ destination, onClose, onTrack }: CityDetailMod
             Estimated return points
           </p>
           <p className="mt-0.5 text-[11px] text-zinc-500">
-            Per person, from Australia. Real award costs vary by program and date.
+            Per person, {origin.city} ({originCode}) → {destination.city} ({code}). Real award costs
+            vary by program and date.
           </p>
 
           <ul className="mt-3 divide-y divide-zinc-100 dark:divide-zinc-800">

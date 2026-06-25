@@ -9,6 +9,32 @@ import { create } from 'zustand';
 export type CabinClass = 'Economy' | 'Premium Economy' | 'Business' | 'First';
 export type TripType = 'Return' | 'One-way';
 
+/** Australian departure ports the user can choose from. International
+ *  origins outside AU are out of scope for v1 — the points estimates +
+ *  award charts assume an AU outbound. */
+export interface OriginPort {
+  /** Lowercase IATA — matches the destination id convention. */
+  id: string;
+  city: string;
+  state: string;
+  airport: string;
+}
+
+export const ORIGIN_PORTS: OriginPort[] = [
+  { id: 'syd', city: 'Sydney', state: 'NSW', airport: 'Kingsford Smith Airport' },
+  { id: 'mel', city: 'Melbourne', state: 'VIC', airport: 'Tullamarine Airport' },
+  { id: 'bne', city: 'Brisbane', state: 'QLD', airport: 'Brisbane Airport' },
+  { id: 'per', city: 'Perth', state: 'WA', airport: 'Perth Airport' },
+  { id: 'adl', city: 'Adelaide', state: 'SA', airport: 'Adelaide Airport' },
+  { id: 'cbr', city: 'Canberra', state: 'ACT', airport: 'Canberra Airport' },
+  { id: 'ool', city: 'Gold Coast', state: 'QLD', airport: 'Gold Coast Airport' },
+  { id: 'cns', city: 'Cairns', state: 'QLD', airport: 'Cairns Airport' },
+  { id: 'hba', city: 'Hobart', state: 'TAS', airport: 'Hobart Airport' },
+  { id: 'drw', city: 'Darwin', state: 'NT', airport: 'Darwin Airport' },
+];
+
+export const DEFAULT_ORIGIN_ID = 'syd';
+
 export type RegionId = 'asia-pacific' | 'europe' | 'americas' | 'mea';
 
 export interface CabinPoints {
@@ -361,6 +387,9 @@ export const DESTINATION_CATALOGUE: DestinationOption[] = RAW_DESTINATIONS.map((
 
 export interface TrackedJourney {
   id: string;
+  /** Lowercase IATA of the AU departure port. Older records that pre-
+   *  date this field default to DEFAULT_ORIGIN_ID at read time. */
+  originId: string;
   destinationId: string;
   destinationCity: string;
   tripType: TripType;
@@ -392,8 +421,13 @@ function load(): TrackedJourney[] {
   try {
     const raw = window.localStorage.getItem(STORAGE_KEY);
     if (!raw) return [];
-    const parsed = JSON.parse(raw) as TrackedJourney[];
-    return Array.isArray(parsed) ? parsed : [];
+    const parsed = JSON.parse(raw) as Array<Partial<TrackedJourney>>;
+    if (!Array.isArray(parsed)) return [];
+    // Backfill originId for records created before the field existed.
+    return parsed.map((j) => ({
+      ...(j as TrackedJourney),
+      originId: j.originId ?? DEFAULT_ORIGIN_ID,
+    }));
   } catch {
     return [];
   }

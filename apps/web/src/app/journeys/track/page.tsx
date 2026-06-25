@@ -37,28 +37,45 @@ import {
   ChevronLeft,
   Coins,
   Plane,
+  PlaneTakeoff,
   Search,
   Target,
   Users,
 } from 'lucide-react';
 import { CityDetailModal } from '@/components/city-detail-modal';
+import { Dropdown, type DropdownOption } from '@/components/dropdown';
 import { JourneyProgress } from '@/components/journey-progress';
 import { MonthYearPicker } from '@/components/month-year-picker';
 import { WorldMap } from '@/components/world-map';
 import { formatPoints } from '@/lib/format';
 import { selectTotalPoints, useBalancesStore } from '@/store/balances';
 import {
+  DEFAULT_ORIGIN_ID,
   DESTINATION_CATALOGUE,
+  ORIGIN_PORTS,
   REGIONS,
   useJourneysStore,
   type CabinClass,
   type DestinationOption,
+  type OriginPort,
   type RegionId,
   type TripType,
 } from '@/store/journeys';
 
-const CABINS: CabinClass[] = ['Economy', 'Premium Economy', 'Business', 'First'];
 const TRIP_TYPES: TripType[] = ['Return', 'One-way'];
+
+const CABIN_OPTIONS: DropdownOption<CabinClass>[] = [
+  { value: 'Economy', label: 'Economy', caption: 'Light cash, heavy on points value' },
+  { value: 'Premium Economy', label: 'Premium Economy', caption: 'A step up, modest points lift' },
+  { value: 'Business', label: 'Business', caption: 'Sweet spot — flat beds, lounge access' },
+  { value: 'First', label: 'First', caption: 'Top of the cabin' },
+];
+
+const ORIGIN_OPTIONS: DropdownOption<string>[] = ORIGIN_PORTS.map((p) => ({
+  value: p.id,
+  label: p.city,
+  caption: `${p.id.toUpperCase()} · ${p.state}`,
+}));
 
 /** Placeholder target-points bands, per-person. Anchored to typical
  *  AU Business-class redemption costs; swap in your real ranges. */
@@ -90,8 +107,13 @@ function TrackJourneyWizard() {
   const startTracking = useJourneysStore((s) => s.startTracking);
 
   const [step, setStep] = useState<1 | 2 | 3>(initialDestId ? 2 : 1);
+  const [originId, setOriginId] = useState<string>(DEFAULT_ORIGIN_ID);
   const [destId, setDestId] = useState(initialDestId);
   const dest = useMemo(() => DESTINATION_CATALOGUE.find((d) => d.id === destId) ?? null, [destId]);
+  const origin = useMemo(
+    () => ORIGIN_PORTS.find((o) => o.id === originId) ?? ORIGIN_PORTS[0]!,
+    [originId],
+  );
 
   const [pax, setPax] = useState<number>(2);
   const [tripType, setTripType] = useState<TripType>('Return');
@@ -109,6 +131,7 @@ function TrackJourneyWizard() {
   function handleStart() {
     if (!dest || effectiveTarget <= 0) return;
     startTracking({
+      originId,
       destinationId: dest.id,
       destinationCity: dest.city,
       tripType,
@@ -131,6 +154,9 @@ function TrackJourneyWizard() {
       {step === 1 && (
         <Step1PickDestination
           selectedId={destId}
+          originId={originId}
+          origin={origin}
+          onChangeOrigin={setOriginId}
           onPick={(id) => {
             setDestId(id);
             setStep(2);
@@ -141,6 +167,7 @@ function TrackJourneyWizard() {
       {step === 2 && dest && (
         <Step2Configure
           dest={dest}
+          origin={origin}
           pax={pax}
           tripType={tripType}
           cabin={cabin}
@@ -161,6 +188,7 @@ function TrackJourneyWizard() {
       {step === 3 && dest && (
         <Step3Confirm
           dest={dest}
+          origin={origin}
           pax={pax}
           tripType={tripType}
           cabin={cabin}
@@ -210,9 +238,15 @@ function WizardHeader({ step, onBack }: { step: 1 | 2 | 3; onBack: () => void })
 
 function Step1PickDestination({
   selectedId,
+  originId,
+  origin,
+  onChangeOrigin,
   onPick,
 }: {
   selectedId: string;
+  originId: string;
+  origin: OriginPort;
+  onChangeOrigin: (id: string) => void;
   onPick: (id: string) => void;
 }) {
   const [region, setRegion] = useState<RegionId | null>(null);
@@ -233,7 +267,12 @@ function Step1PickDestination({
   }
 
   if (region === null) {
-    return <RegionPicker onPick={(id) => setRegion(id)} />;
+    return (
+      <>
+        <OriginPickerStrip originId={originId} onChange={onChangeOrigin} />
+        <RegionPicker onPick={(id) => setRegion(id)} />
+      </>
+    );
   }
 
   const regionDef = REGIONS.find((r) => r.id === region);
@@ -247,6 +286,8 @@ function Step1PickDestination({
 
   return (
     <>
+      <OriginPickerStrip originId={originId} onChange={onChangeOrigin} />
+
       <WorldMap
         destinations={regional}
         selectedId={previewId ?? selectedId}
@@ -297,6 +338,7 @@ function Step1PickDestination({
 
       <CityDetailModal
         destination={previewDest}
+        origin={origin}
         onClose={() => setPreviewId(null)}
         onTrack={(id) => {
           setPreviewId(null);
@@ -323,6 +365,42 @@ function Step1PickDestination({
 /** Phase 1 of Step 1: pick a region before drilling into cities.
  *  Each region card shows the world map zoomed into that region as a
  *  preview, so the user sees what they'd be picking from. */
+/**
+ * OriginPickerStrip — small "departing from {city}" row that sits at
+ * the top of Step 1. Plane-takeoff icon + Dropdown of AU ports.
+ * v1 restricts origins to Australia; international AU-bound users
+ * are out of scope until the wizard learns to scale points by route.
+ */
+function OriginPickerStrip({
+  originId,
+  onChange,
+}: {
+  originId: string;
+  onChange: (id: string) => void;
+}) {
+  return (
+    <section
+      aria-label="Departure port"
+      className="mb-3 flex items-center gap-3 rounded-xl bg-white p-3 ring-1 ring-zinc-200 dark:bg-zinc-900 dark:ring-zinc-800"
+    >
+      <span className="grid h-8 w-8 flex-none place-items-center rounded-full bg-red-50 text-[var(--color-ph-red)] dark:bg-red-500/10">
+        <PlaneTakeoff className="h-4 w-4" aria-hidden />
+      </span>
+      <div className="min-w-0 flex-1">
+        <p className="text-[10px] font-bold uppercase tracking-wide text-zinc-500">Flying from</p>
+        <div className="mt-1">
+          <Dropdown<string>
+            value={originId}
+            options={ORIGIN_OPTIONS}
+            onChange={onChange}
+            sheetTitle="Choose departure port"
+          />
+        </div>
+      </div>
+    </section>
+  );
+}
+
 function RegionPicker({ onPick }: { onPick: (id: RegionId) => void }) {
   return (
     <>
@@ -379,6 +457,7 @@ function RegionPreview({
 
 function Step2Configure({
   dest,
+  origin,
   pax,
   tripType,
   cabin,
@@ -395,6 +474,7 @@ function Step2Configure({
   onNext,
 }: {
   dest: DestinationOption;
+  origin: OriginPort;
   pax: number;
   tripType: TripType;
   cabin: CabinClass;
@@ -417,10 +497,15 @@ function Step2Configure({
   return (
     <>
       <section className="rounded-2xl bg-white p-4 ring-1 ring-zinc-200 dark:bg-zinc-900 dark:ring-zinc-800">
-        <p className="text-[10px] font-bold uppercase tracking-wide text-zinc-500">Destination</p>
+        <p className="text-[10px] font-bold uppercase tracking-wide text-zinc-500">Route</p>
         <p className="mt-1 text-lg font-semibold">
-          {dest.city} · {dest.country}
+          {origin.city}{' '}
+          <span className="font-bold tabular-nums text-zinc-400">{origin.id.toUpperCase()}</span>
+          {' → '}
+          {dest.city}{' '}
+          <span className="font-bold tabular-nums text-zinc-400">{dest.id.toUpperCase()}</span>
         </p>
+        <p className="mt-0.5 text-[11px] text-zinc-500">{dest.country}</p>
       </section>
 
       <div className="mt-4 grid grid-cols-2 gap-3">
@@ -428,7 +513,12 @@ function Step2Configure({
           <PaxStepper value={pax} onChange={onPax} />
         </FieldGroup>
         <FieldGroup label="Cabin" Icon={Plane} flush>
-          <SelectControl value={cabin} options={CABINS} onChange={onCabin} />
+          <Dropdown<CabinClass>
+            value={cabin}
+            options={CABIN_OPTIONS}
+            onChange={onCabin}
+            sheetTitle="Choose a cabin"
+          />
         </FieldGroup>
       </div>
 
@@ -527,6 +617,7 @@ function Step2Configure({
 
 function Step3Confirm({
   dest,
+  origin,
   pax,
   tripType,
   cabin,
@@ -538,6 +629,7 @@ function Step3Confirm({
   onStart,
 }: {
   dest: DestinationOption;
+  origin: OriginPort;
   pax: number;
   tripType: TripType;
   cabin: CabinClass;
@@ -562,7 +654,7 @@ function Step3Confirm({
           {dest.city} · {cabin}
         </p>
         <p className="mt-0.5 text-xs text-zinc-500">
-          {tripType} · {paxLabel}
+          {origin.id.toUpperCase()} → {dest.id.toUpperCase()} · {tripType} · {paxLabel}
           {departureMonth ? ` · ${departureMonth}` : ' · Flexible date'}
           {program ? ` · via ${program.name}` : ''}
         </p>
@@ -682,30 +774,6 @@ function StepperButton({
     >
       {children}
     </button>
-  );
-}
-
-function SelectControl<T extends string>({
-  value,
-  options,
-  onChange,
-}: {
-  value: T;
-  options: readonly T[];
-  onChange: (v: T) => void;
-}) {
-  return (
-    <select
-      value={value}
-      onChange={(e) => onChange(e.target.value as T)}
-      className="h-9 w-full rounded-xl border border-zinc-200 bg-zinc-50 px-3 text-sm font-bold shadow-none focus:border-[var(--color-ph-red)] focus:outline-none dark:border-zinc-700 dark:bg-zinc-900"
-    >
-      {options.map((opt) => (
-        <option key={opt} value={opt}>
-          {opt}
-        </option>
-      ))}
-    </select>
   );
 }
 

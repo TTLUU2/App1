@@ -113,6 +113,14 @@ export function JourneyProgress({
         .journey-arc-pulse {
           animation: journey-arc-pulse 1.6s ease-in-out infinite;
         }
+        @keyframes journey-globe-spin {
+          0%   { transform: rotate(0deg); }
+          100% { transform: rotate(360deg); }
+        }
+        .journey-globe-meridians {
+          animation: journey-globe-spin 18s linear infinite;
+          transform-origin: 100px 100px;
+        }
       `}</style>
 
       <svg
@@ -121,6 +129,12 @@ export function JourneyProgress({
         role="img"
         aria-label={`${Math.round(clamped * 100)}% of the way to your ${tripType.toLowerCase()} goal`}
       >
+        {/* Stylised globe at the centre of the ring — the plane reads
+            as "circling the world" instead of just spinning in space.
+            A slow rotation on the meridian lines hints at the Earth
+            turning underneath without competing for attention. */}
+        <Globe />
+
         {isReturn ? (
           <ReturnArcs progress={displayed} celebrating={celebrating} />
         ) : (
@@ -151,6 +165,65 @@ export function JourneyProgress({
         </div>
       )}
     </div>
+  );
+}
+
+/**
+ * Stylised globe — base sphere + equator + three slowly-rotating
+ * meridians (slate slate-300 / slate-700) so it reads as a globe
+ * without competing with the brand-red plane on the outer arc.
+ */
+function Globe() {
+  const GR = 30; // globe radius
+  return (
+    <g>
+      <circle
+        cx={CX}
+        cy={CY}
+        r={GR}
+        className="fill-slate-100 stroke-slate-300 dark:fill-slate-800 dark:stroke-slate-600"
+        strokeWidth="0.8"
+      />
+      {/* Equator */}
+      <line
+        x1={CX - GR}
+        y1={CY}
+        x2={CX + GR}
+        y2={CY}
+        className="stroke-slate-300 dark:stroke-slate-600"
+        strokeWidth="0.6"
+      />
+      {/* Meridians — rotated continuously so the globe "spins". Three
+          ellipses at different radii give a sense of perspective. */}
+      <g className="journey-globe-meridians">
+        <ellipse
+          cx={CX}
+          cy={CY}
+          rx={GR * 0.4}
+          ry={GR}
+          className="fill-none stroke-slate-300 dark:stroke-slate-600"
+          strokeWidth="0.6"
+        />
+        <ellipse
+          cx={CX}
+          cy={CY}
+          rx={GR * 0.7}
+          ry={GR}
+          className="fill-none stroke-slate-300 dark:stroke-slate-600"
+          strokeWidth="0.5"
+          opacity="0.7"
+        />
+        <ellipse
+          cx={CX}
+          cy={CY}
+          rx={GR}
+          ry={GR * 0.4}
+          className="fill-none stroke-slate-300 dark:stroke-slate-600"
+          strokeWidth="0.5"
+          opacity="0.6"
+        />
+      </g>
+    </g>
   );
 }
 
