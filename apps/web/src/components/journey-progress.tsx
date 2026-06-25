@@ -169,61 +169,30 @@ export function JourneyProgress({
 }
 
 /**
- * Stylised globe — base sphere + equator + three slowly-rotating
- * meridians (slate slate-300 / slate-700) so it reads as a globe
- * without competing with the brand-red plane on the outer arc.
+ * Globe — designer-supplied illustrated Earth (public/images/globe.png)
+ * dropped in via SVG `<image>` so it scales cleanly with the
+ * viewBox at any widget size (52px tile → 200px Step 3 ring).
+ *
+ * Sizing note: the source PNG has whitespace around the globe — at
+ * 160×160 viewBox-units centred on (100, 100) the visible sphere
+ * lands at roughly radius 50, fitting the inner space without
+ * touching the plane orbit at R=80. The whole image rotates on the
+ * same `.journey-globe-meridians` keyframe used by the original
+ * stylised version, so the Earth turns underneath the plane.
  */
 function Globe() {
-  const GR = 50; // globe radius — fills the inner space while leaving
-  // ~30 viewBox-unit breathing room before the plane orbit (R=80).
+  const SIZE = 160;
+  const ORIGIN = (200 - SIZE) / 2; // 20 — centres the image on (100, 100)
   return (
-    <g>
-      <circle
-        cx={CX}
-        cy={CY}
-        r={GR}
-        className="fill-slate-100 stroke-slate-300 dark:fill-slate-800 dark:stroke-slate-600"
-        strokeWidth="0.8"
+    <g className="journey-globe-meridians" style={{ transformOrigin: `${CX}px ${CY}px` }}>
+      <image
+        href="/images/globe.png"
+        x={ORIGIN}
+        y={ORIGIN}
+        width={SIZE}
+        height={SIZE}
+        preserveAspectRatio="xMidYMid meet"
       />
-      {/* Equator */}
-      <line
-        x1={CX - GR}
-        y1={CY}
-        x2={CX + GR}
-        y2={CY}
-        className="stroke-slate-300 dark:stroke-slate-600"
-        strokeWidth="0.6"
-      />
-      {/* Meridians — rotated continuously so the globe "spins". Three
-          ellipses at different radii give a sense of perspective. */}
-      <g className="journey-globe-meridians">
-        <ellipse
-          cx={CX}
-          cy={CY}
-          rx={GR * 0.4}
-          ry={GR}
-          className="fill-none stroke-slate-300 dark:stroke-slate-600"
-          strokeWidth="0.6"
-        />
-        <ellipse
-          cx={CX}
-          cy={CY}
-          rx={GR * 0.7}
-          ry={GR}
-          className="fill-none stroke-slate-300 dark:stroke-slate-600"
-          strokeWidth="0.5"
-          opacity="0.7"
-        />
-        <ellipse
-          cx={CX}
-          cy={CY}
-          rx={GR}
-          ry={GR * 0.4}
-          className="fill-none stroke-slate-300 dark:stroke-slate-600"
-          strokeWidth="0.5"
-          opacity="0.6"
-        />
-      </g>
     </g>
   );
 }
