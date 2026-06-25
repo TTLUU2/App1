@@ -41,7 +41,9 @@ import {
   Target,
   Users,
 } from 'lucide-react';
+import { CityDetailModal } from '@/components/city-detail-modal';
 import { JourneyProgress } from '@/components/journey-progress';
+import { MonthYearPicker } from '@/components/month-year-picker';
 import { WorldMap } from '@/components/world-map';
 import { formatPoints } from '@/lib/format';
 import { selectTotalPoints, useBalancesStore } from '@/store/balances';
@@ -215,6 +217,10 @@ function Step1PickDestination({
 }) {
   const [region, setRegion] = useState<RegionId | null>(null);
   const [query, setQuery] = useState('');
+  /** Pin/card tap opens the detail modal first — the modal's "Track
+   *  to here" CTA is what actually advances the wizard. Lets the user
+   *  browse cabin points before committing. */
+  const [previewId, setPreviewId] = useState<string | null>(null);
 
   // Pre-select the region of the currently-selected destination (e.g.
   // when arriving via /journeys/track?destinationId=…).
@@ -235,13 +241,16 @@ function Step1PickDestination({
   const matches = regional.filter((d) =>
     `${d.city} ${d.country}`.toLowerCase().includes(query.trim().toLowerCase()),
   );
+  const previewDest = previewId
+    ? (DESTINATION_CATALOGUE.find((d) => d.id === previewId) ?? null)
+    : null;
 
   return (
     <>
       <WorldMap
         destinations={regional}
-        selectedId={selectedId}
-        onPick={onPick}
+        selectedId={previewId ?? selectedId}
+        onPick={(id) => setPreviewId(id)}
         zoomBbox={regionDef?.bbox ?? null}
         title={regionDef?.label ?? 'World map'}
         onBack={() => setRegion(null)}
@@ -268,7 +277,7 @@ function Step1PickDestination({
             <li key={d.id}>
               <button
                 type="button"
-                onClick={() => onPick(d.id)}
+                onClick={() => setPreviewId(d.id)}
                 className={
                   active
                     ? 'w-full rounded-xl bg-white p-3 text-left ring-2 ring-[var(--color-ph-red)] dark:bg-zinc-900'
@@ -285,6 +294,15 @@ function Step1PickDestination({
           );
         })}
       </ul>
+
+      <CityDetailModal
+        destination={previewDest}
+        onClose={() => setPreviewId(null)}
+        onTrack={(id) => {
+          setPreviewId(null);
+          onPick(id);
+        }}
+      />
       {matches.length === 0 && (
         <p className="mt-4 text-center text-xs text-zinc-500">
           No matches — try another city or{' '}
@@ -445,11 +463,10 @@ function Step2Configure({
       </FieldGroup>
 
       <FieldGroup label="Departure month (optional)" Icon={Calendar}>
-        <input
-          type="month"
+        <MonthYearPicker
           value={departureMonth}
-          onChange={(e) => onDepartureMonth(e.target.value)}
-          className="w-full rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm shadow-sm focus:border-[var(--color-ph-red)] focus:outline-none dark:border-zinc-700 dark:bg-zinc-950"
+          onChange={onDepartureMonth}
+          placeholder="Pick a month"
         />
       </FieldGroup>
 
