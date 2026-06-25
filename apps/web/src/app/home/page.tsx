@@ -364,38 +364,46 @@ function JourneysView() {
             You're tracking
           </h2>
           <ul className="space-y-2">
-            {tracked.map((j) => (
-              <li
-                key={j.id}
-                className="overflow-hidden rounded-xl bg-white ring-1 ring-zinc-200 dark:bg-zinc-900 dark:ring-zinc-800"
-              >
-                <CityBanner destinationId={j.destinationId} />
-                <div className="flex items-center gap-3 p-3">
-                  <JourneyProgress
-                    progress={total / j.targetPoints}
-                    tripType={j.tripType}
-                    size={84}
-                  >
-                    <p className="text-sm font-semibold tabular-nums">
-                      {Math.min(100, Math.round((total / j.targetPoints) * 100))}%
-                    </p>
-                  </JourneyProgress>
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate text-sm font-semibold">
-                      {j.destinationCity} · {j.cabin}
-                    </p>
-                    <p className="mt-0.5 truncate text-[11px] text-zinc-500">
-                      {j.tripType}
-                      {j.pax > 1 ? ` · ${j.pax} pax` : ''}
-                      {j.departureMonth ? ` · ${j.departureMonth}` : ''}
-                    </p>
-                    <p className="mt-0.5 truncate text-[11px] text-zinc-500 tabular-nums">
-                      Target {formatPoints(j.targetPoints)}
+            {tracked.map((j) => {
+              const pct = Math.min(100, Math.round((total / j.targetPoints) * 100));
+              return (
+                <li
+                  key={j.id}
+                  className="relative overflow-hidden rounded-xl bg-white ring-1 ring-zinc-200 dark:bg-zinc-900 dark:ring-zinc-800"
+                >
+                  {/* City silhouette as a faint watermark behind the
+                      content — adds destination flavour without the
+                      vertical space the full banner takes. */}
+                  <CityIllustration
+                    destinationId={j.destinationId}
+                    preserveAspectRatio="xMaxYMid meet"
+                    className="pointer-events-none absolute inset-y-0 right-0 h-full w-1/2 text-[var(--color-ph-red)] opacity-10 dark:opacity-20"
+                  />
+                  <div className="relative flex items-center gap-3 p-3">
+                    <JourneyProgress
+                      progress={total / j.targetPoints}
+                      tripType={j.tripType}
+                      size={52}
+                    />
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-sm font-semibold leading-tight">
+                        {j.destinationCity} · {j.cabin}
+                      </p>
+                      <p className="mt-0.5 truncate text-[11px] leading-tight text-zinc-500">
+                        {j.tripType}
+                        {j.pax > 1 ? ` · ${j.pax} pax` : ''}
+                        {j.departureMonth ? ` · ${j.departureMonth}` : ''}
+                        {' · '}
+                        <span className="tabular-nums">{formatPoints(j.targetPoints)}</span>
+                      </p>
+                    </div>
+                    <p className="flex-none text-base font-bold tabular-nums text-[var(--color-ph-red)]">
+                      {pct}%
                     </p>
                   </div>
-                </div>
-              </li>
-            ))}
+                </li>
+              );
+            })}
           </ul>
         </section>
       )}

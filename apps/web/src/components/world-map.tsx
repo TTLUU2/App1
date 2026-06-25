@@ -224,15 +224,21 @@ function Pin({
   onClick: () => void;
   counterScale: number;
 }) {
-  // Base sizes in viewBox units (counter-scaled so they stay constant).
-  const glyphScale = (active ? 0.55 : 0.42) / counterScale;
+  // Base sizes in viewBox units (counter-scaled so they stay constant
+  // at any zoom). Bumped ~1.6× from the first pass — felt too dainty
+  // when region filtering means only 3-9 pins live in any frame.
+  const glyphScale = (active ? 0.85 : 0.65) / counterScale;
   const glyphTx = x - 12 * glyphScale;
   const glyphTy = y - 23 * glyphScale;
-  const haloR = 4.5 / counterScale;
-  const ringR = 2.4 / counterScale;
-  const breathR = 2 / counterScale;
-  const labelFont = 5.5 / counterScale;
-  const codeFont = 3.5 / counterScale;
+  const haloR = 6.5 / counterScale;
+  const ringR = 3.4 / counterScale;
+  const breathR = 2.8 / counterScale;
+  // Single label below each pin: city name + code on the same line.
+  // Active gets uppercase + bold ink; idle is muted but still legible.
+  const labelFont = (active ? 6.5 : 5) / counterScale;
+  const labelY = y + 4 / counterScale;
+  const letterSpacing = (active ? 0.6 : 0.3) / counterScale;
+  const labelText = active ? `${city.toUpperCase()} · ${code}` : `${city} · ${code}`;
 
   return (
     <g
@@ -264,33 +270,22 @@ function Pin({
         <circle cx="12" cy="10" r="3" className="fill-white" />
       </g>
 
-      {active ? (
-        <text
-          x={x}
-          y={y - 8 / counterScale}
-          textAnchor="middle"
-          className="fill-zinc-900 dark:fill-zinc-100"
-          style={{
-            font: `700 ${labelFont.toFixed(2)}px system-ui, -apple-system, sans-serif`,
-            letterSpacing: `${(0.6 / counterScale).toFixed(2)}px`,
-          }}
-        >
-          {city.toUpperCase()} · {code}
-        </text>
-      ) : (
-        <text
-          x={x}
-          y={y + 5 / counterScale}
-          textAnchor="middle"
-          className="fill-zinc-600 dark:fill-zinc-300"
-          style={{
-            font: `700 ${codeFont.toFixed(2)}px system-ui, -apple-system, sans-serif`,
-            letterSpacing: `${(0.3 / counterScale).toFixed(2)}px`,
-          }}
-        >
-          {code}
-        </text>
-      )}
+      <text
+        x={x}
+        y={labelY}
+        textAnchor="middle"
+        className={active ? 'fill-zinc-900 dark:fill-zinc-100' : 'fill-zinc-600 dark:fill-zinc-300'}
+        style={{
+          font: `700 ${labelFont.toFixed(2)}px system-ui, -apple-system, sans-serif`,
+          letterSpacing: `${letterSpacing.toFixed(2)}px`,
+          paintOrder: 'stroke',
+          stroke: 'white',
+          strokeWidth: `${(0.8 / counterScale).toFixed(2)}px`,
+          strokeLinejoin: 'round',
+        }}
+      >
+        {labelText}
+      </text>
     </g>
   );
 }
