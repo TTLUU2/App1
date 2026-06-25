@@ -52,7 +52,10 @@ function pushRings(parts: string[], rings: number[][][]) {
   for (const ring of rings) {
     let d = '';
     for (let i = 0; i < ring.length; i++) {
-      const [lng, lat] = ring[i];
+      const point = ring[i];
+      if (!point || point.length < 2) continue;
+      const lng = point[0] as number;
+      const lat = point[1] as number;
       // Equirectangular: degrees → viewBox units.
       const x = (lng + 180).toFixed(2);
       const y = (90 - lat).toFixed(2);
