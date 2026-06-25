@@ -41,6 +41,7 @@ import {
   Target,
   Users,
 } from 'lucide-react';
+import { JourneyProgress } from '@/components/journey-progress';
 import { formatPoints } from '@/lib/format';
 import { selectTotalPoints, useBalancesStore } from '@/store/balances';
 import {
@@ -112,7 +113,7 @@ function TrackJourneyWizard() {
       departureMonth: departureMonth || null,
       programId,
     });
-    router.push('/journeys');
+    router.push('/home?view=journeys');
   }
 
   return (
@@ -564,19 +565,19 @@ function Step3Confirm({
           {program ? ` · via ${program.name}` : ''}
         </p>
 
-        <div className="mt-4">
-          <div className="flex items-center justify-between text-xs font-medium">
-            <span className="tabular-nums">{formatPoints(totalPoints)}</span>
-            <span className="text-zinc-500 tabular-nums">{formatPoints(targetPoints)}</span>
-          </div>
-          <div className="mt-1 h-2 overflow-hidden rounded-full bg-zinc-100 dark:bg-zinc-800">
-            <div
-              className="h-full rounded-full bg-[var(--color-ph-red)] transition-[width] duration-700"
-              style={{ width: `${progress}%` }}
-            />
-          </div>
-          <p className="mt-2 text-[11px] font-semibold tabular-nums text-zinc-500">
-            {gap === 0 ? "You're there — go book it." : `${formatPoints(gap)} to go (${progress}%)`}
+        <div className="mt-4 flex flex-col items-center">
+          <JourneyProgress
+            progress={targetPoints === 0 ? 0 : totalPoints / targetPoints}
+            tripType={tripType}
+            size={200}
+          >
+            <p className="text-3xl font-semibold tabular-nums">{progress}%</p>
+            <p className="mt-0.5 text-[11px] font-semibold tabular-nums text-zinc-500">
+              {formatPoints(totalPoints)} / {formatPoints(targetPoints)}
+            </p>
+          </JourneyProgress>
+          <p className="mt-3 text-[11px] font-semibold tabular-nums text-zinc-500">
+            {gap === 0 ? "You're there — go book it." : `${formatPoints(gap)} to go`}
           </p>
         </div>
       </section>
@@ -592,7 +593,7 @@ function Step3Confirm({
         </li>
         <li className="flex items-start gap-2">
           <Check className="mt-0.5 h-3.5 w-3.5 flex-none text-[var(--color-ph-red)]" aria-hidden />
-          Stop tracking any time from the Journeys tab.
+          Stop tracking any time from Home → Journeys.
         </li>
       </ul>
 
@@ -605,7 +606,7 @@ function Step3Confirm({
       </button>
 
       <Link
-        href="/journeys"
+        href="/home?view=journeys"
         className="mt-2 block text-center text-[11px] font-semibold text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100"
       >
         Not now

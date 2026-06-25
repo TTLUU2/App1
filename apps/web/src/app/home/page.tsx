@@ -18,8 +18,9 @@
  * once the screens settle.
  */
 
-import { useMemo, useState } from 'react';
+import { Suspense, useMemo, useState } from 'react';
 import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
 import { ArrowRight, BarChart3, Gauge, Plane, TrendingUp } from 'lucide-react';
 import { formatCurrency, formatPoints } from '@/lib/format';
 import { useAlertsStore, type FiredAlert } from '@/store/alerts';
@@ -30,6 +31,7 @@ import {
   type ProgramBalance,
 } from '@/store/balances';
 import { DESTINATION_CATALOGUE, useJourneysStore, type DestinationOption } from '@/store/journeys';
+import { JourneyProgress } from '@/components/journey-progress';
 
 type HomeView = 'score' | 'journeys';
 
@@ -52,7 +54,17 @@ function isToday(iso: string): boolean {
 }
 
 export default function HomePage() {
-  const [view, setView] = useState<HomeView>('score');
+  return (
+    <Suspense fallback={<main className="px-4 pt-4 pb-32" aria-busy="true" />}>
+      <HomeShell />
+    </Suspense>
+  );
+}
+
+function HomeShell() {
+  const params = useSearchParams();
+  const initialView: HomeView = params.get('view') === 'journeys' ? 'journeys' : 'score';
+  const [view, setView] = useState<HomeView>(initialView);
 
   const { greeting, dateLabel } = useMemo(() => {
     const now = new Date();
@@ -351,51 +363,42 @@ function JourneysView() {
             You're tracking
           </h2>
           <ul className="space-y-2">
-            {tracked.map((j) => {
-              const progress = Math.min(100, Math.round((total / j.targetPoints) * 100));
-              return (
-                <li
-                  key={j.id}
-                  className="rounded-xl bg-white p-3 ring-1 ring-zinc-200 dark:bg-zinc-900 dark:ring-zinc-800"
-                >
-                  <div className="flex items-center justify-between">
-                    <p className="text-sm font-semibold">
-                      {j.destinationCity} · {j.cabin}
-                    </p>
-                    <p className="text-xs font-bold tabular-nums text-zinc-500">{progress}%</p>
-                  </div>
-                  <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-zinc-100 dark:bg-zinc-800">
-                    <div
-                      className="h-full rounded-full bg-[var(--color-ph-red)] transition-[width] duration-700"
-                      style={{ width: `${progress}%` }}
-                    />
-                  </div>
-                  <p className="mt-1.5 text-[11px] text-zinc-500">
-                    Target {formatPoints(j.targetPoints)} · {j.tripType}
+            {tracked.map((j) => (
+              <li
+                key={j.id}
+                className="flex items-center gap-3 rounded-xl bg-white p-3 ring-1 ring-zinc-200 dark:bg-zinc-900 dark:ring-zinc-800"
+              >
+                <JourneyProgress progress={total / j.targetPoints} tripType={j.tripType} size={84}>
+                  <p className="text-sm font-semibold tabular-nums">
+                    {Math.min(100, Math.round((total / j.targetPoints) * 100))}%
+                  </p>
+                </JourneyProgress>
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-sm font-semibold">
+                    {j.destinationCity} · {j.cabin}
+                  </p>
+                  <p className="mt-0.5 truncate text-[11px] text-zinc-500">
+                    {j.tripType}
+                    {j.pax > 1 ? ` · ${j.pax} pax` : ''}
                     {j.departureMonth ? ` · ${j.departureMonth}` : ''}
                   </p>
-                </li>
-              );
-            })}
+                  <p className="mt-0.5 truncate text-[11px] text-zinc-500 tabular-nums">
+                    Target {formatPoints(j.targetPoints)}
+                  </p>
+                </div>
+              </li>
+            ))}
           </ul>
         </section>
       )}
 
       <section aria-labelledby="where-heading" className="mt-6">
-        <div className="mb-2 flex items-center justify-between">
-          <h2
-            id="where-heading"
-            className="text-[10px] font-bold uppercase tracking-wide text-zinc-500"
-          >
-            Where you can go
-          </h2>
-          <Link
-            href="/journeys"
-            className="text-[11px] font-semibold text-[var(--color-ph-red)] hover:underline"
-          >
-            See all
-          </Link>
-        </div>
+        <h2
+          id="where-heading"
+          className="mb-2 text-[10px] font-bold uppercase tracking-wide text-zinc-500"
+        >
+          Where you can go
+        </h2>
         <ul className="grid grid-cols-2 gap-2">
           {visibleDestinations.map((d) => (
             <li key={d.id}>
