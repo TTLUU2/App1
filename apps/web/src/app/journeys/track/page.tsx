@@ -42,6 +42,7 @@ import {
   Users,
 } from 'lucide-react';
 import { JourneyProgress } from '@/components/journey-progress';
+import { WorldMap } from '@/components/world-map';
 import { formatPoints } from '@/lib/format';
 import { selectTotalPoints, useBalancesStore } from '@/store/balances';
 import {
@@ -261,114 +262,6 @@ function Step1PickDestination({
         <p className="mt-4 text-center text-xs text-zinc-500">No matches — try another city.</p>
       )}
     </>
-  );
-}
-
-/**
- * Stylized world map — equirectangular projection (viewBox 360x180,
- * lng/lat directly map to x/y). Continents are rough rounded blobs;
- * we trade geographic accuracy for a clean, simple silhouette that
- * works at any width. City pins inherit their position from each
- * destination's lat/lng.
- */
-function WorldMap({
-  destinations,
-  selectedId,
-  onPick,
-}: {
-  destinations: DestinationOption[];
-  selectedId: string;
-  onPick: (id: string) => void;
-}) {
-  return (
-    <div className="overflow-hidden rounded-2xl bg-zinc-50 p-3 ring-1 ring-zinc-200 dark:bg-zinc-900 dark:ring-zinc-800">
-      <p className="mb-2 text-[10px] font-bold uppercase tracking-wide text-zinc-500">Where to?</p>
-      <svg
-        viewBox="0 0 360 180"
-        className="block w-full"
-        role="img"
-        aria-label="World map — tap a city to select"
-      >
-        {/* Continents — rough rounded blobs in equirectangular space.
-            Geographic accuracy is intentionally low; the silhouette
-            just frames the pins. */}
-        <g className="fill-zinc-200 dark:fill-zinc-800">
-          {/* North America */}
-          <path d="M30,30 Q60,20 110,35 Q135,55 110,80 Q90,95 70,90 Q50,80 35,70 Q20,55 30,30 Z" />
-          {/* South America */}
-          <path d="M95,95 Q115,90 120,115 Q118,145 105,160 Q95,150 90,130 Q85,110 95,95 Z" />
-          {/* Greenland */}
-          <ellipse cx="155" cy="30" rx="14" ry="10" />
-          {/* Europe */}
-          <path d="M170,40 Q195,35 210,45 Q205,60 190,62 Q175,58 170,50 Z" />
-          {/* Africa */}
-          <path d="M180,75 Q205,68 215,90 Q215,120 200,135 Q185,130 178,110 Q172,90 180,75 Z" />
-          {/* Asia */}
-          <path d="M210,35 Q260,28 305,40 Q325,55 320,75 Q295,82 270,75 Q240,70 215,60 Q205,50 210,35 Z" />
-          {/* Indian subcontinent */}
-          <path d="M250,75 Q265,72 265,90 Q258,100 250,95 Q243,88 250,75 Z" />
-          {/* SE Asia + Indonesia */}
-          <path d="M278,90 Q298,88 305,100 Q295,110 282,105 Q275,98 278,90 Z" />
-          {/* Australia */}
-          <path d="M298,120 Q325,115 335,130 Q330,142 312,140 Q298,135 298,120 Z" />
-          {/* NZ */}
-          <ellipse cx="345" cy="142" rx="5" ry="4" />
-          {/* Antarctica band */}
-          <path d="M0,170 Q180,160 360,170 L360,180 L0,180 Z" />
-        </g>
-
-        {/* Equator line — soft hint */}
-        <line
-          x1="0"
-          y1="90"
-          x2="360"
-          y2="90"
-          className="stroke-zinc-300 dark:stroke-zinc-700"
-          strokeWidth="0.2"
-          strokeDasharray="2 2"
-        />
-
-        {/* City pins */}
-        {destinations.map((d) => {
-          const x = d.lng + 180;
-          const y = 90 - d.lat;
-          const active = d.id === selectedId;
-          return (
-            <g
-              key={d.id}
-              role="button"
-              aria-label={`Select ${d.city}`}
-              onClick={() => onPick(d.id)}
-              className="cursor-pointer"
-            >
-              {/* Glow ring on active */}
-              {active && (
-                <circle cx={x} cy={y} r="6" className="fill-[var(--color-ph-red)] opacity-30" />
-              )}
-              <circle
-                cx={x}
-                cy={y}
-                r={active ? 3 : 2.2}
-                className="fill-[var(--color-ph-red)] stroke-white"
-                strokeWidth="0.6"
-              />
-              {/* Label on active */}
-              {active && (
-                <text
-                  x={x}
-                  y={y - 6}
-                  textAnchor="middle"
-                  className="fill-zinc-900 dark:fill-zinc-100"
-                  style={{ font: '600 5.5px system-ui, -apple-system, sans-serif' }}
-                >
-                  {d.city}
-                </text>
-              )}
-            </g>
-          );
-        })}
-      </svg>
-    </div>
   );
 }
 

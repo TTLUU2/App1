@@ -53,8 +53,9 @@ try {
   var t = localStorage.getItem('${STORAGE_KEY}');
   if (t === 'dark') {
     document.documentElement.classList.add('dark');
-  } else if (t !== 'light' && window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
-    document.documentElement.classList.add('dark');
   }
+  // Default = light. We deliberately don't honour
+  // prefers-color-scheme: dark — only an explicit user toggle flips
+  // us into dark mode. Keeps the app's brand colours predictable.
 } catch (e) {}
 `;
