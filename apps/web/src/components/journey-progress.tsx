@@ -174,7 +174,8 @@ export function JourneyProgress({
  * without competing with the brand-red plane on the outer arc.
  */
 function Globe() {
-  const GR = 30; // globe radius
+  const GR = 50; // globe radius — fills the inner space while leaving
+  // ~30 viewBox-unit breathing room before the plane orbit (R=80).
   return (
     <g>
       <circle
