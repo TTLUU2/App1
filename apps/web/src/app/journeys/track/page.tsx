@@ -47,9 +47,11 @@ import { formatPoints } from '@/lib/format';
 import { selectTotalPoints, useBalancesStore } from '@/store/balances';
 import {
   DESTINATION_CATALOGUE,
+  REGIONS,
   useJourneysStore,
   type CabinClass,
   type DestinationOption,
+  type RegionId,
   type TripType,
 } from '@/store/journeys';
 
@@ -211,20 +213,45 @@ function Step1PickDestination({
   selectedId: string;
   onPick: (id: string) => void;
 }) {
+  const [region, setRegion] = useState<RegionId | null>(null);
   const [query, setQuery] = useState('');
-  const matches = DESTINATION_CATALOGUE.filter((d) =>
+
+  // Pre-select the region of the currently-selected destination (e.g.
+  // when arriving via /journeys/track?destinationId=…).
+  if (region === null && selectedId) {
+    const dest = DESTINATION_CATALOGUE.find((d) => d.id === selectedId);
+    if (dest) {
+      setRegion(dest.region);
+      return null;
+    }
+  }
+
+  if (region === null) {
+    return <RegionPicker onPick={(id) => setRegion(id)} />;
+  }
+
+  const regionDef = REGIONS.find((r) => r.id === region);
+  const regional = DESTINATION_CATALOGUE.filter((d) => d.region === region);
+  const matches = regional.filter((d) =>
     `${d.city} ${d.country}`.toLowerCase().includes(query.trim().toLowerCase()),
   );
 
   return (
     <>
-      <WorldMap destinations={DESTINATION_CATALOGUE} selectedId={selectedId} onPick={onPick} />
+      <WorldMap
+        destinations={regional}
+        selectedId={selectedId}
+        onPick={onPick}
+        zoomBbox={regionDef?.bbox ?? null}
+        title={regionDef?.label ?? 'World map'}
+        onBack={() => setRegion(null)}
+      />
 
       <label className="mt-4 flex items-center gap-2 rounded-xl border border-zinc-200 bg-white px-3 py-2 shadow-sm dark:border-zinc-700 dark:bg-zinc-900">
         <Search className="h-4 w-4 text-zinc-400" aria-hidden />
         <input
           type="search"
-          placeholder="Or search a city"
+          placeholder={`Search in ${regionDef?.label ?? 'this region'}`}
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           className="flex-1 bg-transparent text-sm focus:outline-none"
@@ -232,7 +259,7 @@ function Step1PickDestination({
       </label>
 
       <p className="mt-3 text-[10px] font-bold uppercase tracking-wide text-zinc-500">
-        Popular destinations
+        In {regionDef?.label ?? 'this region'}
       </p>
       <ul className="mt-2 grid grid-cols-2 gap-2">
         {matches.map((d) => {
@@ -259,9 +286,74 @@ function Step1PickDestination({
         })}
       </ul>
       {matches.length === 0 && (
-        <p className="mt-4 text-center text-xs text-zinc-500">No matches — try another city.</p>
+        <p className="mt-4 text-center text-xs text-zinc-500">
+          No matches — try another city or{' '}
+          <button
+            type="button"
+            onClick={() => setRegion(null)}
+            className="font-semibold text-[var(--color-ph-red)] hover:underline"
+          >
+            switch region
+          </button>
+          .
+        </p>
       )}
     </>
+  );
+}
+
+/** Phase 1 of Step 1: pick a region before drilling into cities.
+ *  Each region card shows the world map zoomed into that region as a
+ *  preview, so the user sees what they'd be picking from. */
+function RegionPicker({ onPick }: { onPick: (id: RegionId) => void }) {
+  return (
+    <>
+      <p className="text-[10px] font-bold uppercase tracking-wide text-zinc-500">
+        Where in the world?
+      </p>
+      <p className="mt-1 text-xs text-zinc-500">Pick a region to zoom in.</p>
+      <ul className="mt-3 grid grid-cols-2 gap-2">
+        {REGIONS.map((r) => (
+          <li key={r.id}>
+            <button
+              type="button"
+              onClick={() => onPick(r.id)}
+              className="block w-full overflow-hidden rounded-xl bg-white text-left ring-1 ring-zinc-200 transition-colors hover:ring-[var(--color-ph-red)] dark:bg-zinc-900 dark:ring-zinc-800"
+            >
+              <div className="bg-emerald-50/60 dark:bg-emerald-500/10">
+                <RegionPreview region={r} />
+              </div>
+              <div className="p-3">
+                <p className="text-sm font-semibold">{r.label}</p>
+                <p className="mt-0.5 text-[11px] text-zinc-500">{r.blurb}</p>
+              </div>
+            </button>
+          </li>
+        ))}
+      </ul>
+    </>
+  );
+}
+
+/** Mini WorldMap preview already zoomed into the region — no pin
+ *  interactivity, smaller height. Reuses the same component so the
+ *  zoom math stays a single source of truth. */
+function RegionPreview({
+  region,
+}: {
+  region: { id: RegionId; bbox: { x: number; y: number; w: number; h: number } };
+}) {
+  const destinations = DESTINATION_CATALOGUE.filter((d) => d.region === region.id);
+  return (
+    <div className="pointer-events-none">
+      <WorldMap
+        destinations={destinations}
+        selectedId=""
+        onPick={() => {}}
+        zoomBbox={region.bbox}
+        title=""
+      />
+    </div>
   );
 }
 

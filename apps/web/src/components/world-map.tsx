@@ -70,42 +70,87 @@ interface WorldMapProps {
   destinations: DestinationOption[];
   selectedId: string;
   onPick: (id: string) => void;
+  /** When supplied, the map smoothly zooms into this bbox (viewBox
+   *  coords). Pins counter-scale so they stay readable. Pass null
+   *  for the global view. */
+  zoomBbox?: { x: number; y: number; w: number; h: number } | null;
+  /** Header label — defaults to "World map". */
+  title?: string;
+  /** Optional back affordance (e.g. "← Pick a different region"). */
+  onBack?: () => void;
 }
 
-export function WorldMap({ destinations, selectedId, onPick }: WorldMapProps) {
+const WORLD_VIEW = { x: 0, y: 0, w: 360, h: 180 };
+
+export function WorldMap({
+  destinations,
+  selectedId,
+  onPick,
+  zoomBbox,
+  title = 'World map',
+  onBack,
+}: WorldMapProps) {
+  // Letterbox-fit the bbox into the 360×180 viewBox.
+  const target = zoomBbox ?? WORLD_VIEW;
+  const scale = Math.min(WORLD_VIEW.w / target.w, WORLD_VIEW.h / target.h);
+  const offsetX = (WORLD_VIEW.w - target.w * scale) / 2 - target.x * scale;
+  const offsetY = (WORLD_VIEW.h - target.h * scale) / 2 - target.y * scale;
+
   return (
     <div className="overflow-hidden rounded-2xl bg-white p-3 ring-1 ring-zinc-200 dark:bg-zinc-900 dark:ring-zinc-800">
       <div className="mb-2 flex items-center justify-between text-[10px] font-bold uppercase tracking-wide text-zinc-500">
-        <span>World map</span>
+        {onBack ? (
+          <button
+            type="button"
+            onClick={onBack}
+            className="hover:text-zinc-900 dark:hover:text-zinc-100"
+          >
+            ← All regions
+          </button>
+        ) : (
+          <span>{title}</span>
+        )}
         <span>Tap a city</span>
       </div>
       <svg
         viewBox="0 0 360 180"
         className="block w-full"
         role="img"
-        aria-label="World map — tap a city to select"
+        aria-label={`${title} — tap a city to select`}
       >
-        <path
-          d={LAND_PATH_D}
-          fillRule="evenodd"
-          className="fill-emerald-400/55 dark:fill-emerald-500/30"
-        />
+        <g
+          style={{
+            transform: `translate(${offsetX.toFixed(2)}px, ${offsetY.toFixed(2)}px) scale(${scale.toFixed(4)})`,
+            transformOrigin: '0 0',
+            transition: 'transform 0.7s cubic-bezier(0.4, 0, 0.2, 1)',
+          }}
+        >
+          <path
+            d={LAND_PATH_D}
+            fillRule="evenodd"
+            className="fill-emerald-400/55 dark:fill-emerald-500/30"
+          />
 
-        {destinations.map((d) => {
-          const x = d.lng + 180;
-          const y = 90 - d.lat;
-          const active = d.id === selectedId;
-          return (
-            <Pin
-              key={d.id}
-              x={x}
-              y={y}
-              city={d.city}
-              active={active}
-              onClick={() => onPick(d.id)}
-            />
-          );
-        })}
+          {destinations.map((d) => {
+            const x = d.lng + 180;
+            const y = 90 - d.lat;
+            const active = d.id === selectedId;
+            return (
+              <Pin
+                key={d.id}
+                x={x}
+                y={y}
+                city={d.city}
+                active={active}
+                onClick={() => onPick(d.id)}
+                /* Counter-scale the glyph so the pin stays the same
+                 * physical size regardless of how far the map is
+                 * zoomed in. */
+                counterScale={scale}
+              />
+            );
+          })}
+        </g>
       </svg>
     </div>
   );
@@ -123,25 +168,32 @@ function Pin({
   city,
   active,
   onClick,
+  counterScale,
 }: {
   x: number;
   y: number;
   city: string;
   active: boolean;
   onClick: () => void;
+  counterScale: number;
 }) {
-  const scale = active ? 0.55 : 0.42;
-  // Lucide MapPin local tip: (12, 23). After scale: (12s, 23s).
-  // Translate so the scaled tip lands at (x, y).
-  const tx = x - 12 * scale;
-  const ty = y - 23 * scale;
+  // Base pin size in viewBox units. Divide by the outer map scale so
+  // the pin renders at the same physical pixel size regardless of zoom.
+  const base = active ? 0.55 : 0.42;
+  const s = base / counterScale;
+  const tx = x - 12 * s;
+  const ty = y - 23 * s;
+  const halo = 4.5 / counterScale;
+  const fontPx = 5.5 / counterScale;
+  const labelOffsetX = 5 / counterScale;
+  const labelOffsetY = 6 / counterScale;
 
   return (
     <g role="button" aria-label={`Select ${city}`} onClick={onClick} className="cursor-pointer">
-      {/* Soft halo on active so it pops against the green */}
-      {active && <circle cx={x} cy={y} r="4.5" className="fill-[var(--color-ph-red)] opacity-25" />}
-      <g transform={`translate(${tx} ${ty}) scale(${scale})`}>
-        {/* Pin outline drawn as fill — keeps the silhouette crisp at the small scale */}
+      {active && (
+        <circle cx={x} cy={y} r={halo} className="fill-[var(--color-ph-red)] opacity-25" />
+      )}
+      <g transform={`translate(${tx} ${ty}) scale(${s})`}>
         <path
           d="M20 10c0 7-8 13-8 13s-8-6-8-13a8 8 0 0 1 16 0Z"
           className="fill-[var(--color-ph-red)] stroke-white"
@@ -151,10 +203,10 @@ function Pin({
       </g>
       {active && (
         <text
-          x={x + 5}
-          y={y - 6}
+          x={x + labelOffsetX}
+          y={y - labelOffsetY}
           className="fill-zinc-900 dark:fill-zinc-100"
-          style={{ font: '700 5.5px system-ui, -apple-system, sans-serif' }}
+          style={{ font: `700 ${fontPx.toFixed(2)}px system-ui, -apple-system, sans-serif` }}
         >
           {city.toUpperCase()}
         </text>

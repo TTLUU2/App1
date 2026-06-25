@@ -32,6 +32,7 @@ import {
 } from '@/store/balances';
 import { DESTINATION_CATALOGUE, useJourneysStore, type DestinationOption } from '@/store/journeys';
 import { JourneyProgress } from '@/components/journey-progress';
+import { CityIllustration } from '@/components/city-illustration';
 
 type HomeView = 'score' | 'journeys';
 
@@ -366,25 +367,32 @@ function JourneysView() {
             {tracked.map((j) => (
               <li
                 key={j.id}
-                className="flex items-center gap-3 rounded-xl bg-white p-3 ring-1 ring-zinc-200 dark:bg-zinc-900 dark:ring-zinc-800"
+                className="overflow-hidden rounded-xl bg-white ring-1 ring-zinc-200 dark:bg-zinc-900 dark:ring-zinc-800"
               >
-                <JourneyProgress progress={total / j.targetPoints} tripType={j.tripType} size={84}>
-                  <p className="text-sm font-semibold tabular-nums">
-                    {Math.min(100, Math.round((total / j.targetPoints) * 100))}%
-                  </p>
-                </JourneyProgress>
-                <div className="min-w-0 flex-1">
-                  <p className="truncate text-sm font-semibold">
-                    {j.destinationCity} · {j.cabin}
-                  </p>
-                  <p className="mt-0.5 truncate text-[11px] text-zinc-500">
-                    {j.tripType}
-                    {j.pax > 1 ? ` · ${j.pax} pax` : ''}
-                    {j.departureMonth ? ` · ${j.departureMonth}` : ''}
-                  </p>
-                  <p className="mt-0.5 truncate text-[11px] text-zinc-500 tabular-nums">
-                    Target {formatPoints(j.targetPoints)}
-                  </p>
+                <CityBanner destinationId={j.destinationId} />
+                <div className="flex items-center gap-3 p-3">
+                  <JourneyProgress
+                    progress={total / j.targetPoints}
+                    tripType={j.tripType}
+                    size={84}
+                  >
+                    <p className="text-sm font-semibold tabular-nums">
+                      {Math.min(100, Math.round((total / j.targetPoints) * 100))}%
+                    </p>
+                  </JourneyProgress>
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-sm font-semibold">
+                      {j.destinationCity} · {j.cabin}
+                    </p>
+                    <p className="mt-0.5 truncate text-[11px] text-zinc-500">
+                      {j.tripType}
+                      {j.pax > 1 ? ` · ${j.pax} pax` : ''}
+                      {j.departureMonth ? ` · ${j.departureMonth}` : ''}
+                    </p>
+                    <p className="mt-0.5 truncate text-[11px] text-zinc-500 tabular-nums">
+                      Target {formatPoints(j.targetPoints)}
+                    </p>
+                  </div>
                 </div>
               </li>
             ))}
@@ -454,19 +462,37 @@ function DestinationTile({ dest, totalPoints }: { dest: DestinationOption; total
   return (
     <Link
       href={`/journeys/track?destinationId=${dest.id}`}
-      className="block rounded-xl bg-white p-3 ring-1 ring-zinc-200 transition-colors hover:bg-zinc-50 dark:bg-zinc-900 dark:ring-zinc-800 dark:hover:bg-zinc-800/60"
+      className="block overflow-hidden rounded-xl bg-white ring-1 ring-zinc-200 transition-colors hover:bg-zinc-50 dark:bg-zinc-900 dark:ring-zinc-800 dark:hover:bg-zinc-800/60"
     >
-      <p className="text-sm font-semibold">{dest.city}</p>
-      <p className="mt-0.5 text-[11px] text-zinc-500 tabular-nums">
-        {formatPoints(dest.pointsBusinessReturn)} · Business
-      </p>
-      {canBook ? (
-        <p className="mt-2 text-[11px] font-bold text-[var(--color-ph-red)]">You can book now</p>
-      ) : (
-        <p className="mt-2 text-[11px] font-semibold text-zinc-500 tabular-nums">
-          {formatPoints(gap)} to go
+      <CityBanner destinationId={dest.id} />
+      <div className="p-3">
+        <p className="text-sm font-semibold">{dest.city}</p>
+        <p className="mt-0.5 text-[11px] text-zinc-500 tabular-nums">
+          {formatPoints(dest.pointsBusinessReturn)} · Business
         </p>
-      )}
+        {canBook ? (
+          <p className="mt-2 text-[11px] font-bold text-[var(--color-ph-red)]">You can book now</p>
+        ) : (
+          <p className="mt-2 text-[11px] font-semibold text-zinc-500 tabular-nums">
+            {formatPoints(gap)} to go
+          </p>
+        )}
+      </div>
     </Link>
+  );
+}
+
+/** Stylised landmark banner used on top of destination tiles and
+ *  tracked-journey cards. Soft cream wash + red ink so it reads as a
+ *  passport stamp rather than a busy illustration. */
+function CityBanner({ destinationId }: { destinationId: string }) {
+  return (
+    <div className="relative h-16 overflow-hidden bg-gradient-to-b from-red-50 to-white dark:from-red-500/10 dark:to-zinc-900">
+      <CityIllustration
+        destinationId={destinationId}
+        className="absolute inset-x-0 bottom-0 h-12 w-full text-[var(--color-ph-red)]"
+        preserveAspectRatio="xMidYMax meet"
+      />
+    </div>
   );
 }

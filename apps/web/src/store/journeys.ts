@@ -9,6 +9,8 @@ import { create } from 'zustand';
 export type CabinClass = 'Economy' | 'Premium Economy' | 'Business' | 'First';
 export type TripType = 'Return' | 'One-way';
 
+export type RegionId = 'asia-pacific' | 'europe' | 'americas' | 'mea';
+
 export interface DestinationOption {
   id: string;
   city: string;
@@ -18,7 +20,45 @@ export interface DestinationOption {
   /** Geographic position — drives the SVG map pin location in Step 1. */
   lat: number;
   lng: number;
+  /** Which region card the destination lives behind in Step 1. */
+  region: RegionId;
 }
+
+/** Step 1 first shows a region picker. Picking one zooms the map
+ *  into that region's bbox (viewBox 360×180, x = lng+180, y = 90-lat). */
+export interface RegionDef {
+  id: RegionId;
+  label: string;
+  blurb: string;
+  bbox: { x: number; y: number; w: number; h: number };
+}
+
+export const REGIONS: RegionDef[] = [
+  {
+    id: 'asia-pacific',
+    label: 'Asia & Pacific',
+    blurb: 'Tokyo, Singapore, Hong Kong',
+    bbox: { x: 220, y: 20, w: 130, h: 130 },
+  },
+  {
+    id: 'europe',
+    label: 'Europe',
+    blurb: 'London, Paris',
+    bbox: { x: 160, y: 10, w: 70, h: 60 },
+  },
+  {
+    id: 'americas',
+    label: 'Americas',
+    blurb: 'Los Angeles',
+    bbox: { x: 10, y: 10, w: 140, h: 140 },
+  },
+  {
+    id: 'mea',
+    label: 'Middle East & Africa',
+    blurb: 'Coming soon',
+    bbox: { x: 165, y: 50, w: 80, h: 90 },
+  },
+];
 
 /** Static catalogue shown in step 1 of the wizard. lat/lng are
  *  approximate airport coordinates, used for the inline world-map
@@ -31,8 +71,17 @@ export const DESTINATION_CATALOGUE: DestinationOption[] = [
     pointsBusinessReturn: 216_000,
     lat: 35.6,
     lng: 139.7,
+    region: 'asia-pacific',
   },
-  { id: 'lhr', city: 'London', country: 'UK', pointsBusinessReturn: 288_000, lat: 51.5, lng: -0.1 },
+  {
+    id: 'lhr',
+    city: 'London',
+    country: 'UK',
+    pointsBusinessReturn: 288_000,
+    lat: 51.5,
+    lng: -0.1,
+    region: 'europe',
+  },
   {
     id: 'cdg',
     city: 'Paris',
@@ -40,6 +89,7 @@ export const DESTINATION_CATALOGUE: DestinationOption[] = [
     pointsBusinessReturn: 288_000,
     lat: 48.9,
     lng: 2.4,
+    region: 'europe',
   },
   {
     id: 'lax',
@@ -48,6 +98,7 @@ export const DESTINATION_CATALOGUE: DestinationOption[] = [
     pointsBusinessReturn: 196_000,
     lat: 34.0,
     lng: -118.4,
+    region: 'americas',
   },
   {
     id: 'sin',
@@ -56,6 +107,7 @@ export const DESTINATION_CATALOGUE: DestinationOption[] = [
     pointsBusinessReturn: 108_000,
     lat: 1.3,
     lng: 103.8,
+    region: 'asia-pacific',
   },
   {
     id: 'hkg',
@@ -64,6 +116,7 @@ export const DESTINATION_CATALOGUE: DestinationOption[] = [
     pointsBusinessReturn: 120_000,
     lat: 22.3,
     lng: 114.2,
+    region: 'asia-pacific',
   },
 ];
 
