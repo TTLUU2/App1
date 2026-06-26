@@ -31,6 +31,8 @@ export function CityIllustration({ destinationId, className, ...rest }: Props) {
 
 const ILLUSTRATIONS: Record<string, (p: SVGProps<SVGSVGElement>) => React.JSX.Element> = {
   nrt: TokyoArt,
+  kix: OsakaArt,
+  icn: SeoulArt,
   lhr: LondonArt,
   cdg: ParisArt,
   lax: LosAngelesArt,
@@ -85,6 +87,126 @@ function TokyoArt(props: SVGProps<SVGSVGElement>) {
         opacity="0.18"
         stroke="none"
       />
+    </svg>
+  );
+}
+
+function OsakaArt(props: SVGProps<SVGSVGElement>) {
+  return (
+    <svg
+      viewBox={VIEWBOX}
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.4"
+      strokeLinejoin="round"
+      {...props}
+    >
+      {/* Ground baseline */}
+      <line x1="2" y1="46" x2="118" y2="46" />
+      {/* Tsutenkaku Tower — flatter, wider lattice tower than Tokyo Tower */}
+      <g>
+        {/* Antenna */}
+        <line x1="40" y1="10" x2="40" y2="6" />
+        {/* Top observation deck */}
+        <path d="M 36 10 L 44 10 L 44 12 L 36 12 Z" fill="currentColor" stroke="none" />
+        {/* Tapering lattice */}
+        <path d="M 36 12 L 33 24 L 47 24 L 44 12" />
+        <path d="M 33 24 L 28 46 M 47 24 L 52 46" />
+        {/* Cross beams */}
+        <path d="M 35 18 L 45 18 M 31 32 L 49 32 M 30 40 L 50 40" opacity="0.65" />
+        {/* Diagonals */}
+        <path d="M 35 12 L 45 24 M 45 12 L 35 24" opacity="0.45" />
+        <path d="M 33 24 L 49 32 M 47 24 L 31 32" opacity="0.4" />
+      </g>
+      {/* Osaka Castle — pagoda-tiered keep with curved eaves, just behind */}
+      <g>
+        {/* Base */}
+        <path
+          d="M 64 46 L 64 38 L 86 38 L 86 46 Z"
+          fill="currentColor"
+          opacity="0.18"
+          stroke="none"
+        />
+        <path d="M 64 38 L 86 38" />
+        {/* Tier 2 roof */}
+        <path d="M 62 38 Q 75 32 88 38" />
+        <path d="M 67 38 L 67 32 L 83 32 L 83 38" />
+        {/* Tier 3 roof */}
+        <path d="M 65 32 Q 75 27 85 32" />
+        <path d="M 70 32 L 70 26 L 80 26 L 80 32" />
+        {/* Top tier + finial */}
+        <path d="M 68 26 Q 75 22 82 26" />
+        <path d="M 73 26 L 73 22 L 77 22 L 77 26" />
+        <line x1="75" y1="22" x2="75" y2="18" />
+        <circle cx="75" cy="17" r="0.9" fill="currentColor" stroke="none" />
+      </g>
+      {/* Distant skyscraper cluster */}
+      <g fill="currentColor" stroke="none">
+        <rect x="6" y="36" width="6" height="10" opacity="0.18" />
+        <rect x="14" y="30" width="6" height="16" opacity="0.22" />
+        <rect x="92" y="32" width="6" height="14" opacity="0.2" />
+        <rect x="100" y="26" width="6" height="20" opacity="0.28" />
+        <rect x="108" y="34" width="6" height="12" opacity="0.18" />
+      </g>
+      {/* Castle moat ripples */}
+      <path d="M 60 44 q 4 -2 8 0 q 4 -2 8 0 q 4 -2 8 0" opacity="0.35" />
+    </svg>
+  );
+}
+
+function SeoulArt(props: SVGProps<SVGSVGElement>) {
+  return (
+    <svg
+      viewBox={VIEWBOX}
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.4"
+      strokeLinejoin="round"
+      {...props}
+    >
+      <line x1="2" y1="46" x2="118" y2="46" />
+      {/* Lotte World Tower — very tall, tapered, pointed skyscraper centre */}
+      <g>
+        {/* Spire */}
+        <line x1="60" y1="8" x2="60" y2="4" />
+        {/* Tapered body — narrows toward top */}
+        <path d="M 56 8 L 64 8 L 67 46 L 53 46 Z" fill="currentColor" opacity="0.3" stroke="none" />
+        <path d="M 56 8 L 64 8 L 67 46 L 53 46 Z" />
+        {/* Floor banding hint */}
+        <path
+          d="M 55 16 L 65 16 M 54.5 24 L 65.5 24 M 54 32 L 66 32 M 53.5 40 L 66.5 40"
+          opacity="0.45"
+        />
+      </g>
+      {/* Skyline left + right of the tower */}
+      <g fill="currentColor" stroke="none">
+        <rect x="14" y="32" width="6" height="14" opacity="0.5" />
+        <rect x="22" y="22" width="6" height="24" opacity="0.65" />
+        <rect x="30" y="28" width="6" height="18" opacity="0.55" />
+        <rect x="38" y="20" width="7" height="26" opacity="0.7" />
+        <rect x="46" y="26" width="5" height="20" opacity="0.5" />
+        {/* Right */}
+        <rect x="74" y="24" width="6" height="22" opacity="0.65" />
+        <rect x="82" y="30" width="6" height="16" opacity="0.5" />
+        <rect x="90" y="20" width="7" height="26" opacity="0.7" />
+        <rect x="99" y="26" width="6" height="20" opacity="0.55" />
+        <rect x="107" y="32" width="6" height="14" opacity="0.5" />
+      </g>
+      {/* Antennae */}
+      <line x1="41" y1="20" x2="41" y2="14" />
+      <line x1="93" y1="20" x2="93" y2="14" />
+      {/* Hanok roof row — traditional curved rooflines in the foreground */}
+      <g opacity="0.8">
+        {/* Three small hanok houses side-by-side */}
+        <path d="M 8 46 L 8 42 Q 14 38 20 42 L 20 46" />
+        <path d="M 6 42 Q 14 36 22 42" />
+        <path d="M 24 46 L 24 42 Q 30 38 36 42 L 36 46" />
+        <path d="M 22 42 Q 30 36 38 42" />
+        <path d="M 82 46 L 82 42 Q 88 38 94 42 L 94 46" />
+        <path d="M 80 42 Q 88 36 96 42" />
+        <path d="M 98 46 L 98 42 Q 104 38 110 42 L 110 46" />
+        <path d="M 96 42 Q 104 36 112 42" />
+      </g>
     </svg>
   );
 }

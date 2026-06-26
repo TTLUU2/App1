@@ -30,7 +30,13 @@ import {
   useBalancesStore,
   type ProgramBalance,
 } from '@/store/balances';
-import { DESTINATION_CATALOGUE, useJourneysStore, type DestinationOption } from '@/store/journeys';
+import {
+  DESTINATION_CATALOGUE,
+  pointsDeadlineForDeparture,
+  useJourneysStore,
+  type DestinationOption,
+} from '@/store/journeys';
+import { formatMonthYear } from '@/components/month-year-picker';
 import { JourneyProgress } from '@/components/journey-progress';
 import { CityIllustration } from '@/components/city-illustration';
 
@@ -392,10 +398,18 @@ function JourneysView() {
                       <p className="mt-0.5 truncate text-[11px] leading-tight text-zinc-500">
                         {j.tripType}
                         {j.pax > 1 ? ` · ${j.pax} pax` : ''}
-                        {j.departureMonth ? ` · ${j.departureMonth}` : ''}
+                        {j.departureMonth ? ` · ${formatMonthYear(j.departureMonth)}` : ''}
                         {' · '}
                         <span className="tabular-nums">{formatPoints(j.targetPoints)}</span>
                       </p>
+                      {(() => {
+                        const deadline = pointsDeadlineForDeparture(j.departureMonth);
+                        return deadline ? (
+                          <p className="mt-0.5 truncate text-[11px] font-semibold leading-tight text-[var(--color-ph-red)]">
+                            Points by {formatMonthYear(deadline)}
+                          </p>
+                        ) : null;
+                      })()}
                     </div>
                     <p className="flex-none text-base font-bold tabular-nums text-[var(--color-ph-red)]">
                       {pct}%

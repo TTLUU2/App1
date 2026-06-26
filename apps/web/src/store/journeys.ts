@@ -107,6 +107,42 @@ export const REGIONS: RegionDef[] = [
   },
 ];
 
+/** Maps a CabinClass display label to its key in CabinPoints. Used
+ *  to auto-compute the target points for a journey from the chosen
+ *  destination + cabin, replacing the old "pick a target band" step. */
+export function cabinKeyFor(cabin: CabinClass): keyof CabinPoints {
+  switch (cabin) {
+    case 'Economy':
+      return 'economy';
+    case 'Premium Economy':
+      return 'premiumEconomy';
+    case 'Business':
+      return 'business';
+    case 'First':
+      return 'first';
+  }
+}
+
+/** Three-month buffer before the departure month — the date by which
+ *  the user actually needs the points so awards can be booked, since
+ *  most programs release inventory ~330 days out and good
+ *  availability dries up inside 90 days. Returns ISO yyyy-MM, or
+ *  null if departureMonth is empty/invalid. */
+export function pointsDeadlineForDeparture(departureMonth: string | null): string | null {
+  if (!departureMonth) return null;
+  const m = /^(\d{4})-(\d{2})$/.exec(departureMonth);
+  if (!m) return null;
+  const year = Number(m[1]);
+  const month = Number(m[2]);
+  if (!Number.isFinite(year) || month < 1 || month > 12) return null;
+  // Subtract three months by walking the month index.
+  const monthIndex = year * 12 + (month - 1) - 3;
+  const targetYear = Math.floor(monthIndex / 12);
+  const targetMonth = (monthIndex % 12) + 1;
+  const mm = targetMonth < 10 ? `0${targetMonth}` : String(targetMonth);
+  return `${targetYear}-${mm}`;
+}
+
 /** Build a per-cabin points table from the Business-return anchor.
  *  Ratios are typical for AU outbound award charts (QFF / Velocity /
  *  Krisflyer / Asia Miles): Economy ≈ Business / 2.7, PE ≈ Business

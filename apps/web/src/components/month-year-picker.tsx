@@ -54,6 +54,13 @@ function formatDisplay(value: string): string {
   return `${MONTH_LABELS[parsed.month - 1]} ${parsed.year}`;
 }
 
+/** Convenience export of the same yyyy-MM → "Aug 2026" formatter,
+ *  for callers that surface a month/year outside the picker (e.g.
+ *  the auto-target deadline copy in the wizard). */
+export function formatMonthYear(value: string): string {
+  return formatDisplay(value);
+}
+
 function pad2(n: number): string {
   return n < 10 ? `0${n}` : String(n);
 }

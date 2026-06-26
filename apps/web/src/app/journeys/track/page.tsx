@@ -45,7 +45,7 @@ import {
 import { CityDetailModal } from '@/components/city-detail-modal';
 import { Dropdown, type DropdownOption } from '@/components/dropdown';
 import { JourneyProgress } from '@/components/journey-progress';
-import { MonthYearPicker } from '@/components/month-year-picker';
+import { MonthYearPicker, formatMonthYear } from '@/components/month-year-picker';
 import { WorldMap } from '@/components/world-map';
 import { formatPoints } from '@/lib/format';
 import { selectTotalPoints, useBalancesStore } from '@/store/balances';
@@ -54,6 +54,8 @@ import {
   DESTINATION_CATALOGUE,
   ORIGIN_PORTS,
   REGIONS,
+  cabinKeyFor,
+  pointsDeadlineForDeparture,
   useJourneysStore,
   type CabinClass,
   type DestinationOption,
@@ -76,18 +78,6 @@ const ORIGIN_OPTIONS: DropdownOption<string>[] = ORIGIN_PORTS.map((p) => ({
   label: p.city,
   caption: `${p.id.toUpperCase()} · ${p.state}`,
 }));
-
-/** Placeholder target-points bands, per-person. Anchored to typical
- *  AU Business-class redemption costs; swap in your real ranges. */
-const TARGET_BANDS: Array<{ label: string; sub: string; points: number }> = [
-  { label: '80k', sub: 'Asia · short', points: 80_000 },
-  { label: '120k', sub: 'Asia · mid', points: 120_000 },
-  { label: '150k', sub: 'Asia · J one-way', points: 150_000 },
-  { label: '220k', sub: 'Europe/USA · J one-way', points: 220_000 },
-  { label: '280k', sub: 'Europe · J return', points: 280_000 },
-  { label: '360k', sub: 'USA · J return', points: 360_000 },
-  { label: '500k+', sub: 'First class', points: 500_000 },
-];
 
 export default function TrackJourneyPage() {
   return (
@@ -120,13 +110,13 @@ function TrackJourneyWizard() {
   const [cabin, setCabin] = useState<CabinClass>('Business');
   const [programId, setProgramId] = useState(programs[0]?.id ?? '');
   const [departureMonth, setDepartureMonth] = useState('');
-  const [targetBandPoints, setTargetBandPoints] = useState<number | null>(null);
 
-  // Effective target = chosen band × pax. If no band picked yet, fall
-  // back to the destination's catalogue Business-return cost so the
-  // preview in Step 3 isn't empty.
-  const effectiveTarget =
-    targetBandPoints !== null ? targetBandPoints * pax : dest ? dest.pointsBusinessReturn * pax : 0;
+  // Effective target auto-computes from the catalogue's per-cabin
+  // estimate × pax. No more "pick a target band" — the destination +
+  // cabin already determine the number, so the band step was forcing
+  // the user to choose something redundant.
+  const perPersonTarget = dest ? dest.pointsByCabin[cabinKeyFor(cabin)] : 0;
+  const effectiveTarget = perPersonTarget * pax;
 
   function handleStart() {
     if (!dest || effectiveTarget <= 0) return;
@@ -173,14 +163,14 @@ function TrackJourneyWizard() {
           cabin={cabin}
           programId={programId}
           departureMonth={departureMonth}
-          targetBandPoints={targetBandPoints}
+          perPersonTarget={perPersonTarget}
+          totalTarget={effectiveTarget}
           programs={programs.map((p) => ({ id: p.id, name: p.name, balance: p.balance }))}
           onPax={setPax}
           onTripType={setTripType}
           onCabin={setCabin}
           onProgram={setProgramId}
           onDepartureMonth={setDepartureMonth}
-          onTargetBand={setTargetBandPoints}
           onNext={() => setStep(3)}
         />
       )}
@@ -463,14 +453,14 @@ function Step2Configure({
   cabin,
   programId,
   departureMonth,
-  targetBandPoints,
+  perPersonTarget,
+  totalTarget,
   programs,
   onPax,
   onTripType,
   onCabin,
   onProgram,
   onDepartureMonth,
-  onTargetBand,
   onNext,
 }: {
   dest: DestinationOption;
@@ -480,19 +470,18 @@ function Step2Configure({
   cabin: CabinClass;
   programId: string;
   departureMonth: string;
-  targetBandPoints: number | null;
+  perPersonTarget: number;
+  totalTarget: number;
   programs: Array<{ id: string; name: string; balance: number }>;
   onPax: (v: number) => void;
   onTripType: (v: TripType) => void;
   onCabin: (v: CabinClass) => void;
   onProgram: (v: string) => void;
   onDepartureMonth: (v: string) => void;
-  onTargetBand: (v: number) => void;
   onNext: () => void;
 }) {
-  const canContinue = targetBandPoints !== null && programId !== '';
-  const perPersonTarget = targetBandPoints ?? dest.pointsBusinessReturn;
-  const totalTarget = perPersonTarget * pax;
+  const canContinue = programId !== '' && totalTarget > 0;
+  const pointsDeadline = pointsDeadlineForDeparture(departureMonth || null);
 
   return (
     <>
@@ -560,45 +549,30 @@ function Step2Configure({
         />
       </FieldGroup>
 
-      <FieldGroup label="Target points (per person)" Icon={Target}>
-        <ul className="grid grid-cols-3 gap-1.5 sm:grid-cols-4">
-          {TARGET_BANDS.map((band) => {
-            const active = targetBandPoints === band.points;
-            return (
-              <li key={band.label}>
-                <button
-                  type="button"
-                  onClick={() => onTargetBand(band.points)}
-                  className={
-                    active
-                      ? 'w-full rounded-lg bg-[var(--color-ph-red)] p-2 text-center text-white shadow-sm'
-                      : 'w-full rounded-lg bg-white p-2 text-center ring-1 ring-zinc-200 hover:ring-zinc-300 dark:bg-zinc-900 dark:ring-zinc-800'
-                  }
-                >
-                  <p className={active ? 'text-sm font-bold' : 'text-sm font-bold'}>{band.label}</p>
-                  <p
-                    className={
-                      active
-                        ? 'mt-0.5 text-[10px] text-white/80'
-                        : 'mt-0.5 text-[10px] text-zinc-500'
-                    }
-                  >
-                    {band.sub}
-                  </p>
-                </button>
-              </li>
-            );
-          })}
-        </ul>
-        {targetBandPoints !== null && pax > 1 && (
-          <p className="mt-2 text-[11px] text-zinc-500">
-            {formatPoints(perPersonTarget)} × {pax} pax ={' '}
-            <span className="font-semibold text-zinc-700 dark:text-zinc-200 tabular-nums">
-              {formatPoints(totalTarget)} total
-            </span>
+      {/* Auto-computed target — destination + cabin + pax already
+          determine the required points, so we surface the math
+          instead of asking the user to pick a band. The 3-month
+          buffer ahead of departure ("points by …") falls out of
+          pointsDeadlineForDeparture and reads as a soft deadline. */}
+      <section className="mt-4 rounded-xl bg-red-50/60 p-4 ring-1 ring-[var(--color-ph-red)]/20 dark:bg-red-500/10 dark:ring-red-500/20">
+        <div className="flex items-center gap-2">
+          <Target className="h-3.5 w-3.5 text-[var(--color-ph-red)]" aria-hidden />
+          <p className="text-[10px] font-bold uppercase tracking-wide text-[var(--color-ph-red)]">
+            Target
+          </p>
+        </div>
+        <p className="mt-1 text-xl font-semibold tabular-nums">{formatPoints(totalTarget)}</p>
+        <p className="mt-0.5 text-[11px] text-zinc-600 dark:text-zinc-300 tabular-nums">
+          {formatPoints(perPersonTarget)} × {pax} pax · {cabin}
+        </p>
+        {pointsDeadline && (
+          <p className="mt-2 flex items-center gap-1.5 text-[11px] font-semibold text-zinc-700 dark:text-zinc-200">
+            <Calendar className="h-3 w-3 text-[var(--color-ph-red)]" aria-hidden />
+            Points needed by {formatMonthYear(pointsDeadline)}
+            <span className="font-normal text-zinc-500">· 3-month buffer before departure</span>
           </p>
         )}
-      </FieldGroup>
+      </section>
 
       <button
         type="button"
@@ -645,6 +619,7 @@ function Step3Confirm({
     targetPoints === 0 ? 0 : Math.min(100, Math.round((totalPoints / targetPoints) * 100));
   const gap = Math.max(0, targetPoints - totalPoints);
   const paxLabel = pax === 1 ? '1 passenger' : `${pax === 4 ? '4+' : pax} passengers`;
+  const pointsDeadline = pointsDeadlineForDeparture(departureMonth || null);
 
   return (
     <>
@@ -655,9 +630,16 @@ function Step3Confirm({
         </p>
         <p className="mt-0.5 text-xs text-zinc-500">
           {origin.id.toUpperCase()} → {dest.id.toUpperCase()} · {tripType} · {paxLabel}
-          {departureMonth ? ` · ${departureMonth}` : ' · Flexible date'}
+          {departureMonth ? ` · ${formatMonthYear(departureMonth)}` : ' · Flexible date'}
           {program ? ` · via ${program.name}` : ''}
         </p>
+        {pointsDeadline && (
+          <p className="mt-2 flex items-center gap-1.5 text-[11px] font-semibold text-[var(--color-ph-red)]">
+            <Calendar className="h-3 w-3" aria-hidden />
+            Points needed by {formatMonthYear(pointsDeadline)}
+            <span className="font-normal text-zinc-500">· 3-month buffer</span>
+          </p>
+        )}
 
         <div className="mt-4 flex flex-col items-center">
           <JourneyProgress
