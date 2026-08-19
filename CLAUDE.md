@@ -41,6 +41,25 @@ If a user asks for a deploy, confirm the scope in your reply before running the 
 - Encryption-at-rest waived for v1 (internal testing only).
 - Direct Anthropic API key (`ANTHROPIC_API_KEY`) — **not** Vercel AI Gateway.
 
+### iOS ↔ prod parity (READ THIS BEFORE ANY iOS/TESTFLIGHT CLAIM)
+
+**The iOS app is a thin WKWebView pointing at `https://ph-copilot-gamma.vercel.app` (see `apps/web/capacitor.config.ts` `server.url`).** A TestFlight rebuild only re-versions the shell; the UI is 100% whatever Vercel _prod_ is serving. Bumping the build number, reinstalling, or force-quitting does NOT ship UI changes. Prod does.
+
+Practical consequence: it's very easy to think "we shipped X to iOS because build N is out on TestFlight" when in reality X is on a feature branch that never landed on prod. To stop this recurring, before ANY of the following, run the parity audit and paste the result:
+
+- Claiming a feature/screen/change is "on iOS" or "in the TestFlight build"
+- Diagnosing "why can't I see X in the app" reports
+- Cutting a `mobile/*` branch or asking the user to trigger a Codemagic build
+- Any TestFlight-related conversation at all
+
+```bash
+pnpm --filter @ph/web audit:prod-parity
+```
+
+Exit 0 = OK (branch = main, or only docs commits ahead). Exit 1 = drift — the branch has UI/code commits NOT on prod, so iOS is stale relative to what you're looking at. Fix by deploying (`vercel deploy --prod`) or merging + deploying, THEN talk about iOS.
+
+If the audit says drift and the user is asking about visibility on iOS, the answer is almost never "reinstall / rebuild / bump" — it's "prod is behind, we need to deploy the web app first."
+
 ### iOS / TestFlight
 
 Today's hard-learned lessons (full pain log in `docs/TODO.md` and `docs/CAPACITOR_TESTFLIGHT.md`):

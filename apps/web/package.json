@@ -15,7 +15,8 @@
     "cap:add:ios": "cap add ios",
     "cap:sync": "cap sync",
     "cap:open:ios": "cap open ios",
-    "cap:assets": "capacitor-assets generate --ios --assetPath capacitor-assets"
+    "cap:assets": "capacitor-assets generate --ios --assetPath capacitor-assets",
+    "audit:prod-parity": "node scripts/audit-prod-parity.mjs"
   },
   "dependencies": {
     "@ai-sdk/anthropic": "^3.0.80",
