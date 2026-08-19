@@ -1,8 +1,32 @@
 # Point Hacks Copilot — TODO
 
-Living backlog. Update as items move between states. Last touched 2026-06-09.
+Living backlog. Update as items move between states. Last touched 2026-08-19.
 
 ---
+
+## Considerations (open questions surfaced but not scheduled)
+
+Design decisions parked here for quick decision-making later. Each has
+a companion `docs/DECISIONS.md` entry with the full trade-off analysis.
+
+- **Auto-sync balances via email forwarding** _(Decision #31)_. Users
+  forward Qantas/Velocity/Amex MR balance emails to a per-user
+  `slug@phcopilot.app` address; Postmark webhook parses and updates.
+  Server auto-verifies Google's forwarding-confirmation email so users
+  never manually click "confirm". Ship this before Gmail API.
+- **Gmail API "Fast connect" as post-launch v2** _(Decision #31)_. Adds
+  a one-click "Connect Gmail" alternative to forwarding. Requires CASA
+  Tier 2 audit (~$540 via Google's 2024 authorized-assessor programme
+  like TAC Security) + Google publisher verification (3-6 month
+  timeline). Waits until we have real signal that users want it +
+  encryption-at-rest lands (currently waived per Decision #2).
+- **Affiliate attribution + 12-month Pro reward on approval**
+  _(Decision #32)_. Every "Apply now" outbound link decorated with the
+  user's `device_id` as the network's subid parameter; postback handler
+  auto-grants a `device_grant` when the conversion status flips to
+  approved. Full schema + route sketch in `docs/AFFILIATE_TRACKING.md`.
+  Depends on: confirming which affiliate network Point Hacks uses now,
+  ASIC RG 209 disclosure copy near CTA + T&Cs.
 
 ## Now (active or queued for next session)
 

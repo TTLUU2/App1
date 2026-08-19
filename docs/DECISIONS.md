@@ -495,3 +495,89 @@ Ask Copilot into a mutating voice command surface would contradict
 PRD §11.5.2 (read-only by design). Voice-as-trigger for non-
 destructive actions is already covered by the FAB voice flows
 (Update spend / Update benefits) and the Tab 3 Quick Update bar.
+
+---
+
+## 31. Balances auto-sync via email forwarding, not Gmail API (for v1)
+
+**Considered:** Direct Gmail API (`gmail.readonly` scope, OAuth "Connect
+Gmail" button, `watch()` push notifications when balance emails arrive).
+Bypasses forwarding setup entirely; user experience is one-click.
+
+**We chose:** Per-user forwarding address (`slug@phcopilot.app`) + Postmark
+inbound webhook + server-side auto-verify of Google's confirmation email.
+Users set a Gmail filter once per program that forwards balance emails to
+their unique address; our webhook parses and updates balances.
+
+**Why:** Gmail API is technically simpler but comes with real drag:
+
+- `gmail.readonly` is a restricted scope; CASA Tier 2 audit required
+  before serving >100 production users (now ~$540 via Google's 2024
+  authorized-assessor programme like TAC Security, down from the older
+  $15-75k rates — but the 3-6 month audit + verification timeline is
+  the actual blocker, not the cost)
+- "Unverified app" warning on the OAuth consent screen bounces ~40% of
+  new signups during the verification period
+- Limited Use policy compliance requires encryption-at-rest (currently
+  waived per Decision #2), no human-reads-the-email support path, no
+  training on email content
+- 100-user cap in test mode while the audit runs
+
+Forwarding path ships in weeks, works for every mail provider, no
+compliance drag. Server-side auto-verification of Google's forwarding
+confirmation email keeps the user's setup steps to "paste the address
+into Gmail settings", so friction is smaller than it looks.
+
+**What this costs:** Users must create one Gmail filter per program
+they want auto-synced (Qantas, Velocity, Amex MR). One-time step per
+program, ~30 seconds each with a pre-filled deep-link. The 12-month
+buffer of user data quality difference vs Gmail API is real; some
+users will prefer to enter balances manually forever.
+
+**Migration path:** Post-launch, add "Fast connect (Gmail)" as an
+alternative flow alongside forwarding. Existing users stay put; new
+users get the choice. Microsoft Graph for Outlook slots in as a third
+adapter (much lower verification bar than Gmail). IMAP with an
+app-specific password covers iCloud / Yahoo / ProtonMail power users
+as a fourth adapter. Sketch: `docs/AFFILIATE_TRACKING.md` (companion
+doc pattern; email-ingest sketch to follow when we build it).
+
+---
+
+## 32. Affiliate attribution via subid, keyed on device_id
+
+**Considered:** (a) Cookie-only attribution (fragile — Safari ITP, incognito,
+cleared cookies), (b) Coupon codes (requires each bank to support codes),
+(c) Manual reconciliation (screenshot uploads, human review), (d) subid
+tracking via existing affiliate networks.
+
+**We chose:** Every outbound "Apply now" link is decorated with the user's
+`device_id` as the network's subid parameter (`?sub1=<deviceId>` for
+Commission Factory, `?subId1=` for Impact, etc.). Networks return the
+subid in either real-time postbacks (`POST /api/affiliate/postback/[network]`)
+or batched CSV reports; we join on it to attribute conversions back to
+the specific device. Approved conversions auto-grant benefits via a
+`device_grants` table.
+
+**Why:** subid is universally supported by AU affiliate networks
+(Commission Factory, Impact, Awin, Rakuten, direct bank feeds all
+accept a custom string in the outbound URL). Reuses the existing
+`device_id` scheme with zero new auth model. Server-side attribution
+is bulletproof — no cookie loss, no ITP issues, no user action
+required. The `on_approved_reward` JSONB column on `affiliate_offers`
+means new reward types ship without migrations.
+
+**What this costs:** Device-scoped means a user losing storage or
+switching devices loses their attribution history and any granted
+benefits. Acceptable v1 trade-off; migration path adds `user_id`
+column to all three affiliate tables when we build real auth.
+
+**Compliance:** ASIC RG 209 requires disclosing that we receive a
+commission; every Apply CTA and the T&Cs need clear "We may receive
+a commission if you're approved" wording. Not optional — this is
+regulated territory. Standard AU affiliate content follows the same
+pattern.
+
+**Sketch:** `docs/AFFILIATE_TRACKING.md` — full schema (4 new Drizzle
+tables), both API routes, per-network adapter pattern, testing
+approach with fixture replay.
