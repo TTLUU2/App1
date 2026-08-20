@@ -113,6 +113,49 @@
   --shadow-ph-thumb: 0 1px 3px rgb(46 10 8 / 0.08);
 }
 
+/* Lacquer sheet transitions (HANDOFF § Interactions). Slide-up with
+ * the spec's spring curve; scrim cross-fades. Kept in :root so the
+ * BottomSheet primitive can reference them without pulling in the
+ * @layer utilities context that houses the Deals animations above. */
+@keyframes sheet-slide-in {
+  from {
+    transform: translateY(100%);
+  }
+  to {
+    transform: translateY(0);
+  }
+}
+@keyframes sheet-slide-out {
+  from {
+    transform: translateY(0);
+  }
+  to {
+    transform: translateY(100%);
+  }
+}
+@keyframes sheet-scrim-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+@keyframes sheet-scrim-out {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  [data-radix-dialog-content],
+  [data-radix-dialog-overlay] {
+    animation-duration: 1ms !important;
+  }
+}
+
 /* ── Deals animations (lifted from points-deals/app/globals.css) ──────
  * Used by the deals list — cards stagger-reveal up with a fade when
  * filter / sort state changes. Tap a filter chip and you see the
