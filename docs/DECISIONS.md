@@ -542,6 +542,27 @@ app-specific password covers iCloud / Yahoo / ProtonMail power users
 as a fourth adapter. Sketch: `docs/AFFILIATE_TRACKING.md` (companion
 doc pattern; email-ingest sketch to follow when we build it).
 
+**Scope expansion (2026-08-20):** Both mechanisms will ship in v1 —
+forwarding for anyone, OAuth for the taps-and-done crowd. Build order
+locked as:
+
+1. **Forwarding backend v1** (Postmark inbound, per-device slugs, parser
+   framework, first two parsers Qantas + Velocity, auto-verify handler).
+2. **Outlook OAuth trial** (Microsoft Graph `Mail.Read` +
+   `offline_access`). Chosen ahead of Gmail because Microsoft's basic
+   mail-read scope is not restricted — no security audit, no verification
+   backlog, publishes in days. Smaller AU coverage than Gmail but this
+   is a mechanism test; the parser layer is identical, so the second
+   provider is an ingress swap.
+3. **Gmail OAuth** once Outlook validates the shared parser pipeline
+   end-to-end. Kick off CASA Tier 2 in parallel; forwarding remains the
+   universal fallback during audit.
+
+Program parsers land in ingress-order Qantas → Velocity; Amex MR,
+KrisFlyer, and the rest wait until those two are proven correct on
+real inbound emails (parsers are cheap to add once the framework and
+the first two are cleaned up).
+
 ---
 
 ## 32. Affiliate attribution via subid, keyed on device_id
