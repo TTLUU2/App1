@@ -16,16 +16,16 @@ prod alias stays on the pre-Lacquer deployment until we flip.
 
 Phase status:
 
-- [ ] **Phase 1** — Tokens, Instrument Serif, primitive scaffolding.
-      Zero user-visible change; foundation for everything downstream.
-- [ ] **Phase 2** — Shared components (SegmentedControl, HeroCard,
-      EvidencePanel, StatusChip variants, BottomSheet, CardArtFrame,
-      PerryAvatar). Reviewed on `/dev/lacquer-primitives` before use.
-- [ ] **Phase 3** — Nav shell cutover (tab bar, header cluster,
-      routes, redirects for old `/home` + `/balances`).
-- [ ] **Phase 4** — Screen redesigns: Today → Optimise · Your cards
-      → Optimise · Next card → Journeys · Destinations →
-      Journeys · Balances → Alert Centre.
+- [x] **Phase 1** — Tokens, Instrument Serif, primitive scaffolding
+      (`9545e1b`). Zero user-visible change; foundation.
+- [x] **Phase 2** — Shared components (`c1d3755`). SegmentedControl,
+      HeroCard, EvidencePanel, LacquerChip, BottomSheet, CardArtFrame,
+      PerryAvatar. Reviewed on `/dev/lacquer-primitives`.
+- [x] **Phase 3** — Nav shell cutover (`9b638dc`). Tab bar reorder,
+      header cluster, `/today` created, `/home` → `/today` redirect.
+- [x] **Phase 4** — Screen redesigns: Today (`6795c94`), Optimise
+      (Cards + Next card sub-tabs), Journeys (Destinations + Balances
+      sub-tabs), Alert Centre. `/balances` and `/next-card` redirected.
 - [ ] **Phase 5** — `+` action sheet, Log-a-spend, Add-a-card, Perry
       states (Resting / Deadline slipping / Bonus cleared /
       Destination unlocked / First-run).

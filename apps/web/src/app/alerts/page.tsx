@@ -1,24 +1,47 @@
 'use client';
 
-/**
- * /alerts — Alerts inbox. Today / Earlier grouped feed of fired
- * alerts. Reached from the bell icon in the top-right cluster
- * (alongside VoiceToggle + ThemeToggle + TopMenu).
- *
- * Each item is a Link into the source surface (spend log, benefits,
- * card detail) so the user can act on the alert in one tap. Tapping
- * also marks the alert read so the unread badge clears.
- */
+// /alerts — Alert Centre (HANDOFF § 6) — Phase 4f.
+//
+// Two groups by intent, not by time:
+//   NEEDS YOU — deadlines that will cost money if ignored
+//   GOOD NEWS — wins the app noticed, nothing to do
+//
+// Cards carry a 3px left accent rail (amber for deadlines, pine for
+// wins, warm-fill for read/archived). Deadline cards get an action
+// button (red for the primary fix, warm-fill for secondary). Win
+// cards get no button — nothing to do is the point (Behaviour
+// rule adjacent: pace, not reference data).
+//
+// Read items drop to 0.66 opacity with a neutral rail so the eye
+// doesn't keep re-scanning what you've already dismissed.
 
 import Link from 'next/link';
-import { useMemo } from 'react';
-import { ArrowRight, Bell, CheckCheck } from 'lucide-react';
+import { useMemo, useState } from 'react';
 import { useAlertsStore, type AlertKind, type FiredAlert } from '@/store/alerts';
 
-function isTodayIso(iso: string): boolean {
-  const today = new Date().toISOString().slice(0, 10);
-  return iso.startsWith(today);
+// Compact age label — "3h" / "2d" / "3w" — used on Win cards. Kept
+// inline because it's a one-liner and specific to this screen; the
+// rest of the app uses formatDate + formatRelativeDays from
+// @/lib/format.
+function formatAge(iso: string): string {
+  const then = new Date(iso).getTime();
+  if (Number.isNaN(then)) return '';
+  const seconds = Math.max(1, Math.round((Date.now() - then) / 1_000));
+  if (seconds < 3_600) return `${Math.round(seconds / 60)}m`;
+  if (seconds < 86_400) return `${Math.round(seconds / 3_600)}h`;
+  if (seconds < 604_800) return `${Math.round(seconds / 86_400)}d`;
+  return `${Math.round(seconds / 604_800)}w`;
 }
+
+type ChipFilter = 'all' | 'deadlines' | 'wins';
+
+const DEADLINE_KINDS: ReadonlySet<AlertKind> = new Set([
+  'min-spend-deadline',
+  'annual-fee-renewal',
+  'benefit-expiring',
+]);
+
+const WIN_KINDS: ReadonlySet<AlertKind> = new Set(['three-month-to-bonus']);
 
 function destinationFor(alert: FiredAlert): string {
   switch (alert.kind) {
@@ -29,120 +52,219 @@ function destinationFor(alert: FiredAlert): string {
     case 'annual-fee-renewal':
       return `/optimisation?cardId=${encodeURIComponent(alert.cardId)}`;
     case 'three-month-to-bonus':
-      return `/next-card`;
+      return `/optimisation?tab=next`;
   }
 }
 
-const KIND_PILL: Record<AlertKind, string> = {
-  'min-spend-deadline': 'Spend',
-  'annual-fee-renewal': 'Fee',
-  'benefit-expiring': 'Benefit',
-  'three-month-to-bonus': 'Eligible',
+const ACTION_LABEL: Record<AlertKind, string> = {
+  'min-spend-deadline': 'Log a spend',
+  'benefit-expiring': 'Mark used',
+  'annual-fee-renewal': 'Decide',
+  'three-month-to-bonus': 'See the play',
 };
 
 export default function AlertsInboxPage() {
   const feed = useAlertsStore((s) => s.feed);
   const markRead = useAlertsStore((s) => s.markRead);
   const markAllRead = useAlertsStore((s) => s.markAllRead);
+  const [chip, setChip] = useState<ChipFilter>('all');
 
-  const { today, earlier, unreadCount } = useMemo(() => {
+  const grouped = useMemo(() => {
     const sorted = [...feed].sort((a, b) => b.firedAt.localeCompare(a.firedAt));
-    return {
-      today: sorted.filter((a) => isTodayIso(a.firedAt)),
-      earlier: sorted.filter((a) => !isTodayIso(a.firedAt)),
-      unreadCount: sorted.filter((a) => !a.read).length,
-    };
+    const deadlines = sorted.filter((a) => DEADLINE_KINDS.has(a.kind));
+    const wins = sorted.filter((a) => WIN_KINDS.has(a.kind));
+    return { deadlines, wins };
   }, [feed]);
 
+  const visibleDeadlines = chip === 'wins' ? [] : grouped.deadlines;
+  const visibleWins = chip === 'deadlines' ? [] : grouped.wins;
+
   return (
-    <main className="px-4 pt-4 pb-32">
-      <header className="mb-4 flex items-start justify-between gap-3">
-        <div className="min-w-0">
-          <h1 className="flex items-center gap-2 text-lg font-semibold tracking-tight">
-            <Bell className="h-5 w-5 text-[var(--color-ph-red)]" aria-hidden />
-            Alerts
-          </h1>
-          <p className="mt-1 text-xs text-zinc-500">
-            {unreadCount > 0 ? `${unreadCount} unread · tap to act on it` : 'You’re caught up.'}
-          </p>
-        </div>
-        {unreadCount > 0 && (
+    <main className="min-h-dvh bg-ph-paper text-ph-text">
+      <div className="px-6 pt-6 pb-32">
+        <header className="flex items-center justify-between">
+          <h1 className="font-serif text-[28px] leading-none text-ph-ink">Alerts</h1>
           <button
             type="button"
             onClick={markAllRead}
-            className="flex items-center gap-1 rounded-full bg-zinc-100 px-2.5 py-1 text-[11px] font-bold text-zinc-700 hover:bg-zinc-200 dark:bg-zinc-800 dark:text-zinc-200 dark:hover:bg-zinc-700"
+            className="text-[13px] font-medium text-ph-brick transition-colors hover:text-ph-ink"
           >
-            <CheckCheck className="h-3 w-3" aria-hidden />
             Mark all read
           </button>
-        )}
-      </header>
+        </header>
 
-      {today.length > 0 && <FeedSection title="Today" items={today} onRead={markRead} />}
+        <div className="mt-4 flex items-center gap-2">
+          <FilterChip
+            active={chip === 'all'}
+            onClick={() => setChip('all')}
+            label="All"
+            count={grouped.deadlines.length + grouped.wins.length}
+          />
+          <FilterChip
+            active={chip === 'deadlines'}
+            onClick={() => setChip('deadlines')}
+            label="Deadlines"
+            count={grouped.deadlines.length}
+          />
+          <FilterChip
+            active={chip === 'wins'}
+            onClick={() => setChip('wins')}
+            label="Wins"
+            count={grouped.wins.length}
+          />
+        </div>
 
-      {earlier.length > 0 && <FeedSection title="Earlier" items={earlier} onRead={markRead} />}
+        {visibleDeadlines.length > 0 ? (
+          <section aria-labelledby="needs-you-heading" className="mt-6">
+            <h2
+              id="needs-you-heading"
+              className="mb-2 font-mono text-[10px] uppercase tracking-[0.14em] text-ph-text-meta"
+            >
+              Needs you
+            </h2>
+            <ul className="space-y-2">
+              {visibleDeadlines.map((a) => (
+                <li key={a.id}>
+                  <DeadlineCard alert={a} onOpen={() => markRead(a.id)} />
+                </li>
+              ))}
+            </ul>
+          </section>
+        ) : null}
 
-      {feed.length === 0 && (
-        <p className="rounded-xl bg-white p-6 text-center text-sm text-zinc-500 ring-1 ring-zinc-200 dark:bg-zinc-900 dark:ring-zinc-800">
-          No alerts yet. They'll show here when something needs your attention.
-        </p>
-      )}
+        {visibleWins.length > 0 ? (
+          <section aria-labelledby="good-news-heading" className="mt-6">
+            <h2
+              id="good-news-heading"
+              className="mb-2 font-mono text-[10px] uppercase tracking-[0.14em] text-ph-text-meta"
+            >
+              Good news
+            </h2>
+            <ul className="space-y-2">
+              {visibleWins.map((a) => (
+                <li key={a.id}>
+                  <WinCard alert={a} onOpen={() => markRead(a.id)} />
+                </li>
+              ))}
+            </ul>
+          </section>
+        ) : null}
 
-      <p className="mt-4 text-center text-[10px] text-zinc-400">
-        Configure which alerts fire in{' '}
-        <Link href="/settings" className="font-semibold text-[var(--color-ph-red)] hover:underline">
-          Alert Centre
-        </Link>
-        .
-      </p>
+        {visibleDeadlines.length === 0 && visibleWins.length === 0 ? (
+          <p className="mt-8 text-center text-[13px] text-ph-text-muted">
+            Nothing here right now. Perry will surface anything worth acting on.
+          </p>
+        ) : null}
+      </div>
     </main>
   );
 }
 
-function FeedSection({
-  title,
-  items,
-  onRead,
+function FilterChip({
+  active,
+  onClick,
+  label,
+  count,
 }: {
-  title: string;
-  items: FiredAlert[];
-  onRead: (id: string) => void;
+  active: boolean;
+  onClick: () => void;
+  label: string;
+  count: number;
 }) {
   return (
-    <section aria-label={title} className="mb-6">
-      <h2 className="mb-2 text-[10px] font-bold uppercase tracking-wide text-zinc-500">{title}</h2>
-      <ul className="space-y-2">
-        {items.map((a) => (
-          <li key={a.id}>
-            <Link
-              href={destinationFor(a)}
-              onClick={() => onRead(a.id)}
-              className={
-                a.read
-                  ? 'flex items-start gap-3 rounded-xl bg-white p-3 ring-1 ring-zinc-200 transition-colors hover:bg-zinc-50 dark:bg-zinc-900 dark:ring-zinc-800 dark:hover:bg-zinc-800/60'
-                  : 'flex items-start gap-3 rounded-xl bg-white p-3 ring-1 ring-[var(--color-ph-red)]/40 transition-colors hover:bg-zinc-50 dark:bg-zinc-900 dark:hover:bg-zinc-800/60'
-              }
-            >
-              {!a.read && (
-                <span
-                  aria-hidden
-                  className="mt-1.5 h-1.5 w-1.5 flex-none rounded-full bg-[var(--color-ph-red)]"
-                />
-              )}
-              <div className="min-w-0 flex-1">
-                <div className="flex items-center gap-2">
-                  <span className="rounded-full bg-zinc-100 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide text-zinc-600 dark:bg-zinc-800 dark:text-zinc-300">
-                    {KIND_PILL[a.kind]}
-                  </span>
-                  <p className="truncate text-sm font-semibold">{a.title}</p>
-                </div>
-                <p className="mt-0.5 truncate text-xs text-zinc-500">{a.subtitle}</p>
-              </div>
-              <ArrowRight className="mt-0.5 h-4 w-4 flex-none text-zinc-400" aria-hidden />
-            </Link>
-          </li>
-        ))}
-      </ul>
-    </section>
+    <button
+      type="button"
+      aria-pressed={active}
+      onClick={onClick}
+      className={
+        active
+          ? 'inline-flex flex-none items-center gap-1.5 rounded-full bg-ph-ink px-3 py-1.5 text-xs font-medium text-ph-on-brick'
+          : 'inline-flex flex-none items-center gap-1.5 rounded-full bg-ph-fill px-3 py-1.5 text-xs font-medium text-ph-text-muted hover:text-ph-text'
+      }
+    >
+      <span>{label}</span>
+      <span
+        className={
+          active ? 'text-ph-on-brick-secondary tabular-nums' : 'text-ph-text-meta tabular-nums'
+        }
+      >
+        {count}
+      </span>
+    </button>
+  );
+}
+
+// ── card variants ────────────────────────────────────────────────────
+
+function DeadlineCard({ alert, onOpen }: { alert: FiredAlert; onOpen: () => void }) {
+  const days = 19; // v1 mock; wires to a real days-remaining derivation in Phase 5
+  const isRead = alert.read;
+  return (
+    <div
+      className={
+        isRead
+          ? 'flex items-stretch overflow-hidden rounded-ph-card border border-ph-border bg-ph-card opacity-[0.66]'
+          : 'flex items-stretch overflow-hidden rounded-ph-card border border-ph-border bg-ph-card'
+      }
+    >
+      <span
+        aria-hidden
+        className="w-[3px] flex-none"
+        style={{
+          backgroundColor: isRead ? '#DCD2C1' : 'var(--color-ph-amber-lacquer)',
+        }}
+      />
+      <div className="min-w-0 flex-1 p-[15px]">
+        <div className="flex items-start justify-between gap-3">
+          <div className="min-w-0 flex-1">
+            <p className="font-serif text-[17px] leading-tight text-ph-ink">{alert.title}</p>
+            <p className="mt-1 text-[13px] leading-snug text-ph-text-muted">{alert.subtitle}</p>
+          </div>
+          <p className="flex-none font-mono text-[10px] uppercase tracking-[0.14em] text-ph-amber-figure tabular-nums">
+            {days}d
+          </p>
+        </div>
+        <Link
+          href={destinationFor(alert)}
+          onClick={onOpen}
+          className="mt-3 inline-flex items-center rounded-full bg-ph-red px-4 py-2 text-xs font-medium text-white transition-opacity hover:opacity-90"
+        >
+          {ACTION_LABEL[alert.kind]}
+        </Link>
+      </div>
+    </div>
+  );
+}
+
+function WinCard({ alert, onOpen }: { alert: FiredAlert; onOpen: () => void }) {
+  const isRead = alert.read;
+  const ageLabel = formatAge(alert.firedAt);
+  return (
+    <Link
+      href={destinationFor(alert)}
+      onClick={onOpen}
+      className={
+        isRead
+          ? 'flex items-stretch overflow-hidden rounded-ph-card border border-ph-border bg-ph-card opacity-[0.66]'
+          : 'flex items-stretch overflow-hidden rounded-ph-card border border-ph-border bg-ph-card'
+      }
+    >
+      <span
+        aria-hidden
+        className="w-[3px] flex-none"
+        style={{ backgroundColor: isRead ? '#DCD2C1' : 'var(--color-ph-pine)' }}
+      />
+      <div className="min-w-0 flex-1 p-[15px]">
+        <div className="flex items-start justify-between gap-3">
+          <div className="min-w-0 flex-1">
+            <p className="font-serif text-[17px] leading-tight text-ph-ink">{alert.title}</p>
+            <p className="mt-1 text-[13px] leading-snug text-ph-text-muted">{alert.subtitle}</p>
+          </div>
+          <p className="flex-none font-mono text-[10px] uppercase tracking-[0.14em] text-ph-text-meta tabular-nums">
+            {ageLabel}
+          </p>
+        </div>
+      </div>
+    </Link>
   );
 }
