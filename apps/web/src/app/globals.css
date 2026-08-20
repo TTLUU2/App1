@@ -6,8 +6,27 @@
  * preference in localStorage, eliminating the flash-of-wrong-theme. */
 @custom-variant dark (&:where(.dark, .dark *));
 
-/* Point Hacks brand palette (placeholder hex pending official spec). */
+/* ── Point Hacks brand palette ─────────────────────────────────────────
+ * Two token sets coexist during the Lacquer refresh (Decision #33,
+ * plan in docs/LACQUER_REFRESH.md).
+ *
+ *   1. Legacy — `--color-ph-red`, `--color-ph-red-dark`, plus the
+ *      `--color-ink|paper|amber|brand|...` names lifted from
+ *      points-deals. Every current screen consumes these. Do NOT
+ *      remove or repoint until Phase 4 has migrated every callsite.
+ *
+ *   2. Lacquer — the `--color-ph-{ink|brick|paper|card|pine|amber|...}`
+ *      family from docs/design/lacquer/HANDOFF.md. New screens (Today,
+ *      Optimise sub-tabs, Journeys sub-tabs, Alert Centre, the +
+ *      sheets, Perry) consume these.
+ *
+ * Contract worth stating: bright red is a primary action only. Brick
+ * is the brand surface. Amber = deadlines / reached. Pine = on-track /
+ * positive. Red never means "at risk" — the spec calls that out as
+ * the single most important change from the current app.
+ */
 @theme {
+  /* ── Legacy tokens (in use everywhere pre-Lacquer) ─────────────────── */
   --color-ph-red: #d62828;
   --color-ph-red-dark: #a51d1d;
 
@@ -33,6 +52,65 @@
   --color-brand-soft: oklch(0.96 0.025 25);
 
   --radius-card: 0.875rem;
+
+  /* ── Lacquer tokens (Phase 1 — foundation) ────────────────────────────
+   * Ordered as in docs/design/lacquer/HANDOFF.md so a diff against the
+   * spec is trivial. Tailwind v4 auto-generates utilities from each:
+   *   --color-ph-brick        → bg-ph-brick, text-ph-brick, border-ph-brick
+   *   --color-ph-pine-chip    → bg-ph-pine-chip
+   *   ...etc.
+   */
+  --color-ph-ink: #2e0a08;
+  --color-ph-brick: #8e2a22;
+  --color-ph-paper: #f6f1e9;
+  --color-ph-card: #fffdf9;
+  --color-ph-border: #e4d8d3;
+  --color-ph-border-strong: #dfd0cb;
+  --color-ph-fill: #ede2de;
+  --color-ph-fill-warm: #f2e7e4;
+  --color-ph-tint: #f7edea;
+  --color-ph-tint-border: #e8d4d0;
+  --color-ph-text: #3f332f;
+  --color-ph-text-muted: #5f5450;
+  --color-ph-text-meta: #6b5a56;
+  --color-ph-text-disabled: #4a403c;
+  --color-ph-pine: #1f4b3f;
+  --color-ph-pine-text: #17402f;
+  --color-ph-pine-chip: oklch(0.72 0.1 160 / 0.18);
+  --color-ph-amber-lacquer: oklch(0.85 0.12 80);
+  --color-ph-amber-chip: oklch(0.79 0.13 75 / 0.24);
+  --color-ph-amber-text: #7a4e00;
+  --color-ph-amber-figure: #8a5a00;
+  --color-ph-negative-chip: #f7ddda;
+
+  /* Brick-surface text scale — the "on brick" section of HANDOFF.md.
+   * `paper` here is the same #F6F1E9 as the app background, kept as a
+   * distinct token so brick-surface callers reach for the semantic
+   * name (`text-ph-on-brick`) instead of remembering the raw paper
+   * token. */
+  --color-ph-on-brick: #f6f1e9;
+  --color-ph-on-brick-row: #fbedeb;
+  --color-ph-on-brick-secondary: #efcfcb;
+  --color-ph-on-brick-meta: #e8b7b1;
+
+  /* Type — Instrument Serif joins Geist for display type. `--font-serif`
+   * is Tailwind's default binding for the `font-serif` utility; pointing
+   * it at the next/font-loaded Instrument Serif (see app/layout.tsx)
+   * turns every `font-serif` callsite into Lacquer's display face. */
+  --font-serif: var(--font-instrument-serif), 'Instrument Serif', Georgia, ui-serif, serif;
+
+  /* Radii from the spec's "Spacing, radius, shadow" table. Hero card 22,
+   * standard 18, inner 14, sheet-top 26. Named for readability at
+   * callsites (rounded-ph-hero vs the raw rounded-[22px]). */
+  --radius-ph-hero: 1.375rem; /* 22px */
+  --radius-ph-card: 1.125rem; /* 18px */
+  --radius-ph-inner: 0.875rem; /* 14px */
+  --radius-ph-sheet: 1.625rem; /* 26px */
+
+  /* Only one shadow in the system — the FAB. Segmented-thumb gets a
+   * near-invisible lift so it reads as raised without competing. */
+  --shadow-ph-fab: 0 8px 20px rgb(142 42 34 / 0.3);
+  --shadow-ph-thumb: 0 1px 3px rgb(46 10 8 / 0.08);
 }
 
 /* ── Deals animations (lifted from points-deals/app/globals.css) ──────

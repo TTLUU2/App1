@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from 'next';
+import { Instrument_Serif } from 'next/font/google';
 import { TabBar } from '@/components/tab-bar';
 import { StoreHydrator } from '@/components/store-hydrator';
 import { ThemeToggle, THEME_INIT_SCRIPT } from '@/components/theme-toggle';
@@ -8,6 +9,25 @@ import { TopMenu } from '@/components/top-menu';
 import { PerryFAB } from '@/components/perry-fab';
 import { PushOptInModal } from '@/components/push-opt-in-modal';
 import './globals.css';
+
+// Instrument Serif — Lacquer's display face (Decision #33). Weight 400
+// only, per the spec: "Never bold it; the serif carries the premium tone
+// through size, not weight." `next/font/google` self-hosts the file at
+// build time so there's no third-party font request at load — critical
+// for the Capacitor WKWebView, which doesn't benefit from a warm CDN
+// cache the way a fresh browser tab does.
+//
+// The `variable` here binds to `--font-instrument-serif` in the CSS
+// custom-property tree; globals.css's `--font-serif` token points at it,
+// which in turn is Tailwind's binding for the `font-serif` utility. Net:
+// every `font-serif` callsite in the app now paints in Instrument Serif.
+const instrumentSerif = Instrument_Serif({
+  weight: '400',
+  style: ['normal', 'italic'],
+  subsets: ['latin'],
+  display: 'swap',
+  variable: '--font-instrument-serif',
+});
 
 export const metadata: Metadata = {
   title: 'Point Hacks Copilot',
@@ -41,7 +61,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en-AU" className="h-full antialiased">
+    <html lang="en-AU" className={`h-full antialiased ${instrumentSerif.variable}`}>
       <head>
         {/* Pre-paint theme init — runs synchronously before React hydrates so
             the .dark class is on <html> before the first paint. Eliminates
