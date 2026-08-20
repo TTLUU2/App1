@@ -2,10 +2,8 @@ import type { Metadata, Viewport } from 'next';
 import { Instrument_Serif } from 'next/font/google';
 import { TabBar } from '@/components/tab-bar';
 import { StoreHydrator } from '@/components/store-hydrator';
-import { ThemeToggle, THEME_INIT_SCRIPT } from '@/components/theme-toggle';
-import { VoiceToggle } from '@/components/voice-toggle';
-import { AlertsBell } from '@/components/alerts-bell';
-import { TopMenu } from '@/components/top-menu';
+import { THEME_INIT_SCRIPT } from '@/components/theme-toggle';
+import { LacquerHeaderCluster } from '@/components/lacquer/header-cluster';
 import { PerryFAB } from '@/components/perry-fab';
 import { PushOptInModal } from '@/components/push-opt-in-modal';
 import './globals.css';
@@ -73,15 +71,11 @@ export default function RootLayout({
             The bottom tab bar is fixed; we reserve space with bottom padding. */}
         <StoreHydrator />
 
-        {/* Global controls — voice mute + theme toggle. Always visible
-            top-right, don't scroll with content. Voice toggle silences
-            every speak() call across the app; mic input is independent. */}
-        <div className="fixed right-3 top-3 z-40 flex items-center gap-1 rounded-full bg-white/80 p-0.5 backdrop-blur ring-1 ring-zinc-200 dark:bg-zinc-900/80 dark:ring-zinc-800">
-          <VoiceToggle />
-          <ThemeToggle />
-          <AlertsBell />
-          <TopMenu />
-        </div>
+        {/* Lacquer top-right cluster (Phase 3): ⌂ Today, bell, ☰ Settings.
+            Voice mute + theme toggle relocated into Settings — they
+            don't belong on every screen (HANDOFF § Header). Balances
+            / Home menu items dropped: they moved to the tab bar. */}
+        <LacquerHeaderCluster />
 
         <div className="mx-auto flex min-h-dvh max-w-md flex-col pb-24">{children}</div>
         <TabBar />

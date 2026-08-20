@@ -19,6 +19,8 @@ import {
   type CardAlertPrefs,
   type GlobalAlertPrefs,
 } from '@/store/alerts';
+import { VoiceToggle } from '@/components/voice-toggle';
+import { ThemeToggle } from '@/components/theme-toggle';
 
 const ALERT_KIND_LABELS: Record<AlertKind, { title: string; sub: string }> = {
   'min-spend-deadline': {
@@ -56,6 +58,31 @@ export default function SettingsPage() {
           ones up first.
         </p>
       </header>
+
+      {/* Preferences: voice output + theme toggles. Relocated here
+          from the top-right cluster in Phase 3 (HANDOFF § Header) —
+          the header carries only Today / Alerts / Settings now. */}
+      <section
+        aria-label="Preferences"
+        className="mb-6 overflow-hidden rounded-2xl bg-white ring-1 ring-zinc-200 dark:bg-zinc-900 dark:ring-zinc-800"
+      >
+        <div className="flex items-center justify-between gap-3 border-b border-zinc-100 p-3 dark:border-zinc-800">
+          <div className="min-w-0">
+            <p className="text-sm font-semibold">Spoken voice</p>
+            <p className="mt-0.5 text-xs text-zinc-500">
+              Mute Copilot&apos;s spoken replies. Voice input (mic) stays on either way.
+            </p>
+          </div>
+          <VoiceToggle />
+        </div>
+        <div className="flex items-center justify-between gap-3 p-3">
+          <div className="min-w-0">
+            <p className="text-sm font-semibold">Appearance</p>
+            <p className="mt-0.5 text-xs text-zinc-500">Follow system, or lock to light / dark.</p>
+          </div>
+          <ThemeToggle />
+        </div>
+      </section>
 
       <GlobalSection global={global} onChange={setGlobal} />
 

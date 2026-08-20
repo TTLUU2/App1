@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useEffect, useState } from 'react';
-import { CreditCard, Gift, TrendingUp, Sparkles, Plus } from 'lucide-react';
+import { CreditCard, Gift, Send, TrendingUp, Plus } from 'lucide-react';
 import clsx from 'clsx';
 import { FanActions, type FanActionId } from './fan-actions';
 import { AddCardModal } from './add-card-v2/add-card-modal';
@@ -11,16 +11,24 @@ import { AddCardModal } from './add-card-v2/add-card-modal';
 /**
  * Persistent four-tab bottom bar plus a centre FAB.
  *
- * Tab order is fixed per PRD §6.1. FAB sits centred at z-50, outside the
- * nav's stacking context. Tapping the FAB opens a radial fan of 4 action
- * buttons (PRD §6.2 "radial menu"), with the + icon rotating to ×.
+ * Lacquer tab order (Decision #33, HANDOFF §Tab bar):
+ *   Matching · Deals · [+] · Optimise · Journeys
+ *
+ * Next Card was retired from the bar and folds into Optimise as a
+ * sub-tab in Phase 4. Journeys is promoted here from its old
+ * hamburger-only home. The paper-plane glyph nods at Perry — same
+ * silhouette he'll carry once the real artwork lands.
+ *
+ * FAB sits centred at z-50, outside the nav's stacking context.
+ * Tapping opens the radial fan; Phase 5 replaces the fan with the
+ * labelled action-sheet from HANDOFF §7.
  */
 
 const TABS = [
   { href: '/matching', label: 'Matching', longLabel: 'Card Matching', Icon: CreditCard },
   { href: '/deals', label: 'Deals', longLabel: 'Deals & Alerts', Icon: Gift },
   { href: '/optimisation', label: 'Optimise', longLabel: 'Card Optimisation', Icon: TrendingUp },
-  { href: '/next-card', label: 'Next Card', longLabel: 'Next Card', Icon: Sparkles },
+  { href: '/journeys', label: 'Journeys', longLabel: 'Journeys', Icon: Send },
 ] as const;
 
 export function TabBar() {
@@ -123,8 +131,18 @@ export function TabBar() {
 }
 
 function isActive(pathname: string, href: string): boolean {
-  if (href === '/next-card') {
-    return pathname === '/next-card' || pathname.startsWith('/cards');
+  // Journeys tab stays lit while browsing tracked-journey subroutes
+  // (/journeys/track) and while /balances is still live (it redirects
+  // to /journeys?tab=balances in Phase 4). Card-detail lives under
+  // /cards; keep it lit under Optimise since that's where the "your
+  // cards" flow anchors now that Next Card is folded in.
+  if (href === '/journeys') {
+    return pathname === '/journeys' || pathname.startsWith('/journeys/');
+  }
+  if (href === '/optimisation') {
+    return (
+      pathname === '/optimisation' || pathname === '/next-card' || pathname.startsWith('/cards')
+    );
   }
   return pathname === href || pathname.startsWith(href + '/');
 }
