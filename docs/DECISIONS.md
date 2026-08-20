@@ -602,3 +602,99 @@ pattern.
 **Sketch:** `docs/AFFILIATE_TRACKING.md` — full schema (4 new Drizzle
 tables), both API routes, per-network adapter pattern, testing
 approach with fixture replay.
+
+---
+
+## 33. Lacquer brand + IA + Perry refresh
+
+**Considered:** iterating on the current brand — keep placeholder red
+as brand + action, tidy the hamburger nav, patch Perry's overlay
+behaviour — as a smaller, quicker pass. Rejected because the design
+handoff identifies structural problems that iteration can't reach:
+red carrying brand, action, active state, positive figures and
+warnings simultaneously (the colour system had collapsed to "red
+means something"); recommendations shipping without evidence; action
+lists claiming empty while deadlines sit two rows above them; Perry
+covering live content on every screen.
+
+**We chose:** full "Lacquer" refresh — spec in
+`docs/design/lacquer/HANDOFF.md`, plan in `docs/LACQUER_REFRESH.md`.
+
+- **Palette**: lacquer brick `#8E2A22` becomes the brand surface; the
+  placeholder `--color-ph-red` (`#D62828`) is retained as primary
+  action only. Pine (`#1F4B3F`) for on-track / positive, amber
+  (`oklch(0.85 0.12 80)`) for deadlines / reached. Red never means
+  "at risk" again.
+- **Type**: Instrument Serif 400 for display type (screen title,
+  hero figure, card title, stat figure); Geist retained for row
+  titles and body; Geist Mono for eyebrow labels and inline meta.
+  Never bold the serif.
+- **IA**: Next Card folds into Optimise as a sub-tab; Journeys and
+  Point balances promote to a fourth tab (Destinations + Balances
+  sub-tabs); Today moves to a top-right icon; hamburger shrinks to
+  Settings only. The Today/Journeys toggle inside Home disappears.
+- **Perry**: four moments only — Resting (bar avatar), Deadline
+  slipping, Bonus cleared, Destination unlocked, First-run. Never a
+  floating overlay covering live content.
+- **Scope**: Today, Optimise (Your cards + Next card), Journeys
+  (Destinations + Balances), Alert Centre, `+` action sheet,
+  Log-a-spend, Add-a-card, Perry. Matching + Deals stay as-is —
+  refreshed later.
+
+**Why:**
+
+- The colour contract is the single biggest change and everything else
+  compounds on it. Once brick is the brand surface and red is action
+  only, chip taxonomy becomes legible, warnings stop competing with
+  brand identity, and the Perry-as-brand-avatar decision is coherent.
+- Instrument Serif carries "premium AU points-hacking" without
+  needing weight. The current Geist-only stack reads as generic SaaS.
+- Journeys as a top-level tab (rather than hamburger-nested inside
+  Home) matches how users think about the app: cards → optimise →
+  destinations. Home-as-Today survives, just off a top-right icon.
+- The Perry constraint ("four moments, silent otherwise") turns a
+  liability into an asset. A mascot that speaks four times a month
+  is a character; one that greets every screen is a cursor.
+
+**What this costs:**
+
+- Every screen in scope gets a rebuild against the new tokens and IA.
+  Multi-phase — foundation → primitives → nav shell → screen
+  redesigns → sheets + Perry → assets + polish. Sequenced so each
+  phase is preview-deployable and prod cutover only happens at
+  milestones.
+- Instrument Serif adds a Google Fonts request; served weight 400
+  only to keep it under 30KB.
+- Matching + Deals will look "old" against Lacquer screens during
+  the transition. Acknowledged and accepted; those two are
+  scope-out for this refresh and get their own pass later.
+- Real card art, program logos, destination photos, and Perry
+  artwork must be sourced before Phase 6 goes prod. Phases 1–5
+  build behind placeholders (cream frame + labelled strip).
+- Dark mode not designed yet — spec calls for `#2E0A08` base, brick
+  as card surface, red as action. Full dark pass lands in Phase 6.
+
+**Safety net:**
+
+- `stable/pre-lacquer` branch pinned at `69a9985`, pushed to origin.
+- `snapshot/pre-lacquer-2026-08-20` annotated tag on the same
+  commit, pushed to origin. Immutable pin.
+- Vercel prod alias `ph-copilot-gamma.vercel.app` stays on
+  `dpl_5CeQ9CdaazYzEFbwAoT7hkyGCtXB` (pre-Lacquer) until we
+  deliberately flip. Rollback is one `vercel alias set` write and
+  iOS TestFlight build 27 picks it up instantly.
+- All Lacquer work on `feat/lacquer-refresh`. Do not commit to
+  `feat/home-journeys-settings` while Lacquer is in flight — it
+  remains the "known-good" prod source of truth.
+
+**Migration path:** phases 1 and 2 land zero user-visible change; the
+first cutover is Phase 3 (nav shell). Every prod flip is instantly
+reversible via the Vercel alias. iOS never rebuilds during any of
+this — the WKWebView shell keeps loading whatever prod is aliased to.
+Codemagic only re-enters the loop in Phase 6 when native asset
+changes (icon / splash) are ready alongside real Perry artwork.
+
+**Reference:** `docs/design/lacquer/HANDOFF.md` (full spec verbatim
+from the designer bundle), `docs/LACQUER_REFRESH.md` (phase plan),
+`docs/design/lacquer/github.md` (screen-to-source map from the
+designer's sync).

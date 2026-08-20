@@ -1,8 +1,57 @@
 # Point Hacks Copilot — TODO
 
-Living backlog. Update as items move between states. Last touched 2026-08-19.
+Living backlog. Update as items move between states. Last touched 2026-08-20.
 
 ---
+
+## In flight — Lacquer refresh (branch `feat/lacquer-refresh`)
+
+Full brand + IA + Perry refresh per Decision #33. Plan lives in
+`docs/LACQUER_REFRESH.md`; verbatim spec in
+`docs/design/lacquer/HANDOFF.md`.
+
+Safety net already in place: branch `stable/pre-lacquer` and tag
+`snapshot/pre-lacquer-2026-08-20` both pin commit `69a9985`; Vercel
+prod alias stays on the pre-Lacquer deployment until we flip.
+
+Phase status:
+
+- [ ] **Phase 1** — Tokens, Instrument Serif, primitive scaffolding.
+      Zero user-visible change; foundation for everything downstream.
+- [ ] **Phase 2** — Shared components (SegmentedControl, HeroCard,
+      EvidencePanel, StatusChip variants, BottomSheet, CardArtFrame,
+      PerryAvatar). Reviewed on `/dev/lacquer-primitives` before use.
+- [ ] **Phase 3** — Nav shell cutover (tab bar, header cluster,
+      routes, redirects for old `/home` + `/balances`).
+- [ ] **Phase 4** — Screen redesigns: Today → Optimise · Your cards
+      → Optimise · Next card → Journeys · Destinations →
+      Journeys · Balances → Alert Centre.
+- [ ] **Phase 5** — `+` action sheet, Log-a-spend, Add-a-card, Perry
+      states (Resting / Deadline slipping / Bonus cleared /
+      Destination unlocked / First-run).
+- [ ] **Phase 6** — Real card art / program logos / destination
+      photos / Perry artwork; dark-mode pass; motion polish; prod
+      cutover.
+
+Matching + Deals stay as-is throughout — separate refresh later.
+
+## Next up (parked mid-flight — pick up as soon as Lacquer lands)
+
+- **Email sync — forwarding backend v1** (commit `69a9985`). Schema
+  - `/api/link-email` + `/api/inbound-email` + parser framework +
+    Qantas/Velocity stubs already in the tree. Blocked on:
+  1. Postmark account + inbound stream + MX record on `phcopilot.app`
+     (or `mail.phcopilot.app` — one-line domain choice).
+  2. `POSTMARK_INBOUND_USER` + `POSTMARK_INBOUND_PASS` env vars set
+     on Vercel (pointhacks scope).
+  3. `pnpm --filter @ph/web db:push` to hit Neon with the three new
+     tables (linked_email_forwards, email_events, balance_updates).
+  4. Real Qantas + Velocity balance emails to lock the parser regexes
+     (best-guess only right now).
+     Then the client-side follow-up: `/api/balance-updates` GET route,
+     Balances page calls `/api/link-email` on mount + foreground sync
+     into the Zustand balances store. Outlook OAuth trial comes after
+     forwarding is proven end-to-end. Gmail after Outlook.
 
 ## Considerations (open questions surfaced but not scheduled)
 

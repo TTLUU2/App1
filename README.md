@@ -9,6 +9,36 @@ workspace package so the future native build reuses it unchanged.
 > React Native / Expo to a web app to de-risk the card-OCR flow without
 > paying the native-build tax up front.
 
+> **Note — much of this README post-dates rapid iteration.** Everything
+> below still holds directionally, but the app has since shipped Home /
+> Balances / Settings / Alerts / Journeys screens, a Capacitor 8 iOS
+> shell on TestFlight, and Vercel prod deploys — none of which the
+> "What's deferred" section reflects. A full README rewrite lands in
+> Phase 6 of the Lacquer refresh below; until then, `docs/TODO.md` and
+> `docs/DECISIONS.md` are the current sources of truth.
+
+---
+
+## Current focus — Lacquer refresh
+
+Full brand + IA + Perry refresh is in flight on `feat/lacquer-refresh`.
+
+- Plan: [`docs/LACQUER_REFRESH.md`](docs/LACQUER_REFRESH.md)
+- Spec: [`docs/design/lacquer/HANDOFF.md`](docs/design/lacquer/HANDOFF.md)
+- Decision: [`docs/DECISIONS.md`](docs/DECISIONS.md) §33
+
+Safety net so we can always go back:
+
+- `stable/pre-lacquer` branch — pinned at commit `69a9985`
+- `snapshot/pre-lacquer-2026-08-20` tag — immutable pin at the same commit
+- Vercel prod alias `ph-copilot-gamma.vercel.app` stays on the
+  pre-Lacquer deployment until we deliberately flip; TestFlight iOS
+  build 27 loads that alias, so a Vercel rollback = an iOS rollback
+- `main` still ~76 commits behind — natural clean slate
+
+Matching + Deals are explicitly out of scope for this refresh and stay
+as-is; they get their own pass later.
+
 ---
 
 ## Quick start
