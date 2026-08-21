@@ -79,7 +79,7 @@ export function PhotoStep({
 
   return (
     <div className="space-y-4">
-      <p className="text-sm text-zinc-700 dark:text-zinc-300">
+      <p className="text-sm text-ph-text dark:text-zinc-300">
         Let&apos;s add a card. Snap a photo, speak the name, or pick from the list.
       </p>
 
@@ -88,7 +88,7 @@ export function PhotoStep({
         <img
           src={preview}
           alt="Your card"
-          className="mx-auto h-32 rounded-xl object-cover ring-1 ring-zinc-300 dark:ring-zinc-700"
+          className="mx-auto h-32 rounded-xl object-cover ring-1 ring-ph-border-strong dark:ring-zinc-700"
         />
       )}
 
@@ -106,7 +106,7 @@ export function PhotoStep({
           type="button"
           onClick={() => cameraInput.current?.click()}
           disabled={submitting}
-          className="inline-flex items-center justify-center gap-2 rounded-2xl bg-[var(--color-ph-red)] px-4 py-3 text-sm font-medium text-white shadow-sm disabled:opacity-50"
+          className="inline-flex items-center justify-center gap-2 rounded-2xl bg-ph-red px-4 py-3 text-sm font-medium text-white shadow-sm disabled:opacity-50"
         >
           <Camera className="h-4 w-4" aria-hidden />
           {submitting ? 'Reading your card…' : preview ? 'Retake photo' : 'Take photo'}
@@ -127,7 +127,7 @@ export function PhotoStep({
           type="button"
           onClick={onSpeak}
           disabled={submitting}
-          className="inline-flex items-center justify-center gap-2 rounded-2xl border border-zinc-300 bg-white px-4 py-3 text-sm font-medium text-zinc-700 disabled:opacity-50 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-300"
+          className="inline-flex items-center justify-center gap-2 rounded-2xl border border-ph-border-strong bg-ph-card px-4 py-3 text-sm font-medium text-ph-text disabled:opacity-50 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-300"
         >
           <Mic className="h-4 w-4" aria-hidden />
           Speak the card name
@@ -136,7 +136,7 @@ export function PhotoStep({
           type="button"
           onClick={() => fileInput.current?.click()}
           disabled={submitting}
-          className="inline-flex items-center justify-center gap-2 rounded-2xl border border-zinc-300 bg-white px-4 py-3 text-sm font-medium text-zinc-700 disabled:opacity-50 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-300"
+          className="inline-flex items-center justify-center gap-2 rounded-2xl border border-ph-border-strong bg-ph-card px-4 py-3 text-sm font-medium text-ph-text disabled:opacity-50 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-300"
         >
           <Upload className="h-4 w-4" aria-hidden />
           Upload from file
@@ -156,7 +156,7 @@ export function PhotoStep({
           type="button"
           onClick={onManual}
           disabled={submitting}
-          className="inline-flex items-center justify-center gap-2 rounded-2xl border border-dashed border-zinc-300 px-4 py-3 text-sm font-medium text-zinc-600 disabled:opacity-50 dark:border-zinc-700 dark:text-zinc-400"
+          className="inline-flex items-center justify-center gap-2 rounded-2xl border border-dashed border-ph-border-strong px-4 py-3 text-sm font-medium text-ph-text-muted disabled:opacity-50 dark:border-zinc-700 dark:text-zinc-400"
         >
           <Pencil className="h-4 w-4" aria-hidden />
           I&apos;ll pick it manually
@@ -168,7 +168,7 @@ export function PhotoStep({
               setPreview(null);
               setError(null);
             }}
-            className="mt-1 inline-flex items-center justify-center gap-1 text-xs text-zinc-500 hover:underline"
+            className="mt-1 inline-flex items-center justify-center gap-1 text-xs text-ph-text-meta hover:underline"
           >
             <RefreshCcw className="h-3 w-3" aria-hidden />
             Start over
@@ -176,7 +176,7 @@ export function PhotoStep({
         )}
       </div>
 
-      <p className="text-[11px] text-zinc-500">
+      <p className="text-[11px] text-ph-text-meta">
         We extract product, expiry, and last 4 only. PAN and CVV never leave the device or get
         stored.
       </p>

@@ -180,7 +180,7 @@ export function AddCardFlow({ onSaved, onClose }: AddCardFlowProps = {}) {
             type="button"
             onClick={onClose}
             aria-label="Close add card"
-            className="grid h-9 w-9 place-items-center rounded-full text-zinc-600 hover:bg-zinc-100 dark:text-zinc-300 dark:hover:bg-zinc-800"
+            className="grid h-9 w-9 place-items-center rounded-full text-ph-text-muted hover:bg-ph-fill-warm dark:text-zinc-300 dark:hover:bg-zinc-800"
           >
             <ChevronLeft className="h-5 w-5" aria-hidden />
           </button>
@@ -188,7 +188,7 @@ export function AddCardFlow({ onSaved, onClose }: AddCardFlowProps = {}) {
           <Link
             href="/"
             aria-label="Back"
-            className="grid h-9 w-9 place-items-center rounded-full text-zinc-600 hover:bg-zinc-100 dark:text-zinc-300 dark:hover:bg-zinc-800"
+            className="grid h-9 w-9 place-items-center rounded-full text-ph-text-muted hover:bg-ph-fill-warm dark:text-zinc-300 dark:hover:bg-zinc-800"
           >
             <ChevronLeft className="h-5 w-5" aria-hidden />
           </Link>
@@ -206,9 +206,7 @@ export function AddCardFlow({ onSaved, onClose }: AddCardFlowProps = {}) {
 
         {step === 'pick' && (
           <div className="space-y-3">
-            <p className="text-sm text-zinc-700 dark:text-zinc-300">
-              Pick your card from the list.
-            </p>
+            <p className="text-sm text-ph-text dark:text-zinc-300">Pick your card from the list.</p>
             <CardPickerQuestion cards={cards} onPick={(id) => handlePicked(id)} />
           </div>
         )}
@@ -301,15 +299,15 @@ function ReviewForm({
     >
       {/* Card identity (from OCR + catalogue match). Visible, with a quick
           way to swap if the match was wrong. */}
-      <section className="flex items-center gap-3 rounded-2xl border border-zinc-200 bg-white p-3 dark:border-zinc-800 dark:bg-zinc-900">
+      <section className="flex items-center gap-3 rounded-2xl border border-ph-border bg-ph-card p-3 dark:border-zinc-800 dark:bg-zinc-900">
         <CardArt card={card} size="sm" />
         <div className="min-w-0 flex-1">
           <p className="truncate text-sm font-semibold">{card.name}</p>
-          <p className="text-xs text-zinc-500">
+          <p className="text-xs text-ph-text-muted">
             {card.issuer.name} · annual fee {formatCurrency(card.annualFee)}
           </p>
           {(collected.last4 || collected.expiryMonthYear) && (
-            <p className="mt-0.5 text-[11px] text-zinc-500">
+            <p className="mt-0.5 text-[11px] text-ph-text-muted">
               {collected.last4 && <>•••• {collected.last4}</>}
               {collected.last4 && collected.expiryMonthYear && ' · '}
               {collected.expiryMonthYear && <>exp {collected.expiryMonthYear}</>}
@@ -319,7 +317,7 @@ function ReviewForm({
         <button
           type="button"
           onClick={onChangeCard}
-          className="inline-flex items-center gap-1 rounded-full border border-zinc-300 px-2 py-1 text-[11px] font-medium text-zinc-600 hover:border-[var(--color-ph-red)] hover:text-[var(--color-ph-red)] dark:border-zinc-700 dark:text-zinc-400"
+          className="inline-flex items-center gap-1 rounded-full border border-ph-border-strong px-2 py-1 text-[11px] font-medium text-ph-text-muted hover:border-ph-brick hover:text-ph-brick dark:border-zinc-700 dark:text-zinc-400"
         >
           <Pencil className="h-3 w-3" aria-hidden />
           Change card
@@ -327,8 +325,8 @@ function ReviewForm({
       </section>
 
       {/* Smart defaults — every field editable. */}
-      <div className="space-y-3 rounded-2xl border border-zinc-200 bg-white p-3 dark:border-zinc-800 dark:bg-zinc-900">
-        <p className="text-[10px] font-semibold uppercase tracking-widest text-zinc-500">
+      <div className="space-y-3 rounded-2xl border border-ph-border bg-ph-card p-3 dark:border-zinc-800 dark:bg-zinc-900">
+        <p className="text-[10px] font-semibold uppercase tracking-widest text-ph-text-muted">
           Defaults — edit anything wrong
         </p>
 
@@ -340,7 +338,7 @@ function ReviewForm({
             type="date"
             value={collected.activationDate}
             onChange={(e) => onChange({ activationDate: e.target.value })}
-            className="w-full rounded-lg border border-zinc-300 bg-white px-2 py-1.5 text-sm dark:border-zinc-700 dark:bg-zinc-950"
+            className="w-full rounded-lg border border-ph-border-strong bg-ph-card px-2 py-1.5 text-sm dark:border-zinc-700 dark:bg-zinc-950"
           />
           {/* Per-field voice input removed — the "Tap to edit by voice"
               walkthrough below handles voice-editing for approval date
@@ -358,7 +356,7 @@ function ReviewForm({
         <div className="grid grid-cols-[1fr,1.2fr] gap-3">
           <Field label="Min-spend target">
             <div className="relative">
-              <span className="pointer-events-none absolute left-2 top-1/2 -translate-y-1/2 text-sm text-zinc-500">
+              <span className="pointer-events-none absolute left-2 top-1/2 -translate-y-1/2 text-sm text-ph-text-muted">
                 $
               </span>
               <input
@@ -368,7 +366,7 @@ function ReviewForm({
                 step={500}
                 value={String(collected.bonusTarget)}
                 onChange={(e) => onChange({ bonusTarget: Number(e.target.value) || 0 })}
-                className="w-full rounded-lg border border-zinc-300 bg-white py-1.5 pl-5 pr-2 text-sm tabular-nums dark:border-zinc-700 dark:bg-zinc-950"
+                className="w-full rounded-lg border border-ph-border-strong bg-ph-card py-1.5 pl-5 pr-2 text-sm tabular-nums dark:border-zinc-700 dark:bg-zinc-950"
               />
             </div>
           </Field>
@@ -380,12 +378,12 @@ function ReviewForm({
               type="date"
               value={collected.bonusSpendWindowEndDate}
               onChange={(e) => onChange({ bonusSpendWindowEndDate: e.target.value })}
-              className="w-full rounded-lg border border-zinc-300 bg-white px-2 py-1.5 text-sm dark:border-zinc-700 dark:bg-zinc-950"
+              className="w-full rounded-lg border border-ph-border-strong bg-ph-card px-2 py-1.5 text-sm dark:border-zinc-700 dark:bg-zinc-950"
             />
           </Field>
         </div>
-        <div className="flex items-center justify-between gap-3 rounded-lg bg-zinc-50 px-3 py-2 dark:bg-zinc-950/60">
-          <span className="text-sm font-medium text-zinc-800 dark:text-zinc-200">
+        <div className="flex items-center justify-between gap-3 rounded-lg bg-ph-fill-warm px-3 py-2 dark:bg-zinc-950/60">
+          <span className="text-sm font-medium text-ph-ink dark:text-zinc-200">
             Sign-up bonus already received?
           </span>
           <button
@@ -394,11 +392,11 @@ function ReviewForm({
             aria-checked={collected.bonusReceived}
             onClick={() => onChange({ bonusReceived: !collected.bonusReceived })}
             className={`relative inline-flex h-6 w-11 flex-none items-center rounded-full transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-ph-red)] ${
-              collected.bonusReceived ? 'bg-[var(--color-ph-red)]' : 'bg-zinc-300 dark:bg-zinc-700'
+              collected.bonusReceived ? 'bg-ph-red' : 'bg-ph-fill dark:bg-zinc-700'
             }`}
           >
             <span
-              className={`inline-block h-5 w-5 transform rounded-full bg-white shadow transition-transform ${
+              className={`inline-block h-5 w-5 transform rounded-full bg-ph-card shadow transition-transform ${
                 collected.bonusReceived ? 'translate-x-5' : 'translate-x-0.5'
               }`}
             />
@@ -412,7 +410,7 @@ function ReviewForm({
       <button
         type="button"
         onClick={() => void speak(buildSummary())}
-        className="mx-auto flex items-center gap-1.5 rounded-full border border-zinc-300 px-3 py-1 text-[11px] font-medium text-zinc-600 hover:border-[var(--color-ph-red)] hover:text-[var(--color-ph-red)] dark:border-zinc-700 dark:text-zinc-400"
+        className="mx-auto flex items-center gap-1.5 rounded-full border border-ph-border-strong px-3 py-1 text-[11px] font-medium text-ph-text-muted hover:border-ph-brick hover:text-ph-brick dark:border-zinc-700 dark:text-zinc-400"
       >
         <Volume2 className="h-3 w-3" aria-hidden />
         Hear summary
@@ -443,7 +441,7 @@ function ReviewForm({
       <button
         type="submit"
         disabled={pending}
-        className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-[var(--color-ph-red)] px-4 py-3 text-sm font-medium text-white disabled:opacity-50"
+        className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-ph-red px-4 py-3 text-sm font-medium text-white disabled:opacity-50"
       >
         <CheckCircle2 className="h-4 w-4" aria-hidden />
         {pending ? 'Saving…' : 'Save card'}
@@ -463,11 +461,11 @@ function Field({
 }) {
   return (
     <label className="block">
-      <span className="block text-[11px] font-medium text-zinc-600 dark:text-zinc-400">
+      <span className="block text-[11px] font-medium text-ph-text-muted dark:text-zinc-400">
         {label}
       </span>
       <div className="mt-1">{children}</div>
-      {hint && <p className="mt-1 text-[10px] text-zinc-500">{hint}</p>}
+      {hint && <p className="mt-1 text-[10px] text-ph-text-muted">{hint}</p>}
     </label>
   );
 }

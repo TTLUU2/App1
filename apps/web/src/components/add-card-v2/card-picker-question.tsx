@@ -80,14 +80,14 @@ export function CardPickerQuestion({
         autoFocus
       />
       {voiceError && <p className="text-xs text-rose-600 dark:text-rose-300">{voiceError}</p>}
-      <details className="rounded-lg border border-zinc-200 dark:border-zinc-800">
-        <summary className="cursor-pointer px-3 py-2 text-xs font-medium text-zinc-600 dark:text-zinc-400">
+      <details className="rounded-lg border border-ph-border dark:border-zinc-800">
+        <summary className="cursor-pointer px-3 py-2 text-xs font-medium text-ph-text-muted dark:text-zinc-400">
           Or browse the catalogue
         </summary>
         <ul className="max-h-72 overflow-y-auto p-1">
           {grouped.map(([issuerName, list]) => (
             <li key={issuerName}>
-              <h4 className="px-2 pt-2 text-[10px] font-semibold uppercase tracking-wide text-zinc-500">
+              <h4 className="px-2 pt-2 text-[10px] font-semibold uppercase tracking-wide text-ph-text-meta">
                 {issuerName}
               </h4>
               <ul>
@@ -96,7 +96,7 @@ export function CardPickerQuestion({
                     <button
                       type="button"
                       onClick={() => onPick(c.id, c.name)}
-                      className="w-full rounded-md px-2 py-1.5 text-left text-sm hover:bg-zinc-100 dark:hover:bg-zinc-800"
+                      className="w-full rounded-md px-2 py-1.5 text-left text-sm hover:bg-ph-fill-warm dark:hover:bg-zinc-800"
                     >
                       {c.name}
                     </button>

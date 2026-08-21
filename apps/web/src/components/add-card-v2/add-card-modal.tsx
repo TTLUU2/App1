@@ -57,24 +57,30 @@ export function AddCardModal({
       }}
     >
       <Dialog.Portal>
-        <Dialog.Overlay className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm data-[state=open]:animate-in data-[state=open]:fade-in" />
+        <Dialog.Overlay
+          className="fixed inset-0 z-40 backdrop-blur-sm data-[state=open]:animate-in data-[state=open]:fade-in"
+          style={{ backgroundColor: 'rgba(46,10,8,0.42)' }}
+        />
         <Dialog.Content
           aria-describedby={undefined}
-          className="fixed inset-x-0 bottom-0 z-50 mx-auto flex max-h-[92vh] max-w-md flex-col overflow-y-auto rounded-t-2xl bg-zinc-50 pb-[max(env(safe-area-inset-bottom),0.5rem)] shadow-xl outline-none data-[state=open]:animate-in data-[state=open]:slide-in-from-bottom dark:bg-zinc-950"
+          className="fixed inset-x-0 bottom-0 z-50 mx-auto flex max-h-[92vh] max-w-md flex-col overflow-y-auto rounded-t-ph-sheet bg-ph-paper pb-[max(env(safe-area-inset-bottom),0.5rem)] text-ph-text outline-none data-[state=open]:animate-in data-[state=open]:slide-in-from-bottom"
         >
           <Dialog.Title className="sr-only">Add a card</Dialog.Title>
 
-          {/* Drag handle + close — visually clear that this is dismissible */}
-          <div className="sticky top-0 z-10 flex items-center justify-between bg-zinc-50/95 px-4 pt-3 backdrop-blur dark:bg-zinc-950/95">
+          {/* Drag handle + close. Lacquer sheet handle recipe: 38×4 in
+              the paper-tinted #DCD2C1 stripe, close button ph-card
+              chip so it reads against the sheet interior. */}
+          <div className="sticky top-0 z-10 flex items-center justify-between bg-ph-paper/95 px-4 pt-3 backdrop-blur">
             <div
               aria-hidden
-              className="mx-auto h-1 w-10 rounded-full bg-zinc-300 dark:bg-zinc-700"
+              className="mx-auto h-1 w-[38px] rounded-full"
+              style={{ backgroundColor: '#DCD2C1' }}
             />
             <Dialog.Close asChild>
               <button
                 type="button"
                 aria-label="Close"
-                className="absolute right-3 top-3 grid h-8 w-8 place-items-center rounded-full text-zinc-500 hover:bg-zinc-200 dark:hover:bg-zinc-800"
+                className="absolute right-3 top-3 grid h-8 w-8 place-items-center rounded-full bg-ph-card text-ph-text-muted ring-1 ring-ph-border transition-colors hover:text-ph-text"
               >
                 <X className="h-5 w-5" aria-hidden />
               </button>
@@ -111,21 +117,23 @@ function SavedView({
   const card = catalogue.allCards().find((c) => c.id === cardId);
   return (
     <main className="flex flex-1 flex-col items-center justify-center gap-4 px-6 py-10 text-center">
-      <div className="grid h-16 w-16 place-items-center rounded-full bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300">
+      <div className="grid h-16 w-16 place-items-center rounded-full bg-ph-pine-chip text-ph-pine">
         <CheckCircle2 className="h-8 w-8" aria-hidden />
       </div>
       <div>
-        <h2 className="text-lg font-semibold">Saved</h2>
-        {card && <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">{card.name}</p>}
+        <h2 className="font-serif text-[24px] leading-tight text-ph-ink">Saved</h2>
+        {card && <p className="mt-1 text-[13px] text-ph-text-muted">{card.name}</p>}
         {count > 1 && (
-          <p className="mt-1 text-[11px] text-zinc-500">{count} cards added this session</p>
+          <p className="mt-1 font-mono text-[10px] uppercase tracking-[0.14em] text-ph-text-meta">
+            {count} cards added this session
+          </p>
         )}
       </div>
       <div className="mt-2 flex w-full max-w-xs flex-col gap-2">
         <button
           type="button"
           onClick={onAddAnother}
-          className="inline-flex items-center justify-center gap-2 rounded-full bg-[var(--color-ph-red)] px-4 py-2.5 text-sm font-medium text-white"
+          className="inline-flex items-center justify-center gap-2 rounded-full bg-ph-red px-4 py-3 text-sm font-medium text-white transition-opacity hover:opacity-90"
         >
           <Plus className="h-4 w-4" aria-hidden />
           Add another card
@@ -133,7 +141,7 @@ function SavedView({
         <button
           type="button"
           onClick={onDone}
-          className="inline-flex items-center justify-center rounded-full border border-zinc-300 px-4 py-2.5 text-sm font-medium text-zinc-700 dark:border-zinc-700 dark:text-zinc-300"
+          className="inline-flex items-center justify-center rounded-full border border-ph-border-strong bg-ph-card px-4 py-3 text-sm font-medium text-ph-text-muted transition-colors hover:text-ph-text"
         >
           Done
         </button>

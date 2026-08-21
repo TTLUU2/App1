@@ -28,17 +28,17 @@ export function ChatThread({
       <ul className="space-y-3" aria-live="polite">
         {bubbles.map((b, i) => (
           <li key={i} className="space-y-1.5">
-            <div className="mr-auto max-w-[85%] rounded-2xl rounded-tl-sm bg-zinc-100 px-3 py-2 text-sm dark:bg-zinc-800">
+            <div className="mr-auto max-w-[85%] rounded-2xl rounded-tl-sm bg-ph-fill-warm px-3 py-2 text-sm dark:bg-zinc-800">
               {b.question}
             </div>
-            <div className="ml-auto max-w-[85%] rounded-2xl rounded-tr-sm bg-[var(--color-ph-red)]/10 px-3 py-2 text-sm text-zinc-900 dark:bg-[var(--color-ph-red)]/20 dark:text-zinc-100">
+            <div className="ml-auto max-w-[85%] rounded-2xl rounded-tr-sm bg-ph-red/10 px-3 py-2 text-sm text-ph-ink dark:bg-ph-red/20 dark:text-zinc-100">
               {b.answerLabel}
             </div>
           </li>
         ))}
         {currentQuestion && (
           <li>
-            <div className="mr-auto max-w-[85%] rounded-2xl rounded-tl-sm bg-zinc-100 px-3 py-2 text-sm dark:bg-zinc-800">
+            <div className="mr-auto max-w-[85%] rounded-2xl rounded-tl-sm bg-ph-fill-warm px-3 py-2 text-sm dark:bg-zinc-800">
               {currentQuestion}
             </div>
           </li>

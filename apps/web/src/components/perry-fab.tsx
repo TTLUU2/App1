@@ -89,30 +89,31 @@ export function PerryFAB() {
         {/* Cluster wrapper — relative so the bubble can absolute-position
             itself without shifting Perry on show/hide cycles. */}
         <div className="relative">
-          {/* Speech bubble — auto-width based on content, absolutely
-              positioned above-right of Perry's head. Opacity + scale
-              transition for smooth show/hide on the 15s cycle. */}
+          {/* Speech bubble — Lacquer chrome. Paper card + hairline
+              border to sit against any page surface; ph-text-muted
+              body so it doesn't compete with Perry. Rounded-bl-sm
+              gives the tail its Perry-facing bite. */}
           <div
             aria-hidden={!bubbleVisible}
-            className={`absolute -top-1 left-12 origin-bottom-left whitespace-nowrap rounded-2xl rounded-bl-sm bg-white px-2.5 py-1.5 text-[11px] font-medium leading-snug text-zinc-700 shadow-md ring-1 ring-zinc-200 transition-all duration-300 dark:bg-zinc-900 dark:text-zinc-200 dark:ring-zinc-700 ${
+            className={`absolute -top-1 left-[46px] origin-bottom-left whitespace-nowrap rounded-2xl rounded-bl-sm border border-ph-border bg-ph-card px-2.5 py-1.5 text-[11px] font-medium leading-snug text-ph-text-muted transition-all duration-300 ${
               bubbleVisible ? 'scale-100 opacity-100' : 'pointer-events-none scale-95 opacity-0'
             }`}
+            style={{ boxShadow: 'var(--shadow-ph-thumb)' }}
           >
             Got a question?
-            {/* Tail — small rotated square forming the bubble pointer
-                toward Perry below-left. */}
             <span
               aria-hidden
-              className="absolute -bottom-1 left-2 h-2 w-2 rotate-45 bg-white ring-1 ring-zinc-200 dark:bg-zinc-900 dark:ring-zinc-700"
+              className="absolute -bottom-1 left-2 h-2 w-2 rotate-45 border-b border-l border-ph-border bg-ph-card"
             />
           </div>
 
-          {/* Perry — naked plane, no ring. Drop-shadow gives him weight
-              on light pages where the cream body would otherwise vanish.
-              Bumped to 90px (1.5× the prior 60px) for proper mascot
-              presence. */}
-          <div className="transition-transform hover:scale-105 active:scale-95 [filter:drop-shadow(0_4px_8px_rgba(0,0,0,0.18))]">
-            <PerryIcon size={90} />
+          {/* Perry — the floating overlay treatment is transitional
+              (HANDOFF § 10 replaces this with the four-moment character
+              + Copilot bar in Phase 5). For the Lacquer interim we
+              shrink from 90px to 68px and soften the drop shadow so
+              he stops dominating the corner. */}
+          <div className="transition-transform hover:scale-105 active:scale-95 [filter:drop-shadow(0_2px_6px_rgba(46,10,8,0.14))]">
+            <PerryIcon size={68} />
           </div>
         </div>
       </Link>

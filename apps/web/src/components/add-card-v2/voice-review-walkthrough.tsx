@@ -236,12 +236,12 @@ export function VoiceReviewWalkthrough({ cardName, current, onUpdate, onSave }: 
   const active = phase !== 'idle';
 
   return (
-    <div className="mt-3 rounded-2xl border border-zinc-200 bg-zinc-50 p-3 dark:border-zinc-800 dark:bg-zinc-950/40">
+    <div className="mt-3 rounded-2xl border border-ph-border bg-ph-fill-warm p-3 dark:border-zinc-800 dark:bg-zinc-950/40">
       {!active ? (
         <button
           type="button"
           onClick={() => void start()}
-          className="flex w-full items-center justify-center gap-2 rounded-full bg-[var(--color-ph-red)] px-4 py-2.5 text-sm font-medium text-white shadow-sm transition-transform hover:scale-[1.02] active:scale-95"
+          className="flex w-full items-center justify-center gap-2 rounded-full bg-ph-red px-4 py-2.5 text-sm font-medium text-white shadow-sm transition-transform hover:scale-[1.02] active:scale-95"
         >
           <Mic className="h-4 w-4" aria-hidden />
           Tap to edit by voice
@@ -257,7 +257,7 @@ export function VoiceReviewWalkthrough({ cardName, current, onUpdate, onSave }: 
               (phase === 'listening' || phase === 'greeting' || phase === 'speaking') &&
                 'animate-pulse',
               phase === 'listening'
-                ? 'bg-[var(--color-ph-red)] ring-4 ring-[var(--color-ph-red)]/30'
+                ? 'bg-ph-red ring-4 ring-[var(--color-ph-red)]/30'
                 : phase === 'speaking' || phase === 'greeting'
                   ? 'bg-emerald-500'
                   : 'bg-zinc-400',
@@ -271,7 +271,7 @@ export function VoiceReviewWalkthrough({ cardName, current, onUpdate, onSave }: 
               <Loader2 className="h-5 w-5 animate-spin" aria-hidden />
             )}
           </button>
-          <p className="text-center text-xs font-medium text-zinc-700 dark:text-zinc-300">
+          <p className="text-center text-xs font-medium text-ph-text dark:text-zinc-300">
             {phase === 'greeting'
               ? 'Speaking…'
               : phase === 'listening'
@@ -283,7 +283,7 @@ export function VoiceReviewWalkthrough({ cardName, current, onUpdate, onSave }: 
                     : ''}
           </p>
           {transcript.length > 0 && (
-            <p className="text-center text-[11px] italic text-zinc-500">
+            <p className="text-center text-[11px] italic text-ph-text-meta">
               &ldquo;{transcript}&rdquo;
             </p>
           )}
@@ -295,7 +295,7 @@ export function VoiceReviewWalkthrough({ cardName, current, onUpdate, onSave }: 
         </p>
       )}
       {!active && (
-        <p className="mt-2 text-center text-[10px] text-zinc-500">
+        <p className="mt-2 text-center text-[10px] text-ph-text-meta">
           Try: &ldquo;approval is 5 June&rdquo; · &ldquo;min spend is 3000&rdquo; ·
           &ldquo;save&rdquo;
         </p>

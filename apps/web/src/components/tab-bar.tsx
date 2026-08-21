@@ -66,7 +66,7 @@ export function TabBar() {
         // contentInset modes squash the safe-area env value to 0). On
         // iPhones with a home indicator, the env() adds the device's
         // native indicator height (~34px) on top of the explicit pb-3.
-        className="fixed inset-x-0 bottom-0 z-30 mx-auto max-w-md border-t border-zinc-200 bg-white/95 pb-[calc(0.75rem+env(safe-area-inset-bottom))] backdrop-blur dark:border-zinc-800 dark:bg-zinc-950/95"
+        className="fixed inset-x-0 bottom-0 z-30 mx-auto max-w-md border-t border-ph-border bg-ph-card/90 pb-[calc(0.75rem+env(safe-area-inset-bottom))] backdrop-blur"
       >
         <ul role="tablist" className="grid grid-cols-4 items-end">
           {TABS.map((tab, i) => {
@@ -86,12 +86,11 @@ export function TabBar() {
                     // 64px tab. Combined with the nav's
                     // pb-[calc(0.75rem+env(safe-area-inset-bottom))], the
                     // label sits well above the iPhone home indicator on
-                    // TestFlight. Previous pb-2.5 wasn't enough breathing
-                    // room on real-device testing.
-                    'flex h-16 flex-col items-center gap-1 pt-2 pb-3 text-xs font-medium transition-colors',
+                    // TestFlight.
+                    'flex h-16 flex-col items-center gap-1 pt-2 pb-3 text-[10px] transition-colors',
                     active
-                      ? 'text-[var(--color-ph-red)]'
-                      : 'text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100',
+                      ? 'font-semibold text-ph-brick'
+                      : 'font-medium text-ph-text-meta hover:text-ph-text',
                     // The 2nd tab leaves room for the FAB on its right edge; the 3rd on its left.
                     i === 1 && 'pr-7',
                     i === 2 && 'pl-7',
@@ -108,8 +107,10 @@ export function TabBar() {
 
       <FanActions open={fanOpen} onClose={() => setFanOpen(false)} onPick={handleFanPick} />
 
-      {/* FAB — plain button at z-50. Always on top of the fan backdrop so
-          tapping it again closes the fan. + icon rotates to × when open. */}
+      {/* FAB — the centre pill from HANDOFF § Tab bar. Brick-filled 52px,
+          the single system shadow (shadow-ph-fab). Sits proud of the
+          bar via margin-bottom offset. Rotates to × when the fan is
+          open. */}
       <button
         type="button"
         onClick={() => setFanOpen((o) => !o)}
@@ -117,12 +118,15 @@ export function TabBar() {
         aria-haspopup="menu"
         aria-expanded={fanOpen}
         className={clsx(
-          'fixed left-1/2 z-50 grid h-14 w-14 -translate-x-1/2 place-items-center rounded-full bg-[var(--color-ph-red)] text-white shadow-lg ring-4 ring-white transition-transform duration-200 ease-out hover:scale-105 focus-visible:scale-105 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[var(--color-ph-red)]/40 active:scale-95 dark:ring-zinc-950',
+          'fixed left-1/2 z-50 grid h-[52px] w-[52px] -translate-x-1/2 place-items-center rounded-full bg-ph-brick text-ph-on-brick transition-transform duration-200 ease-out hover:scale-105 focus-visible:scale-105 focus-visible:outline-none active:scale-95',
           fanOpen && 'rotate-45',
         )}
-        style={{ bottom: 'calc(2.25rem + env(safe-area-inset-bottom))' }}
+        style={{
+          bottom: 'calc(2.25rem + env(safe-area-inset-bottom))',
+          boxShadow: 'var(--shadow-ph-fab)',
+        }}
       >
-        <Plus className="h-7 w-7" aria-hidden />
+        <Plus className="h-6 w-6" aria-hidden />
       </button>
 
       <AddCardModal open={addCardOpen} onOpenChange={setAddCardOpen} />
