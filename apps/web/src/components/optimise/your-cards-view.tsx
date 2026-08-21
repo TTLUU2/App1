@@ -33,6 +33,7 @@ import { getBenefitsForCard } from '@ph/shared';
 import { selectUserCardsWithDetails, useUserCardsStore } from '@/store/user-cards';
 import { useUserBenefitsStore } from '@/store/user-benefits';
 import { CardArtFrame, LacquerChip } from '@/components/lacquer';
+import { CancelCardConfirm } from '@/components/cancel-card-confirm';
 import { EditCardModal } from '@/components/tab3/edit-card-modal';
 import { formatCurrency, formatPoints } from '@/lib/format';
 
@@ -134,7 +135,15 @@ interface CardTileProps {
 function CardTile({ uc, defaultOpen }: CardTileProps) {
   const [open, setOpen] = useState(defaultOpen);
   const [editing, setEditing] = useState(false);
+  const [confirmingCancel, setConfirmingCancel] = useState(false);
+  const updateCard = useUserCardsStore((s) => s.updateCard);
   const status = computeStatus(uc);
+
+  async function doCancel() {
+    const today = new Date().toISOString().slice(0, 10);
+    await updateCard(uc.id, { cancellationDate: today });
+    setConfirmingCancel(false);
+  }
   const summary = status.bonusEarned
     ? 'Bonus earned · nothing to do'
     : status.deadlineIso
@@ -181,7 +190,19 @@ function CardTile({ uc, defaultOpen }: CardTileProps) {
           <AttributeGrid uc={uc} />
           <SignUpBonusPanel uc={uc} status={status} />
           <BenefitsSection uc={uc} />
-          <ActionRow uc={uc} onEdit={() => setEditing(true)} />
+          <ActionRow
+            onEdit={() => setEditing(true)}
+            onCancelRequest={() => setConfirmingCancel(true)}
+          />
+          {confirmingCancel && (
+            <div className="px-3 pb-3">
+              <CancelCardConfirm
+                cardName={uc.card.name}
+                onConfirm={doCancel}
+                onClose={() => setConfirmingCancel(false)}
+              />
+            </div>
+          )}
         </div>
       )}
       {editing && <EditCardModal uc={uc} onClose={() => setEditing(false)} />}
@@ -396,12 +417,13 @@ function BenefitsSection({ uc }: { uc: UserCardWithDetails }) {
 // the centre FAB both open the log-spend surface, so a per-card pill
 // duplicated one of two more prominent affordances.
 
-function ActionRow({ uc, onEdit }: { uc: UserCardWithDetails; onEdit: () => void }) {
-  const updateCard = useUserCardsStore((s) => s.updateCard);
-  function cancel() {
-    const today = new Date().toISOString().slice(0, 10);
-    void updateCard(uc.id, { cancellationDate: today });
-  }
+function ActionRow({
+  onEdit,
+  onCancelRequest,
+}: {
+  onEdit: () => void;
+  onCancelRequest: () => void;
+}) {
   return (
     <div className="flex items-center gap-2 border-t border-ph-border p-3">
       <button
@@ -414,7 +436,7 @@ function ActionRow({ uc, onEdit }: { uc: UserCardWithDetails; onEdit: () => void
       </button>
       <button
         type="button"
-        onClick={cancel}
+        onClick={onCancelRequest}
         className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-full border border-ph-red bg-ph-card px-3 py-2 text-[13px] font-medium text-ph-red transition-colors hover:bg-ph-red/5"
       >
         <Ban className="h-3.5 w-3.5" aria-hidden />
