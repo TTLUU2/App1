@@ -618,18 +618,28 @@ function Step3Confirm({
         )}
 
         <div className="mt-5 flex flex-col items-center">
-          <JourneyProgress
-            progress={targetPoints === 0 ? 0 : totalPoints / targetPoints}
-            tripType={tripType}
-            size={200}
+          {/* Paper disc backdrop for the JourneyProgress ring — the
+              globe illustration is teal on a light sphere; against the
+              brick it lost contrast, so we frame it in a paper circle.
+              The disc size hugs the ring at 200px so the brick still
+              wraps around it. */}
+          <div
+            className="grid place-items-center rounded-full bg-ph-card"
+            style={{ width: 216, height: 216, boxShadow: '0 1px 3px rgba(46,10,8,0.12)' }}
           >
-            <p className="font-serif text-[42px] leading-none text-ph-on-brick tabular-nums">
-              {progress}%
-            </p>
-            <p className="mt-1 font-mono text-[10px] tracking-[0.08em] text-ph-on-brick-secondary tabular-nums">
-              {formatPoints(totalPoints)} / {formatPoints(targetPoints)}
-            </p>
-          </JourneyProgress>
+            <JourneyProgress
+              progress={targetPoints === 0 ? 0 : totalPoints / targetPoints}
+              tripType={tripType}
+              size={200}
+            >
+              <p className="font-serif text-[42px] leading-none text-ph-ink tabular-nums">
+                {progress}%
+              </p>
+              <p className="mt-1 font-mono text-[10px] tracking-[0.08em] text-ph-text-muted tabular-nums">
+                {formatPoints(totalPoints)} / {formatPoints(targetPoints)}
+              </p>
+            </JourneyProgress>
+          </div>
           <p className="mt-3 font-mono text-[10px] uppercase tracking-[0.14em] text-ph-on-brick-secondary tabular-nums">
             {gap === 0 ? "You're there — go book it." : `${formatPoints(gap)} to go`}
           </p>

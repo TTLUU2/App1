@@ -17,9 +17,13 @@ import { AlertTriangle, Check, ChevronDown, Plus } from 'lucide-react';
 import { formatCurrency } from '@/lib/format';
 import { CardArtFrame, LacquerChip } from '@/components/lacquer';
 
+// Card names + art URLs mirror @ph/shared/data/cards.json entries so
+// the plastic CDN images (https://plastic.pointhacks.com.au) render
+// through the same paths the Matching / Deals surfaces already use.
 const ACTIVE_CARD = {
-  name: 'Amex Platinum Charge',
-  issuerLogo: 'amex',
+  name: 'American Express Platinum Card',
+  cardArtUrl:
+    'https://plastic.pointhacks.com.au/api/files/q3s7m5x1/cjk2jnnoewycj09/amex_platinum_charge_2022_6xljjf9deh.jpg',
   approvedOn: '10 Jun',
   feeAud: 1_450,
 };
@@ -60,7 +64,7 @@ function ActiveCardBlock() {
   return (
     <div className="rounded-ph-card border border-ph-border bg-ph-card p-[15px]">
       <div className="flex items-center gap-3">
-        <CardArtFrame alt={ACTIVE_CARD.name} issuerLogo={ACTIVE_CARD.issuerLogo} size="sm" />
+        <CardArtFrame alt={ACTIVE_CARD.name} src={ACTIVE_CARD.cardArtUrl} size="sm" />
         <div className="min-w-0 flex-1">
           <p className="font-serif text-[19px] leading-tight text-ph-ink">{ACTIVE_CARD.name}</p>
           <p className="mt-0.5 font-mono text-[10px] uppercase tracking-[0.14em] text-ph-text-meta">

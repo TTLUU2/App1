@@ -36,7 +36,7 @@ const PROGRAM_CHIPS: { id: ProgramFilter; label: string; count: number }[] = [
 interface RankedCard {
   rank: number;
   name: string;
-  issuerLogo: string;
+  cardArtUrl: string;
   pointsBonus: number;
   feeAud: number;
   netValueAud: number;
@@ -44,13 +44,18 @@ interface RankedCard {
   ineligibleReason?: string;
 }
 
-// Mock catalogue — swap in the ranker's output when it wires. Issuer
-// logos must correspond to a file under /public/images/banks/.
+// Mock catalogue — swap in the ranker's output when it wires. Names +
+// cardArtUrls mirror @ph/shared/data/cards.json so real plastic-CDN
+// product photos render.
+const BEST_MOVE_CARD_ART =
+  'https://plastic.pointhacks.com.au/api/files/q3s7m5x1/cjk2jqn6xwyk709/american_express_explorer_card_art_november_2024_arjvjbew8m.jpg';
+
 const RANKED: RankedCard[] = [
   {
     rank: 2,
-    name: 'ANZ Frequent Flyer Black',
-    issuerLogo: 'anz',
+    name: 'ANZ Rewards Black',
+    cardArtUrl:
+      'https://plastic.pointhacks.com.au/api/files/q3s7m5x1/cjknttt9jue8w09/anz_rewards_black_visa_s7rwnzufb8.jpg',
     pointsBonus: 120_000,
     feeAud: 375,
     netValueAud: 2_205,
@@ -58,8 +63,9 @@ const RANKED: RankedCard[] = [
   },
   {
     rank: 3,
-    name: 'Westpac Altitude Platinum',
-    issuerLogo: 'westpac',
+    name: 'Westpac Altitude Qantas Black',
+    cardArtUrl:
+      'https://plastic.pointhacks.com.au/api/files/q3s7m5x1/cka5ybmc8pu1h08/westpac_altitude_black_2023_fknlgqsd7s.jpg',
     pointsBonus: 100_000,
     feeAud: 420,
     netValueAud: 1_780,
@@ -67,8 +73,9 @@ const RANKED: RankedCard[] = [
   },
   {
     rank: 4,
-    name: 'NAB Qantas Signature',
-    issuerLogo: 'nab',
+    name: 'NAB Qantas Rewards Signature',
+    cardArtUrl:
+      'https://plastic.pointhacks.com.au/api/files/q3s7m5x1/cjkw9fq7r1e9509/nab_qantas_signature_card_art_2028_qkoxmp0i2r.jpeg',
     pointsBonus: 130_000,
     feeAud: 395,
     netValueAud: 2_010,
@@ -141,10 +148,10 @@ function BestMoveCard() {
       </div>
 
       <div className="mt-3 flex items-start gap-3">
-        <CardArtFrame alt="Amex MR Business Explorer" issuerLogo="amex" size="md" />
+        <CardArtFrame alt="American Express Explorer" src={BEST_MOVE_CARD_ART} size="md" />
         <div className="min-w-0 flex-1">
           <p className="font-serif text-[19px] leading-tight text-ph-ink">
-            Amex MR Business Explorer
+            American Express Explorer
           </p>
           <p className="mt-2 font-serif text-[26px] leading-none text-ph-brick tabular-nums">
             {formatPoints(150_000)}
@@ -234,7 +241,7 @@ function RankedRow({ card }: { card: RankedCard }) {
       <span className="w-5 font-mono text-[13px] font-medium text-ph-text-meta tabular-nums">
         {card.rank}
       </span>
-      <CardArtFrame alt={card.name} issuerLogo={card.issuerLogo} size="xxs" />
+      <CardArtFrame alt={card.name} src={card.cardArtUrl} size="xxs" />
       <div className="min-w-0 flex-1">
         <p className="truncate font-serif text-[17px] leading-tight text-ph-ink">{card.name}</p>
         <p className="mt-0.5 text-[12px] text-ph-text-muted tabular-nums">

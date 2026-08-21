@@ -28,6 +28,14 @@
 import Image from 'next/image';
 import clsx from 'clsx';
 
+// Real product photos live on Point Hacks' plastic CDN
+// (plastic.pointhacks.com.au). Rather than pin a remotePatterns
+// allow-list per host in next.config.ts (which we'd have to keep in
+// sync as the catalogue grows), we render `src` via a plain <img> —
+// same pattern as the pre-Lacquer components/card-art.tsx. Bank-logo
+// mode still uses next/image because those live under /public/ and
+// benefit from the optimisation.
+
 export type CardArtSize = 'lg' | 'md' | 'sm' | 'xs' | 'xxs';
 
 export interface CardArtFrameProps {
@@ -60,7 +68,8 @@ const SIZE_MAP: Record<
 export function CardArtFrame({ src, issuerLogo, alt, size = 'md', className }: CardArtFrameProps) {
   const dim = SIZE_MAP[size];
 
-  // Mode 1: real product art (full-bleed).
+  // Mode 1: real product art (full-bleed). Plain <img> — see the
+  // note near the imports for why we skip next/image here.
   if (src) {
     return (
       <span
@@ -71,9 +80,11 @@ export function CardArtFrame({ src, issuerLogo, alt, size = 'md', className }: C
         )}
         style={{ width: dim.w, height: dim.h }}
       >
-        <Image
+        {/* eslint-disable-next-line @next/next/no-img-element -- external plastic CDN, not next/image-optimised */}
+        <img
           src={src}
           alt={alt}
+          loading="lazy"
           width={dim.w}
           height={dim.h}
           className="h-full w-full object-cover"
