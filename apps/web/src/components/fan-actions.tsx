@@ -64,9 +64,10 @@ export function FanActions({
         tabIndex={-1}
         onClick={onClose}
         className={clsx(
-          'fixed inset-0 z-40 bg-black/40 backdrop-blur-sm transition-opacity duration-150',
+          'fixed inset-0 z-40 backdrop-blur-sm transition-opacity duration-150',
           open ? 'pointer-events-auto opacity-100' : 'pointer-events-none opacity-0',
         )}
+        style={{ backgroundColor: 'rgba(46,10,8,0.42)' }}
       />
 
       {/* Fan buttons. Anchored to the same fixed position as the FAB; each
@@ -132,10 +133,13 @@ function FanButton({
 
   const body = (
     <>
-      <span className="grid h-12 w-12 place-items-center rounded-full bg-white text-zinc-800 shadow-md ring-1 ring-zinc-200 transition-transform hover:scale-105 active:scale-95 dark:bg-zinc-900 dark:text-zinc-100 dark:ring-zinc-700">
+      <span
+        className="grid h-12 w-12 place-items-center rounded-full bg-ph-card text-ph-ink ring-1 ring-ph-border transition-transform hover:scale-105 active:scale-95"
+        style={{ boxShadow: 'var(--shadow-ph-thumb)' }}
+      >
         <action.Icon className="h-5 w-5" aria-hidden />
       </span>
-      <span className="rounded-full bg-zinc-900/85 px-1.5 py-0.5 text-[10px] font-medium text-white shadow-sm dark:bg-zinc-100/90 dark:text-zinc-900">
+      <span className="rounded-full bg-ph-ink px-2 py-0.5 text-[10px] font-medium text-ph-on-brick">
         {action.label}
       </span>
     </>

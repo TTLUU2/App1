@@ -1,32 +1,29 @@
 'use client';
 
-// Optimise · Your cards — rich expandable-tile view. One tile per held
-// card. The active card auto-expands; secondary cards start collapsed.
-// Matches the designer reference (Amex Platinum tile) — card art thumb
-// + At-risk chip + summary line as the collapsed header, then attribute
-// grid + sign-up bonus amber panel + spend/earn meta rows + benefit
-// checkbox rows + action-button row on expand.
+// Optimise · Your cards. Anchor is the min-spend / sign-up-bonus panel
+// on the active card. Structure kept from the earlier design (voice
+// bar → active card block → amber pace panel → attributes disclosure
+// → benefits → actions → secondary + add-card), with the image-1
+// components layered in (attribute rows, sign-up bonus amber days-left
+// panel, benefit checkboxes, action row).
 //
-// Data source: the shared user-cards store (Dexie via IndexedDB) joined
-// with the bundled @ph/shared catalogue. Benefits come from
-// getBenefitsForCard(); redemptions from useUserBenefitsStore.
-//
-// v1 pace derivations live inside computeStatus() below — real spend
-// wiring lands with Log-a-spend in Phase 5.
+// Data: selectUserCardsWithDetails (same Zustand v5 slice-then-memo
+// pattern as NextCardView). Benefits from getBenefitsForCard().
 
-import { useMemo, useState } from 'react';
+import { useMemo } from 'react';
 import Link from 'next/link';
 import {
   AlertTriangle,
   Ban,
   Check,
   ChevronDown,
-  ChevronUp,
   Hotel,
+  Mic,
   Pencil,
   Plane,
   Plus,
   Receipt,
+  Send,
   Shield,
   Sparkles,
   TrendingDown,
@@ -42,8 +39,6 @@ import { formatCurrency, formatPoints } from '@/lib/format';
 // ── main ─────────────────────────────────────────────────────────────
 
 export function YourCardsView() {
-  // Same Zustand v5 slice-then-memo pattern as NextCardView — avoids
-  // the infinite-render loop selectors would otherwise trigger.
   const userCards = useUserCardsStore((s) => s.userCards);
   const loaded = useUserCardsStore((s) => s.loaded);
   const held = useMemo(() => {
@@ -54,14 +49,29 @@ export function YourCardsView() {
 
   const active = held.filter((h) => !h.cancellationDate);
   const cancelled = held.filter((h) => h.cancellationDate);
+  const primary = active[0] ?? null;
+  const secondary = active.slice(1);
 
   return (
     <section className="mt-4 space-y-3">
-      {active.length === 0 ? (
-        <EmptyState />
+      <VoiceUpdateBar />
+
+      {primary ? (
+        <>
+          <ActiveCardBlock uc={primary} />
+          <SignUpBonusPanel uc={primary} />
+          <MetaRows uc={primary} />
+          <BenefitsSection uc={primary} />
+          <ActionRow uc={primary} />
+          <DetailsDisclosure uc={primary} />
+        </>
       ) : (
-        active.map((uc, i) => <CardTile key={uc.id} uc={uc} defaultOpen={i === 0} />)
+        <EmptyState />
       )}
+
+      {secondary.map((uc) => (
+        <SecondaryCardRow key={uc.id} uc={uc} />
+      ))}
 
       <AddCardRow />
 
@@ -92,84 +102,57 @@ export function YourCardsView() {
   );
 }
 
-// ── one tile per held card ──────────────────────────────────────────
+// ── voice-first CTA ─────────────────────────────────────────────────
 
-interface CardTileProps {
-  uc: UserCardWithDetails;
-  defaultOpen: boolean;
+function VoiceUpdateBar() {
+  return (
+    <Link
+      href="/spend"
+      className="flex items-center gap-3 rounded-full border border-ph-border-strong bg-ph-card p-2 pl-4 transition-colors hover:bg-ph-fill-warm"
+    >
+      <Mic className="h-4 w-4 flex-none text-ph-brick" aria-hidden />
+      <span className="min-w-0 flex-1 truncate text-[13px] text-ph-text-muted">
+        &ldquo;Add $250 to my Amex…&rdquo;
+      </span>
+      <span className="grid h-8 w-8 flex-none place-items-center rounded-full bg-ph-red text-white">
+        <Send className="h-3.5 w-3.5" aria-hidden />
+      </span>
+    </Link>
+  );
 }
 
-function CardTile({ uc, defaultOpen }: CardTileProps) {
-  const [open, setOpen] = useState(defaultOpen);
+// ── active card block ───────────────────────────────────────────────
+
+function ActiveCardBlock({ uc }: { uc: UserCardWithDetails }) {
   const status = computeStatus(uc);
   return (
-    <article className="overflow-hidden rounded-ph-card border border-ph-border bg-ph-card">
-      <button
-        type="button"
-        onClick={() => setOpen((o) => !o)}
-        aria-expanded={open}
-        className="flex w-full items-center gap-3 p-4 text-left transition-colors hover:bg-ph-fill-warm"
-      >
+    <div className="rounded-ph-card border border-ph-border bg-ph-card p-4">
+      <div className="flex items-center gap-3">
         <CardArtFrame alt={uc.card.name} src={uc.card.cardArtUrl ?? undefined} size="sm" />
         <div className="min-w-0 flex-1">
           <p className="truncate font-serif text-[19px] leading-tight text-ph-ink">
             {uc.card.name}
           </p>
-          <div className="mt-1.5 flex flex-wrap items-center gap-2">
-            {status.atRisk ? (
-              <LacquerChip variant="negative" Icon={AlertTriangle} size="sm">
-                At risk
-              </LacquerChip>
-            ) : status.bonusEarned ? (
-              <LacquerChip variant="pine" Icon={Check} size="sm">
-                Bonus earned
-              </LacquerChip>
-            ) : null}
-            <span className="text-[13px] text-ph-text-muted">{status.summaryLine}</span>
-          </div>
+          <p className="mt-0.5 font-mono text-[10px] uppercase tracking-[0.14em] text-ph-text-meta">
+            {uc.activationDate ? `Approved ${formatDMY(uc.activationDate)}` : 'Approval pending'} ·{' '}
+            {formatCurrency(uc.card.annualFee)}/yr
+          </p>
         </div>
-        {open ? (
-          <ChevronUp className="h-4 w-4 flex-none text-ph-text-meta" aria-hidden />
-        ) : (
-          <ChevronDown className="h-4 w-4 flex-none text-ph-text-meta" aria-hidden />
-        )}
-      </button>
-
-      {open && (
-        <div className="border-t border-ph-border">
-          <AttributeGrid uc={uc} />
-          <SignUpBonusPanel uc={uc} status={status} />
-          <SpendMetaRows uc={uc} status={status} />
-          <BenefitsSection uc={uc} />
-          <ActionRow uc={uc} />
-        </div>
-      )}
-    </article>
+        {status.atRisk ? (
+          <LacquerChip variant="negative" Icon={AlertTriangle} size="sm">
+            At risk
+          </LacquerChip>
+        ) : status.bonusEarned ? (
+          <LacquerChip variant="pine" Icon={Check} size="sm">
+            Bonus earned
+          </LacquerChip>
+        ) : null}
+      </div>
+    </div>
   );
 }
 
-// ── attribute grid ──────────────────────────────────────────────────
-
-function AttributeGrid({ uc }: { uc: UserCardWithDetails }) {
-  const rows: [string, string][] = [
-    ['Approval date', uc.activationDate ? formatDMY(uc.activationDate) : '—'],
-    ['Card expiry', uc.expiryMonthYear ?? '—'],
-    ['Annual fee', formatCurrency(uc.card.annualFee)],
-    ['Fee next charged', uc.annualFeeNextDueDate ? formatDMY(uc.annualFeeNextDueDate) : '—'],
-  ];
-  return (
-    <dl className="space-y-2 px-4 pt-4">
-      {rows.map(([k, v]) => (
-        <div key={k} className="flex items-baseline justify-between gap-3 text-[14px]">
-          <dt className="text-ph-text-muted">{k}</dt>
-          <dd className="tabular-nums text-ph-ink">{v}</dd>
-        </div>
-      ))}
-    </dl>
-  );
-}
-
-// ── sign-up bonus + amber deadline panel ────────────────────────────
+// ── sign-up bonus / min-spend anchor panel ─────────────────────────
 
 interface CardStatus {
   atRisk: boolean;
@@ -178,16 +161,23 @@ interface CardStatus {
   spendToGo: number;
   spendTarget: number;
   spentToDate: number;
-  summaryLine: string;
   deadlineIso: string | null;
+  dailyRequired: number;
+  dailyActual: number;
 }
 
-function SignUpBonusPanel({ uc, status }: { uc: UserCardWithDetails; status: CardStatus }) {
+function SignUpBonusPanel({ uc }: { uc: UserCardWithDetails }) {
+  const status = computeStatus(uc);
   if (uc.card.bonusPoints == null) return null;
-  const progress =
+
+  const clamped =
     status.spendTarget > 0 ? Math.max(0, Math.min(1, status.spentToDate / status.spendTarget)) : 0;
+
   return (
-    <section aria-label="Sign-up bonus" className="mt-4 px-4">
+    <section
+      aria-label="Sign-up bonus"
+      className="rounded-ph-card border border-ph-border bg-ph-card p-4"
+    >
       <div className="flex items-baseline justify-between gap-2">
         <p className="font-mono text-[10px] uppercase tracking-[0.14em] text-ph-text-meta">
           Sign-up bonus
@@ -197,42 +187,66 @@ function SignUpBonusPanel({ uc, status }: { uc: UserCardWithDetails; status: Car
         </p>
       </div>
 
-      {status.deadlineIso && !status.bonusEarned && (
-        <div className="mt-2 rounded-ph-inner border border-ph-amber-chip bg-ph-amber-chip p-3">
-          <div className="flex items-baseline justify-between gap-3">
-            <p className="font-serif text-[21px] leading-tight text-ph-amber-text">
-              <strong className="font-semibold tabular-nums">{status.daysRemaining ?? '—'}</strong>{' '}
-              <span className="text-[13px] font-normal">days left</span>
+      {status.bonusEarned ? (
+        <p className="mt-3 flex items-center gap-2 rounded-ph-inner bg-ph-pine-chip p-3 text-[13px] text-ph-pine-text">
+          <Check className="h-4 w-4 flex-none" aria-hidden />
+          Bonus already earned — nothing more to spend.
+        </p>
+      ) : status.deadlineIso ? (
+        <>
+          <div className="mt-3 rounded-ph-inner border border-ph-amber-chip bg-ph-amber-chip p-4">
+            <div className="flex items-baseline justify-between gap-3">
+              <p className="font-serif leading-tight text-ph-amber-text">
+                <span className="text-[32px] font-normal tabular-nums">
+                  {status.daysRemaining ?? '—'}
+                </span>{' '}
+                <span className="text-[13px]">days left</span>
+              </p>
+              <p className="font-mono text-[10px] uppercase tracking-[0.14em] text-ph-amber-text">
+                by {formatDMY(status.deadlineIso)}
+              </p>
+            </div>
+            <p className="mt-1 text-[12px] text-ph-amber-text">
+              to spend{' '}
+              <strong className="font-semibold tabular-nums">
+                {formatCurrency(status.spendToGo)}
+              </strong>{' '}
+              for bonus
             </p>
-            <p className="font-mono text-[10px] uppercase tracking-[0.14em] text-ph-amber-text">
-              by {formatDMY(status.deadlineIso)}
-            </p>
-          </div>
-          <p className="mt-1 text-[12px] text-ph-amber-text">
-            to spend{' '}
-            <strong className="font-semibold tabular-nums">
-              {formatCurrency(status.spendToGo)}
-            </strong>{' '}
-            for bonus
-          </p>
-          <div className="mt-2 h-[7px] w-full overflow-hidden rounded-full bg-white/40" aria-hidden>
             <div
-              className="h-full rounded-full bg-ph-amber-figure transition-[width] duration-500 ease-out"
-              style={{ width: `${progress * 100}%` }}
-            />
+              className="mt-3 h-[10px] w-full overflow-hidden rounded-full bg-white/40"
+              aria-hidden
+            >
+              <div
+                className="h-full rounded-full bg-ph-amber-figure transition-[width] duration-500 ease-out"
+                style={{ width: `${clamped * 100}%` }}
+              />
+            </div>
           </div>
-        </div>
-      )}
+
+          {/* Pace line — the point of the screen. HANDOFF § 2. */}
+          <p className="mt-3 text-[13px] leading-snug text-ph-ink">
+            You need{' '}
+            <strong className="font-semibold">{formatCurrency(status.dailyRequired)} a day</strong>.
+            Last 30 days you averaged{' '}
+            <span className="font-semibold text-ph-amber-figure">
+              {formatCurrency(status.dailyActual)}
+            </span>
+            .
+          </p>
+        </>
+      ) : null}
     </section>
   );
 }
 
-// ── spend + earn meta rows ──────────────────────────────────────────
+// ── meta rows (unrecorded / no spend / earn) ────────────────────────
 
-function SpendMetaRows({ uc, status }: { uc: UserCardWithDetails; status: CardStatus }) {
+function MetaRows({ uc }: { uc: UserCardWithDetails }) {
+  const status = computeStatus(uc);
   const earnRate = uc.card.earnRatePer1Aud ?? 0;
   return (
-    <ul className="mt-3 space-y-2 px-4 text-[13px]">
+    <ul className="space-y-2 rounded-ph-card border border-ph-border bg-ph-card p-4 text-[13px]">
       <li className="flex items-start gap-2 text-ph-text-muted">
         <Receipt className="mt-0.5 h-4 w-4 flex-none" aria-hidden />
         <span className="italic">Unrecorded — tap to log</span>
@@ -261,7 +275,7 @@ function SpendMetaRows({ uc, status }: { uc: UserCardWithDetails; status: CardSt
   );
 }
 
-// ── benefits section ────────────────────────────────────────────────
+// ── benefits with checkboxes ────────────────────────────────────────
 
 const BENEFIT_ICON: Record<BenefitCategory, typeof Plane> = {
   travel_credit: Plane,
@@ -281,11 +295,14 @@ function BenefitsSection({ uc }: { uc: UserCardWithDetails }) {
   const anchorDate = uc.activationDate ?? new Date().toISOString().slice(0, 10);
 
   return (
-    <section aria-label="Benefits" className="mt-5 px-4">
-      <p className="font-mono text-[10px] uppercase tracking-[0.14em] text-ph-text-meta">
+    <section
+      aria-label="Benefits"
+      className="rounded-ph-card border border-ph-border bg-ph-card p-4"
+    >
+      <p className="mb-2 font-mono text-[10px] uppercase tracking-[0.14em] text-ph-text-meta">
         Benefits
       </p>
-      <ul className="mt-2 space-y-2">
+      <ul className="space-y-2.5">
         {benefits.map((b) => {
           const Icon = BENEFIT_ICON[b.category] ?? Plane;
           const existing = redemptions.find((r) => r.userCardId === uc.id && r.benefitId === b.id);
@@ -333,7 +350,7 @@ function BenefitsSection({ uc }: { uc: UserCardWithDetails }) {
   );
 }
 
-// ── action row ──────────────────────────────────────────────────────
+// ── action row (Update spend / Edit details / Cancel) ──────────────
 
 function ActionRow({ uc }: { uc: UserCardWithDetails }) {
   const updateCard = useUserCardsStore((s) => s.updateCard);
@@ -342,7 +359,7 @@ function ActionRow({ uc }: { uc: UserCardWithDetails }) {
     void updateCard(uc.id, { cancellationDate: today });
   }
   return (
-    <div className="mt-5 flex items-center gap-2 p-4 pt-0">
+    <div className="flex items-center gap-2">
       <Link
         href={`/spend?cardId=${encodeURIComponent(uc.id)}`}
         className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-full bg-ph-red px-4 py-2.5 text-sm font-medium text-white transition-opacity hover:opacity-90"
@@ -369,7 +386,60 @@ function ActionRow({ uc }: { uc: UserCardWithDetails }) {
   );
 }
 
-// ── shared row (add-a-card) + empty state ───────────────────────────
+// ── details (fees + dates behind a disclosure) ─────────────────────
+
+function DetailsDisclosure({ uc }: { uc: UserCardWithDetails }) {
+  const rows: [string, string][] = [
+    ['Approval date', uc.activationDate ? formatDMY(uc.activationDate) : '—'],
+    ['Card expiry', uc.expiryMonthYear ?? '—'],
+    ['Annual fee', formatCurrency(uc.card.annualFee)],
+    ['Fee next charged', uc.annualFeeNextDueDate ? formatDMY(uc.annualFeeNextDueDate) : '—'],
+  ];
+  return (
+    <details className="rounded-ph-card border border-ph-border bg-ph-card">
+      <summary className="flex cursor-pointer list-none items-center gap-3 p-4 text-ph-text-muted">
+        <p className="flex-1 font-mono text-[10px] uppercase tracking-[0.14em]">
+          Details · fees, dates
+        </p>
+        <ChevronDown className="h-4 w-4 transition-transform group-open:rotate-180" aria-hidden />
+      </summary>
+      <dl className="space-y-2 border-t border-ph-border p-4 text-[13px]">
+        {rows.map(([k, v]) => (
+          <div key={k} className="flex items-baseline justify-between gap-3">
+            <dt className="text-ph-text-muted">{k}</dt>
+            <dd className="tabular-nums text-ph-ink">{v}</dd>
+          </div>
+        ))}
+      </dl>
+    </details>
+  );
+}
+
+// ── secondary + add + empty ─────────────────────────────────────────
+
+function SecondaryCardRow({ uc }: { uc: UserCardWithDetails }) {
+  const status = computeStatus(uc);
+  return (
+    <Link
+      href={`/cards/${uc.card.id}`}
+      className="flex w-full items-center gap-3 rounded-ph-card border border-ph-border bg-ph-card p-4 transition-colors hover:bg-ph-fill-warm"
+    >
+      <CardArtFrame alt={uc.card.name} src={uc.card.cardArtUrl ?? undefined} size="xxs" />
+      <div className="min-w-0 flex-1">
+        <p className="truncate font-serif text-[17px] leading-tight text-ph-ink">{uc.card.name}</p>
+        <p className="mt-1 inline-flex items-center gap-1 text-[12px] text-ph-pine">
+          <Check className="h-3 w-3" aria-hidden />
+          {status.bonusEarned
+            ? 'Bonus earned · nothing to do'
+            : status.deadlineIso
+              ? 'On track'
+              : 'No sign-up bonus'}
+        </p>
+      </div>
+      <ChevronDown className="h-4 w-4 flex-none -rotate-90 text-ph-text-meta" aria-hidden />
+    </Link>
+  );
+}
 
 function AddCardRow() {
   return (
@@ -398,7 +468,7 @@ function EmptyState() {
   );
 }
 
-// ── derivations ─────────────────────────────────────────────────────
+// ── derivations + formatters ────────────────────────────────────────
 
 function computeStatus(uc: UserCardWithDetails): CardStatus {
   const target = uc.bonusTarget ?? Math.round((uc.card.bonusPoints ?? 0) * 0.05);
@@ -410,17 +480,11 @@ function computeStatus(uc: UserCardWithDetails): CardStatus {
     ? Math.max(0, Math.round((new Date(deadlineIso).getTime() - Date.now()) / 86_400_000))
     : null;
 
-  // "At risk" heuristic: not yet earned + <30 days + more than 10% still
-  // outstanding. Real spend + pace projection lands with Phase 5.
   const atRisk = !bonusEarned && (daysRemaining ?? Infinity) <= 30 && toGo > target * 0.1;
 
-  const summaryLine = bonusEarned
-    ? 'Bonus earned · nothing to do'
-    : deadlineIso
-      ? `${formatCurrency(toGo)} to go in ${daysRemaining} days`
-      : uc.card.bonusPoints != null
-        ? `${formatPoints(uc.card.bonusPoints)} pts sign-up`
-        : `${formatCurrency(uc.card.annualFee)} annual fee`;
+  const dailyRequired = daysRemaining && daysRemaining > 0 ? Math.round(toGo / daysRemaining) : 0;
+  // v1 mock — real "last 30 days" pace lands with Log-a-spend in Phase 5.
+  const dailyActual = 180;
 
   return {
     atRisk,
@@ -429,12 +493,11 @@ function computeStatus(uc: UserCardWithDetails): CardStatus {
     spendToGo: toGo,
     spendTarget: target,
     spentToDate: spent,
-    summaryLine,
     deadlineIso,
+    dailyRequired,
+    dailyActual,
   };
 }
-
-// ── format helpers ──────────────────────────────────────────────────
 
 function formatDMY(iso: string): string {
   try {
@@ -457,8 +520,6 @@ function currentPeriodEnd(period: string): string {
     const q = Math.floor(now.getMonth() / 3);
     return new Date(now.getFullYear(), q * 3 + 3, 0).toISOString().slice(0, 10);
   }
-  // annual / one_time — end of the current calendar year is a reasonable
-  // default until real anniversary tracking lands
   return `${now.getFullYear()}-12-31`;
 }
 

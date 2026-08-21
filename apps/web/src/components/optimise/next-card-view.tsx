@@ -186,6 +186,11 @@ export function NextCardView() {
 
   return (
     <section className="mt-4 space-y-4">
+      <BonusEligibleGrid
+        counts={eligiblePerProgram}
+        onPickProgram={(p) => setProgram(p as ProgramFilter)}
+      />
+
       <PreferencesBanner
         programs={preferences.preferredPrograms}
         cardType={preferences.cardType}
@@ -193,11 +198,6 @@ export function NextCardView() {
       />
 
       {bestMove && <BestMoveCard rec={bestMove} />}
-
-      <BonusEligibleGrid
-        counts={eligiblePerProgram}
-        onPickProgram={(p) => setProgram(p as ProgramFilter)}
-      />
 
       <ControlStrip
         program={program}
@@ -321,20 +321,20 @@ function BonusEligibleGrid({
     },
   ];
   return (
-    <div>
-      <h3 className="mb-2 font-mono text-[10px] uppercase tracking-[0.14em] text-ph-text-meta">
-        Bonus eligible cards
-      </h3>
-      <ul className="grid grid-cols-3 gap-2">
+    <div className="rounded-ph-card border border-ph-border bg-ph-card p-2.5">
+      <p className="mb-1.5 px-1 font-mono text-[9.5px] uppercase tracking-[0.14em] text-ph-text-meta">
+        Bonus eligible
+      </p>
+      <ul className="grid grid-cols-3 gap-1.5">
         {tiles.map((t) => (
           <li key={t.program}>
             <button
               type="button"
               onClick={() => onPickProgram(t.program)}
-              className={`flex w-full flex-col items-center gap-1 rounded-ph-card ${t.bg} px-2 py-3 transition-transform hover:-translate-y-0.5`}
+              className={`flex w-full items-center justify-center gap-1.5 rounded-full ${t.bg} px-2 py-1.5 transition-colors hover:brightness-95`}
             >
-              <t.Icon className={`h-5 w-5 ${t.ink}`} aria-hidden />
-              <span className={`font-serif text-[26px] leading-none tabular-nums ${t.ink}`}>
+              <t.Icon className={`h-3.5 w-3.5 flex-none ${t.ink}`} aria-hidden />
+              <span className={`font-serif text-[15px] leading-none tabular-nums ${t.ink}`}>
                 {t.count}
               </span>
               <span className={`text-[11px] font-medium ${t.ink}`}>{t.label}</span>
