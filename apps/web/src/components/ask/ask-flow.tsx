@@ -108,12 +108,12 @@ export function AskFlow() {
   }
 
   return (
-    <main className="flex-1 px-4 pb-6 pt-2">
+    <main className="min-h-dvh bg-ph-paper px-6 pt-6 pb-32 text-ph-text">
       <div className="flex items-center justify-between">
         <Link
           href="/"
           aria-label="Back"
-          className="grid h-9 w-9 place-items-center rounded-full text-ph-text-muted hover:bg-ph-fill-warm dark:text-zinc-300 dark:hover:bg-zinc-800"
+          className="grid h-9 w-9 place-items-center rounded-full text-ph-text-muted hover:bg-ph-fill-warm hover:text-ph-text"
         >
           <ChevronLeft className="h-5 w-5" aria-hidden />
         </Link>
@@ -133,11 +133,13 @@ export function AskFlow() {
           </button>
         )}
       </div>
-      <header className="mt-2 flex items-center gap-2">
-        <Mic className="h-5 w-5 text-ph-brick" aria-hidden />
-        <h1 className="text-lg font-semibold tracking-tight">Ask Copilot</h1>
+      <header className="mt-3 flex items-center gap-2">
+        <span className="grid h-9 w-9 flex-none place-items-center rounded-full bg-ph-fill-warm text-ph-brick">
+          <Mic className="h-4 w-4" aria-hidden />
+        </span>
+        <h1 className="font-serif text-[24px] leading-none text-ph-ink">Ask Copilot</h1>
       </header>
-      <p className="mt-1 text-xs text-ph-text-meta">
+      <p className="mt-2 text-[13px] leading-snug text-ph-text-muted">
         Read-only. I can answer about your min-spend, benefits, eligibility, fees, and
         recommendations.
       </p>

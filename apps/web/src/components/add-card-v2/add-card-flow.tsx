@@ -194,9 +194,11 @@ export function AddCardFlow({ onSaved, onClose }: AddCardFlowProps = {}) {
           </Link>
         )}
       </div>
-      <header className="mt-2 flex items-center gap-2">
-        <Sparkles className="h-5 w-5 text-ph-brick" aria-hidden />
-        <h1 className="text-lg font-semibold tracking-tight">Add a card</h1>
+      <header className="mt-3 flex items-center gap-2">
+        <span className="grid h-9 w-9 flex-none place-items-center rounded-full bg-ph-fill-warm text-ph-brick">
+          <Sparkles className="h-4 w-4" aria-hidden />
+        </span>
+        <h1 className="font-serif text-[24px] leading-none text-ph-ink">Add a card</h1>
       </header>
 
       <div className="mt-4">

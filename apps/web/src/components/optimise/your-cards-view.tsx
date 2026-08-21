@@ -1,29 +1,28 @@
 'use client';
 
-// Optimise · Your cards. Anchor is the min-spend / sign-up-bonus panel
-// on the active card. Structure kept from the earlier design (voice
-// bar → active card block → amber pace panel → attributes disclosure
-// → benefits → actions → secondary + add-card), with the image-1
-// components layered in (attribute rows, sign-up bonus amber days-left
-// panel, benefit checkboxes, action row).
+// Optimise · Your cards — big Copilot voice CTA at the top, then one
+// expandable tile per active card. Multiple cards get multiple full
+// tiles, so every card's approval/fee/bonus/benefits are equally
+// discoverable — no "primary card + tiny secondary rows" second-class
+// treatment.
 //
 // Data: selectUserCardsWithDetails (same Zustand v5 slice-then-memo
 // pattern as NextCardView). Benefits from getBenefitsForCard().
 
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import Link from 'next/link';
 import {
   AlertTriangle,
   Ban,
   Check,
   ChevronDown,
+  ChevronUp,
   Hotel,
   Mic,
   Pencil,
   Plane,
   Plus,
   Receipt,
-  Send,
   Shield,
   Sparkles,
   TrendingDown,
@@ -49,29 +48,16 @@ export function YourCardsView() {
 
   const active = held.filter((h) => !h.cancellationDate);
   const cancelled = held.filter((h) => h.cancellationDate);
-  const primary = active[0] ?? null;
-  const secondary = active.slice(1);
 
   return (
     <section className="mt-4 space-y-3">
-      <VoiceUpdateBar />
+      <CopilotVoiceCard />
 
-      {primary ? (
-        <>
-          <ActiveCardBlock uc={primary} />
-          <SignUpBonusPanel uc={primary} />
-          <MetaRows uc={primary} />
-          <BenefitsSection uc={primary} />
-          <ActionRow uc={primary} />
-          <DetailsDisclosure uc={primary} />
-        </>
-      ) : (
+      {active.length === 0 ? (
         <EmptyState />
+      ) : (
+        active.map((uc, i) => <CardTile key={uc.id} uc={uc} defaultOpen={i === 0} />)
       )}
-
-      {secondary.map((uc) => (
-        <SecondaryCardRow key={uc.id} uc={uc} />
-      ))}
 
       <AddCardRow />
 
@@ -102,57 +88,126 @@ export function YourCardsView() {
   );
 }
 
-// ── voice-first CTA ─────────────────────────────────────────────────
+// ── Copilot voice hero ──────────────────────────────────────────────
 
-function VoiceUpdateBar() {
+function CopilotVoiceCard() {
   return (
-    <Link
-      href="/spend"
-      className="flex items-center gap-3 rounded-full border border-ph-border-strong bg-ph-card p-2 pl-4 transition-colors hover:bg-ph-fill-warm"
+    <section
+      aria-label="Copilot voice input"
+      className="rounded-ph-card border border-ph-border bg-ph-card p-5"
     >
-      <Mic className="h-4 w-4 flex-none text-ph-brick" aria-hidden />
-      <span className="min-w-0 flex-1 truncate text-[13px] text-ph-text-muted">
-        &ldquo;Add $250 to my Amex…&rdquo;
-      </span>
-      <span className="grid h-8 w-8 flex-none place-items-center rounded-full bg-ph-red text-white">
-        <Send className="h-3.5 w-3.5" aria-hidden />
-      </span>
-    </Link>
+      <div className="flex items-baseline justify-between">
+        <p className="font-serif text-[19px] leading-none text-ph-ink">Copilot</p>
+        <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-ph-text-meta">Voice</p>
+      </div>
+      <div className="mt-4 flex justify-center">
+        <Link
+          href="/ask"
+          aria-label="Speak to Copilot"
+          className="grid h-[92px] w-[92px] place-items-center rounded-full bg-ph-red text-white transition-transform hover:scale-105 active:scale-95"
+          style={{ boxShadow: 'var(--shadow-ph-fab)' }}
+        >
+          <Mic className="h-9 w-9" aria-hidden />
+        </Link>
+      </div>
+      <p className="mt-4 text-center text-[13px] leading-snug text-ph-text-muted">
+        Log spend, add or cancel a card, mark a benefit, name a card, or ask anything
+      </p>
+      <div className="mt-2 flex items-center justify-center gap-1 text-[12px] text-ph-text-meta">
+        <span aria-hidden>▶</span>
+        <Link href="/ask" className="underline-offset-2 hover:underline">
+          or type
+        </Link>
+      </div>
+    </section>
   );
 }
 
-// ── active card block ───────────────────────────────────────────────
+// ── one tile per held card ──────────────────────────────────────────
 
-function ActiveCardBlock({ uc }: { uc: UserCardWithDetails }) {
+interface CardTileProps {
+  uc: UserCardWithDetails;
+  defaultOpen: boolean;
+}
+
+function CardTile({ uc, defaultOpen }: CardTileProps) {
+  const [open, setOpen] = useState(defaultOpen);
   const status = computeStatus(uc);
+  const summary = status.bonusEarned
+    ? 'Bonus earned · nothing to do'
+    : status.deadlineIso
+      ? `${formatCurrency(status.spendToGo)} to go in ${status.daysRemaining} days`
+      : uc.card.bonusPoints != null
+        ? `${formatPoints(uc.card.bonusPoints)} pts sign-up`
+        : `${formatCurrency(uc.card.annualFee)} annual fee`;
+
   return (
-    <div className="rounded-ph-card border border-ph-border bg-ph-card p-4">
-      <div className="flex items-center gap-3">
+    <article className="overflow-hidden rounded-ph-card border border-ph-border bg-ph-card">
+      <button
+        type="button"
+        onClick={() => setOpen((o) => !o)}
+        aria-expanded={open}
+        className="flex w-full items-center gap-3 p-4 text-left transition-colors hover:bg-ph-fill-warm"
+      >
         <CardArtFrame alt={uc.card.name} src={uc.card.cardArtUrl ?? undefined} size="sm" />
         <div className="min-w-0 flex-1">
           <p className="truncate font-serif text-[19px] leading-tight text-ph-ink">
             {uc.card.name}
           </p>
-          <p className="mt-0.5 font-mono text-[10px] uppercase tracking-[0.14em] text-ph-text-meta">
-            {uc.activationDate ? `Approved ${formatDMY(uc.activationDate)}` : 'Approval pending'} ·{' '}
-            {formatCurrency(uc.card.annualFee)}/yr
-          </p>
+          <div className="mt-1 flex flex-wrap items-center gap-2">
+            {status.atRisk ? (
+              <LacquerChip variant="negative" Icon={AlertTriangle} size="sm">
+                At risk
+              </LacquerChip>
+            ) : status.bonusEarned ? (
+              <LacquerChip variant="pine" Icon={Check} size="sm">
+                Bonus earned
+              </LacquerChip>
+            ) : null}
+            <span className="text-[12px] text-ph-text-muted">{summary}</span>
+          </div>
         </div>
-        {status.atRisk ? (
-          <LacquerChip variant="negative" Icon={AlertTriangle} size="sm">
-            At risk
-          </LacquerChip>
-        ) : status.bonusEarned ? (
-          <LacquerChip variant="pine" Icon={Check} size="sm">
-            Bonus earned
-          </LacquerChip>
-        ) : null}
-      </div>
-    </div>
+        {open ? (
+          <ChevronUp className="h-4 w-4 flex-none text-ph-text-meta" aria-hidden />
+        ) : (
+          <ChevronDown className="h-4 w-4 flex-none text-ph-text-meta" aria-hidden />
+        )}
+      </button>
+
+      {open && (
+        <div className="border-t border-ph-border">
+          <AttributeGrid uc={uc} />
+          <SignUpBonusPanel uc={uc} status={status} />
+          <BenefitsSection uc={uc} />
+          <ActionRow uc={uc} />
+        </div>
+      )}
+    </article>
   );
 }
 
-// ── sign-up bonus / min-spend anchor panel ─────────────────────────
+// ── attribute grid ──────────────────────────────────────────────────
+
+function AttributeGrid({ uc }: { uc: UserCardWithDetails }) {
+  const rows: [string, string][] = [
+    ['Approval date', uc.activationDate ? formatDMY(uc.activationDate) : '—'],
+    ['Card expiry', uc.expiryMonthYear ?? '—'],
+    ['Annual fee', formatCurrency(uc.card.annualFee)],
+    ['Fee next charged', uc.annualFeeNextDueDate ? formatDMY(uc.annualFeeNextDueDate) : '—'],
+  ];
+  return (
+    <dl className="space-y-1.5 p-4 pb-3 text-[13px]">
+      {rows.map(([k, v]) => (
+        <div key={k} className="flex items-baseline justify-between gap-3">
+          <dt className="text-ph-text-muted">{k}</dt>
+          <dd className="tabular-nums text-ph-ink">{v}</dd>
+        </div>
+      ))}
+    </dl>
+  );
+}
+
+// ── sign-up bonus panel (single tight block) ────────────────────────
 
 interface CardStatus {
   atRisk: boolean;
@@ -166,112 +221,99 @@ interface CardStatus {
   dailyActual: number;
 }
 
-function SignUpBonusPanel({ uc }: { uc: UserCardWithDetails }) {
-  const status = computeStatus(uc);
+function SignUpBonusPanel({ uc, status }: { uc: UserCardWithDetails; status: CardStatus }) {
   if (uc.card.bonusPoints == null) return null;
-
   const clamped =
     status.spendTarget > 0 ? Math.max(0, Math.min(1, status.spentToDate / status.spendTarget)) : 0;
 
   return (
-    <section
-      aria-label="Sign-up bonus"
-      className="rounded-ph-card border border-ph-border bg-ph-card p-4"
-    >
+    <section aria-label="Sign-up bonus" className="border-t border-ph-border px-4 py-3">
       <div className="flex items-baseline justify-between gap-2">
         <p className="font-mono text-[10px] uppercase tracking-[0.14em] text-ph-text-meta">
           Sign-up bonus
         </p>
-        <p className="font-serif text-[19px] leading-none text-ph-red tabular-nums">
+        <p className="font-serif text-[17px] leading-none text-ph-red tabular-nums">
           {formatPoints(uc.card.bonusPoints)} pts
         </p>
       </div>
 
       {status.bonusEarned ? (
-        <p className="mt-3 flex items-center gap-2 rounded-ph-inner bg-ph-pine-chip p-3 text-[13px] text-ph-pine-text">
+        <p className="mt-2 flex items-center gap-2 rounded-ph-inner bg-ph-pine-chip p-2.5 text-[13px] text-ph-pine-text">
           <Check className="h-4 w-4 flex-none" aria-hidden />
           Bonus already earned — nothing more to spend.
         </p>
       ) : status.deadlineIso ? (
-        <>
-          <div className="mt-3 rounded-ph-inner border border-ph-amber-chip bg-ph-amber-chip p-4">
-            <div className="flex items-baseline justify-between gap-3">
-              <p className="font-serif leading-tight text-ph-amber-text">
-                <span className="text-[32px] font-normal tabular-nums">
-                  {status.daysRemaining ?? '—'}
-                </span>{' '}
-                <span className="text-[13px]">days left</span>
-              </p>
-              <p className="font-mono text-[10px] uppercase tracking-[0.14em] text-ph-amber-text">
-                by {formatDMY(status.deadlineIso)}
-              </p>
-            </div>
-            <p className="mt-1 text-[12px] text-ph-amber-text">
-              to spend{' '}
-              <strong className="font-semibold tabular-nums">
-                {formatCurrency(status.spendToGo)}
-              </strong>{' '}
-              for bonus
+        <div className="mt-2 rounded-ph-inner border border-ph-amber-chip bg-ph-amber-chip p-3">
+          <div className="flex items-baseline justify-between gap-3">
+            <p className="font-serif leading-tight text-ph-amber-text">
+              <span className="text-[26px] font-normal tabular-nums">
+                {status.daysRemaining ?? '—'}
+              </span>{' '}
+              <span className="text-[13px]">days left</span>
             </p>
-            <div
-              className="mt-3 h-[10px] w-full overflow-hidden rounded-full bg-white/40"
-              aria-hidden
-            >
-              <div
-                className="h-full rounded-full bg-ph-amber-figure transition-[width] duration-500 ease-out"
-                style={{ width: `${clamped * 100}%` }}
-              />
-            </div>
+            <p className="font-mono text-[10px] uppercase tracking-[0.14em] text-ph-amber-text">
+              by {formatDMY(status.deadlineIso)}
+            </p>
           </div>
-
-          {/* Pace line — the point of the screen. HANDOFF § 2. */}
-          <p className="mt-3 text-[13px] leading-snug text-ph-ink">
+          <p className="mt-1 text-[12px] text-ph-amber-text">
+            <strong className="font-semibold tabular-nums">
+              {formatCurrency(status.spendToGo)}
+            </strong>{' '}
+            to spend for bonus
+          </p>
+          <div className="mt-2 h-[7px] w-full overflow-hidden rounded-full bg-white/40" aria-hidden>
+            <div
+              className="h-full rounded-full bg-ph-amber-figure transition-[width] duration-500 ease-out"
+              style={{ width: `${clamped * 100}%` }}
+            />
+          </div>
+          <p className="mt-2 text-[12px] leading-snug text-ph-amber-text">
             You need{' '}
-            <strong className="font-semibold">{formatCurrency(status.dailyRequired)} a day</strong>.
-            Last 30 days you averaged{' '}
-            <span className="font-semibold text-ph-amber-figure">
-              {formatCurrency(status.dailyActual)}
-            </span>
+            <strong className="font-semibold tabular-nums">
+              {formatCurrency(status.dailyRequired)} a day
+            </strong>
+            . Last 30 days averaged{' '}
+            <span className="font-semibold tabular-nums">{formatCurrency(status.dailyActual)}</span>
             .
           </p>
-        </>
+        </div>
       ) : null}
+
+      <div className="mt-2.5 grid grid-cols-3 gap-2 text-[12px]">
+        <MetaRow Icon={Receipt} tone="muted">
+          <span className="italic">Unrecorded</span>
+        </MetaRow>
+        <MetaRow Icon={TrendingDown} tone="text">
+          <strong className="font-semibold">
+            {status.spentToDate > 0 ? formatCurrency(status.spentToDate) : 'No spend'}
+          </strong>
+        </MetaRow>
+        <MetaRow Icon={Sparkles} tone="pine">
+          <strong className="font-semibold tabular-nums">
+            {formatPoints(Math.round(status.spentToDate * (uc.card.earnRatePer1Aud ?? 0)))} pts
+          </strong>
+        </MetaRow>
+      </div>
     </section>
   );
 }
 
-// ── meta rows (unrecorded / no spend / earn) ────────────────────────
-
-function MetaRows({ uc }: { uc: UserCardWithDetails }) {
-  const status = computeStatus(uc);
-  const earnRate = uc.card.earnRatePer1Aud ?? 0;
+function MetaRow({
+  Icon,
+  tone,
+  children,
+}: {
+  Icon: typeof Receipt;
+  tone: 'muted' | 'text' | 'pine';
+  children: React.ReactNode;
+}) {
+  const cls =
+    tone === 'muted' ? 'text-ph-text-muted' : tone === 'pine' ? 'text-ph-pine' : 'text-ph-text';
   return (
-    <ul className="space-y-2 rounded-ph-card border border-ph-border bg-ph-card p-4 text-[13px]">
-      <li className="flex items-start gap-2 text-ph-text-muted">
-        <Receipt className="mt-0.5 h-4 w-4 flex-none" aria-hidden />
-        <span className="italic">Unrecorded — tap to log</span>
-      </li>
-      <li className="flex items-start gap-2 text-ph-text">
-        <TrendingDown className="mt-0.5 h-4 w-4 flex-none text-ph-text-meta" aria-hidden />
-        <span>
-          <strong className="font-semibold">
-            {status.spentToDate > 0
-              ? `${formatCurrency(status.spentToDate)} spent`
-              : 'No spend yet'}
-          </strong>{' '}
-          · Log spend to see projection.
-        </span>
-      </li>
-      <li className="flex items-start gap-2 text-ph-pine-text">
-        <Sparkles className="mt-0.5 h-4 w-4 flex-none text-ph-amber-figure" aria-hidden />
-        <span>
-          <strong className="font-semibold text-ph-pine tabular-nums">
-            {formatPoints(Math.round(status.spentToDate * earnRate))} pts
-          </strong>{' '}
-          · earning {earnRate} pt per $1 spent
-        </span>
-      </li>
-    </ul>
+    <div className={`flex items-center gap-1.5 ${cls}`}>
+      <Icon className="h-3.5 w-3.5 flex-none" aria-hidden />
+      <span className="truncate">{children}</span>
+    </div>
   );
 }
 
@@ -295,14 +337,11 @@ function BenefitsSection({ uc }: { uc: UserCardWithDetails }) {
   const anchorDate = uc.activationDate ?? new Date().toISOString().slice(0, 10);
 
   return (
-    <section
-      aria-label="Benefits"
-      className="rounded-ph-card border border-ph-border bg-ph-card p-4"
-    >
+    <section aria-label="Benefits" className="border-t border-ph-border px-4 py-3">
       <p className="mb-2 font-mono text-[10px] uppercase tracking-[0.14em] text-ph-text-meta">
         Benefits
       </p>
-      <ul className="space-y-2.5">
+      <ul className="space-y-2">
         {benefits.map((b) => {
           const Icon = BENEFIT_ICON[b.category] ?? Plane;
           const existing = redemptions.find((r) => r.userCardId === uc.id && r.benefitId === b.id);
@@ -313,8 +352,8 @@ function BenefitsSection({ uc }: { uc: UserCardWithDetails }) {
           }
           return (
             <li key={b.id} className="flex items-start gap-3">
-              <span className="grid h-8 w-8 flex-none place-items-center rounded-full bg-ph-fill-warm text-ph-brick">
-                <Icon className="h-4 w-4" aria-hidden />
+              <span className="grid h-7 w-7 flex-none place-items-center rounded-full bg-ph-fill-warm text-ph-brick">
+                <Icon className="h-3.5 w-3.5" aria-hidden />
               </span>
               <button
                 type="button"
@@ -333,7 +372,7 @@ function BenefitsSection({ uc }: { uc: UserCardWithDetails }) {
                   {used ? <Check className="h-2.5 w-2.5" /> : null}
                 </span>
                 <div className="min-w-0 flex-1">
-                  <p className="text-[14px] font-semibold text-ph-ink">{b.name}</p>
+                  <p className="text-[13px] font-semibold text-ph-ink">{b.name}</p>
                   <p className="mt-0.5 text-[11px] text-ph-text-muted">
                     Period ends {shortEnd(b.period)}
                   </p>
@@ -350,7 +389,7 @@ function BenefitsSection({ uc }: { uc: UserCardWithDetails }) {
   );
 }
 
-// ── action row (Update spend / Edit details / Cancel) ──────────────
+// ── compact action row (three equal-width small pills) ─────────────
 
 function ActionRow({ uc }: { uc: UserCardWithDetails }) {
   const updateCard = useUserCardsStore((s) => s.updateCard);
@@ -359,25 +398,25 @@ function ActionRow({ uc }: { uc: UserCardWithDetails }) {
     void updateCard(uc.id, { cancellationDate: today });
   }
   return (
-    <div className="flex items-center gap-2">
+    <div className="flex items-center gap-1.5 border-t border-ph-border p-3">
       <Link
         href={`/spend?cardId=${encodeURIComponent(uc.id)}`}
-        className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-full bg-ph-red px-4 py-2.5 text-sm font-medium text-white transition-opacity hover:opacity-90"
+        className="inline-flex flex-1 items-center justify-center gap-1 rounded-full bg-ph-red px-3 py-1.5 text-[12px] font-medium text-white transition-opacity hover:opacity-90"
       >
-        <Receipt className="h-4 w-4" aria-hidden />
-        Update spend
+        <Receipt className="h-3.5 w-3.5" aria-hidden />
+        Log spend
       </Link>
       <Link
         href={`/cards/${uc.card.id}`}
-        className="inline-flex items-center justify-center gap-1.5 rounded-full border border-ph-border-strong bg-ph-card px-3.5 py-2.5 text-sm font-medium text-ph-text transition-colors hover:bg-ph-fill-warm"
+        className="inline-flex flex-1 items-center justify-center gap-1 rounded-full border border-ph-border-strong bg-ph-card px-3 py-1.5 text-[12px] font-medium text-ph-text transition-colors hover:bg-ph-fill-warm"
       >
         <Pencil className="h-3.5 w-3.5" aria-hidden />
-        Edit details
+        Edit
       </Link>
       <button
         type="button"
         onClick={cancel}
-        className="inline-flex items-center justify-center gap-1.5 rounded-full border border-ph-red bg-ph-card px-3.5 py-2.5 text-sm font-medium text-ph-red transition-colors hover:bg-ph-red/5"
+        className="inline-flex flex-1 items-center justify-center gap-1 rounded-full border border-ph-red bg-ph-card px-3 py-1.5 text-[12px] font-medium text-ph-red transition-colors hover:bg-ph-red/5"
       >
         <Ban className="h-3.5 w-3.5" aria-hidden />
         Cancel
@@ -386,60 +425,7 @@ function ActionRow({ uc }: { uc: UserCardWithDetails }) {
   );
 }
 
-// ── details (fees + dates behind a disclosure) ─────────────────────
-
-function DetailsDisclosure({ uc }: { uc: UserCardWithDetails }) {
-  const rows: [string, string][] = [
-    ['Approval date', uc.activationDate ? formatDMY(uc.activationDate) : '—'],
-    ['Card expiry', uc.expiryMonthYear ?? '—'],
-    ['Annual fee', formatCurrency(uc.card.annualFee)],
-    ['Fee next charged', uc.annualFeeNextDueDate ? formatDMY(uc.annualFeeNextDueDate) : '—'],
-  ];
-  return (
-    <details className="rounded-ph-card border border-ph-border bg-ph-card">
-      <summary className="flex cursor-pointer list-none items-center gap-3 p-4 text-ph-text-muted">
-        <p className="flex-1 font-mono text-[10px] uppercase tracking-[0.14em]">
-          Details · fees, dates
-        </p>
-        <ChevronDown className="h-4 w-4 transition-transform group-open:rotate-180" aria-hidden />
-      </summary>
-      <dl className="space-y-2 border-t border-ph-border p-4 text-[13px]">
-        {rows.map(([k, v]) => (
-          <div key={k} className="flex items-baseline justify-between gap-3">
-            <dt className="text-ph-text-muted">{k}</dt>
-            <dd className="tabular-nums text-ph-ink">{v}</dd>
-          </div>
-        ))}
-      </dl>
-    </details>
-  );
-}
-
-// ── secondary + add + empty ─────────────────────────────────────────
-
-function SecondaryCardRow({ uc }: { uc: UserCardWithDetails }) {
-  const status = computeStatus(uc);
-  return (
-    <Link
-      href={`/cards/${uc.card.id}`}
-      className="flex w-full items-center gap-3 rounded-ph-card border border-ph-border bg-ph-card p-4 transition-colors hover:bg-ph-fill-warm"
-    >
-      <CardArtFrame alt={uc.card.name} src={uc.card.cardArtUrl ?? undefined} size="xxs" />
-      <div className="min-w-0 flex-1">
-        <p className="truncate font-serif text-[17px] leading-tight text-ph-ink">{uc.card.name}</p>
-        <p className="mt-1 inline-flex items-center gap-1 text-[12px] text-ph-pine">
-          <Check className="h-3 w-3" aria-hidden />
-          {status.bonusEarned
-            ? 'Bonus earned · nothing to do'
-            : status.deadlineIso
-              ? 'On track'
-              : 'No sign-up bonus'}
-        </p>
-      </div>
-      <ChevronDown className="h-4 w-4 flex-none -rotate-90 text-ph-text-meta" aria-hidden />
-    </Link>
-  );
-}
+// ── shared row (add-a-card) + empty state ───────────────────────────
 
 function AddCardRow() {
   return (

@@ -339,7 +339,7 @@ export function VoiceInput({
 
   return (
     <div className="w-full">
-      <div className="flex items-center gap-2 rounded-2xl border border-zinc-300 bg-white px-2 py-1.5 focus-within:ring-2 focus-within:ring-[var(--color-ph-red)] dark:border-zinc-700 dark:bg-zinc-900">
+      <div className="flex items-center gap-2 rounded-2xl border border-ph-border-strong bg-ph-card px-2 py-1.5 focus-within:ring-2 focus-within:ring-ph-brick dark:border-ph-border-strong dark:bg-ph-card">
         {supported && (
           <button
             type="button"
@@ -359,10 +359,10 @@ export function VoiceInput({
             aria-pressed={status === 'listening' || status === 'greeting' || status === 'recording'}
             className={`grid h-9 w-9 flex-none place-items-center rounded-full transition-colors ${
               status === 'listening' || status === 'greeting' || status === 'recording'
-                ? 'animate-pulse bg-[var(--color-ph-red)] text-white'
+                ? 'animate-pulse bg-ph-red text-white'
                 : status === 'transcribing'
-                  ? 'bg-zinc-200 text-zinc-500 dark:bg-zinc-800'
-                  : 'text-zinc-600 hover:bg-zinc-100 dark:text-zinc-300 dark:hover:bg-zinc-800'
+                  ? 'bg-ph-fill text-ph-text-meta dark:bg-ph-fill-warm'
+                  : 'text-ph-text-muted hover:bg-ph-fill-warm dark:text-ph-text-muted dark:hover:bg-ph-fill-warm'
             }`}
           >
             {status === 'greeting' ? (
@@ -392,34 +392,36 @@ export function VoiceInput({
           onClick={trySubmit}
           disabled={!text.trim() || disabled}
           aria-label="Send"
-          className="grid h-9 w-9 flex-none place-items-center rounded-full bg-[var(--color-ph-red)] text-white disabled:cursor-not-allowed disabled:opacity-40"
+          className="grid h-9 w-9 flex-none place-items-center rounded-full bg-ph-red text-white disabled:cursor-not-allowed disabled:opacity-40"
         >
           <Send className="h-4 w-4" aria-hidden />
         </button>
       </div>
       {!supported && (
-        <p className="mt-2 flex items-start gap-1.5 text-[11px] text-zinc-500">
+        <p className="mt-2 flex items-start gap-1.5 text-[11px] text-ph-text-meta">
           <AlertCircle className="mt-0.5 h-3 w-3 flex-none" aria-hidden />
           Voice input isn’t supported in this browser. Type instead.
         </p>
       )}
       {status === 'recording' && (
-        <div className="mt-2 flex items-center gap-2 text-[11px] text-zinc-500">
+        <div className="mt-2 flex items-center gap-2 text-[11px] text-ph-text-meta">
           <LevelMeter level={micLevel} />
           <span>Listening… stop speaking and I&apos;ll wrap up.</span>
         </div>
       )}
-      {status === 'transcribing' && <p className="mt-2 text-[11px] text-zinc-500">Transcribing…</p>}
+      {status === 'transcribing' && (
+        <p className="mt-2 text-[11px] text-ph-text-meta">Transcribing…</p>
+      )}
       {errorMessage && (
         <p
           role="alert"
-          className="mt-2 flex items-start gap-1.5 rounded-lg bg-rose-50 px-2 py-1.5 text-[11px] text-rose-800 dark:bg-rose-950/40 dark:text-rose-200"
+          className="mt-2 flex items-start gap-1.5 rounded-lg bg-ph-negative-chip px-2 py-1.5 text-[11px] text-ph-ink dark:bg-rose-950/40 dark:text-rose-200"
         >
           <AlertCircle className="mt-0.5 h-3 w-3 flex-none" aria-hidden />
           {errorMessage}
         </p>
       )}
-      {hint && <div className="mt-2 text-[11px] text-zinc-500">{hint}</div>}
+      {hint && <div className="mt-2 text-[11px] text-ph-text-meta">{hint}</div>}
     </div>
   );
 }
@@ -445,7 +447,7 @@ function LevelMeter({ level }: { level: number }) {
         return (
           <span
             key={i}
-            className={`w-0.5 rounded-full transition-all duration-75 ${active ? 'bg-[var(--color-ph-red)]' : 'bg-zinc-300 dark:bg-zinc-600'}`}
+            className={`w-0.5 rounded-full transition-all duration-75 ${active ? 'bg-ph-red' : 'bg-zinc-300 dark:bg-ph-fill'}`}
             style={{ height: `${height}px` }}
           />
         );
