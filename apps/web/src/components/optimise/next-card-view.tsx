@@ -36,6 +36,7 @@ const PROGRAM_CHIPS: { id: ProgramFilter; label: string; count: number }[] = [
 interface RankedCard {
   rank: number;
   name: string;
+  issuerLogo: string;
   pointsBonus: number;
   feeAud: number;
   netValueAud: number;
@@ -43,10 +44,13 @@ interface RankedCard {
   ineligibleReason?: string;
 }
 
+// Mock catalogue — swap in the ranker's output when it wires. Issuer
+// logos must correspond to a file under /public/images/banks/.
 const RANKED: RankedCard[] = [
   {
     rank: 2,
     name: 'ANZ Frequent Flyer Black',
+    issuerLogo: 'anz',
     pointsBonus: 120_000,
     feeAud: 375,
     netValueAud: 2_205,
@@ -54,7 +58,8 @@ const RANKED: RankedCard[] = [
   },
   {
     rank: 3,
-    name: 'CBA Ultimate Awards',
+    name: 'Westpac Altitude Platinum',
+    issuerLogo: 'westpac',
     pointsBonus: 100_000,
     feeAud: 420,
     netValueAud: 1_780,
@@ -63,6 +68,7 @@ const RANKED: RankedCard[] = [
   {
     rank: 4,
     name: 'NAB Qantas Signature',
+    issuerLogo: 'nab',
     pointsBonus: 130_000,
     feeAud: 395,
     netValueAud: 2_010,
@@ -135,7 +141,7 @@ function BestMoveCard() {
       </div>
 
       <div className="mt-3 flex items-start gap-3">
-        <CardArtFrame alt="Amex MR Business Explorer" size="md" />
+        <CardArtFrame alt="Amex MR Business Explorer" issuerLogo="amex" size="md" />
         <div className="min-w-0 flex-1">
           <p className="font-serif text-[19px] leading-tight text-ph-ink">
             Amex MR Business Explorer
@@ -228,7 +234,7 @@ function RankedRow({ card }: { card: RankedCard }) {
       <span className="w-5 font-mono text-[13px] font-medium text-ph-text-meta tabular-nums">
         {card.rank}
       </span>
-      <CardArtFrame alt={card.name} size="xxs" />
+      <CardArtFrame alt={card.name} issuerLogo={card.issuerLogo} size="xxs" />
       <div className="min-w-0 flex-1">
         <p className="truncate font-serif text-[17px] leading-tight text-ph-ink">{card.name}</p>
         <p className="mt-0.5 text-[12px] text-ph-text-muted tabular-nums">

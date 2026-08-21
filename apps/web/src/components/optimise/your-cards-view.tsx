@@ -19,6 +19,7 @@ import { CardArtFrame, LacquerChip } from '@/components/lacquer';
 
 const ACTIVE_CARD = {
   name: 'Amex Platinum Charge',
+  issuerLogo: 'amex',
   approvedOn: '10 Jun',
   feeAud: 1_450,
 };
@@ -59,7 +60,7 @@ function ActiveCardBlock() {
   return (
     <div className="rounded-ph-card border border-ph-border bg-ph-card p-[15px]">
       <div className="flex items-center gap-3">
-        <CardArtFrame alt={ACTIVE_CARD.name} size="sm" />
+        <CardArtFrame alt={ACTIVE_CARD.name} issuerLogo={ACTIVE_CARD.issuerLogo} size="sm" />
         <div className="min-w-0 flex-1">
           <p className="font-serif text-[19px] leading-tight text-ph-ink">{ACTIVE_CARD.name}</p>
           <p className="mt-0.5 font-mono text-[10px] uppercase tracking-[0.14em] text-ph-text-meta">
