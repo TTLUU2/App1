@@ -34,19 +34,30 @@
 import { useMemo, useState } from 'react';
 import Link from 'next/link';
 import {
+  Building2,
   Check,
   ChevronDown,
   ChevronRight,
   Clock,
+  EyeOff,
   Grid2x2,
+  Layers,
   List,
+  Plane,
   Settings2,
+  SlidersHorizontal,
   Sparkles,
+  User,
   X as XIcon,
 } from 'lucide-react';
-import type { EligibilityStatus, Recommendation, RewardsProgram } from '@ph/shared';
+import type {
+  CardTypePreference,
+  EligibilityStatus,
+  Recommendation,
+  RewardsProgram,
+} from '@ph/shared';
 import { formatPoints, formatCurrency } from '@/lib/format';
-import { selectRecommendations, useUserCardsStore } from '@/store/user-cards';
+import { catalogue, selectRecommendations, useUserCardsStore } from '@/store/user-cards';
 import { useUserPreferencesStore } from '@/store/user-preferences';
 import { BottomSheet, CardArtFrame, EvidencePanel, LacquerChip } from '@/components/lacquer';
 
@@ -163,14 +174,53 @@ export function NextCardView() {
   const bestMove = recs[0] ?? null;
   const hasPreferences = preferences.preferredPrograms.length > 0;
 
+  // Counters for the summary + hidden tiles. Held cards come straight
+  // from useUserCardsStore.userCards (subscribed above). Eligible count
+  // is any rec with eligibility.status === 'eligible'. Hidden count is
+  // the delta between the full catalogue and what the engine returned
+  // — the engine hard-filters by cardType, so anything missing counts
+  // as \"hidden by preferences\".
+  const eligibleCount = useMemo(
+    () => recs.filter((r) => r.eligibility.status === 'eligible').length,
+    [recs],
+  );
+  const hiddenByCardType = useMemo(() => {
+    if (preferences.cardType === 'personal_and_business') return 0;
+    return catalogue.allCards().filter((c) => {
+      if (preferences.cardType === 'personal') return c.cardType === 'business';
+      if (preferences.cardType === 'business') return c.cardType === 'personal';
+      return false;
+    }).length;
+  }, [preferences.cardType]);
+
+  const eligiblePerProgram = useMemo(() => {
+    const c: Record<RewardsProgram, number> = { qantas: 0, velocity: 0, flexible: 0, bank: 0 };
+    for (const r of recs) {
+      if (r.eligibility.status !== 'eligible') continue;
+      const p = r.card.rewardsProgram as RewardsProgram;
+      if (c[p] !== undefined) c[p] += 1;
+    }
+    return c;
+  }, [recs]);
+
   return (
-    <section className="mt-4 space-y-5">
+    <section className="mt-4 space-y-4">
+      <SummaryTile activeCount={userCards.length} eligibleCount={eligibleCount} />
       <PreferencesBanner
         programs={preferences.preferredPrograms}
+        cardType={preferences.cardType}
         onEdit={() => setPrefsOpen(true)}
       />
+      {hiddenByCardType > 0 && (
+        <HiddenByPrefsTile count={hiddenByCardType} onEdit={() => setPrefsOpen(true)} />
+      )}
 
       {bestMove && <BestMoveCard rec={bestMove} />}
+
+      <BonusEligibleGrid
+        counts={eligiblePerProgram}
+        onPickProgram={(p) => setProgram(p as ProgramFilter)}
+      />
 
       <ControlStrip
         program={program}
@@ -205,48 +255,164 @@ export function NextCardView() {
 
 function PreferencesBanner({
   programs,
+  cardType,
   onEdit,
 }: {
   programs: RewardsProgram[];
+  cardType: CardTypePreference;
   onEdit: () => void;
 }) {
+  const summaryBits: string[] = [];
+  if (programs.length > 0) summaryBits.push(...programs.map((p) => PROGRAM_NAME[p] ?? p));
+  summaryBits.push(CARD_TYPE_LABEL[cardType]);
+  const summary = summaryBits.join(' · ');
   return (
-    <button
-      type="button"
-      onClick={onEdit}
-      className="flex w-full items-center gap-3 rounded-ph-card border border-ph-tint-border bg-ph-tint p-3 text-left transition-colors hover:bg-ph-fill-warm"
-    >
-      <span className="grid h-9 w-9 flex-none place-items-center rounded-full bg-ph-card text-ph-brick ring-1 ring-ph-tint-border">
-        <Settings2 className="h-4 w-4" aria-hidden />
+    <div className="flex items-center gap-3 rounded-ph-card border border-ph-border bg-ph-card p-3">
+      <span className="grid h-9 w-9 flex-none place-items-center rounded-full bg-ph-fill-warm text-ph-brick">
+        <SlidersHorizontal className="h-4 w-4" aria-hidden />
       </span>
       <div className="min-w-0 flex-1">
-        <p className="font-mono text-[10px] uppercase tracking-[0.14em] text-ph-brick">
-          Preferences
-        </p>
-        <p className="mt-0.5 text-[13px] text-ph-text">
-          {programs.length === 0 ? (
-            <>Nothing set — the ranker treats every program equally.</>
-          ) : (
-            <>
-              Preferring{' '}
-              <strong className="font-semibold">
-                {programs.map((p) => PROGRAM_NAME[p] ?? p).join(', ')}
-              </strong>
-            </>
-          )}
-        </p>
+        <p className="text-[11px] font-semibold text-ph-text-meta">Preferences:</p>
+        <p className="mt-0.5 truncate text-[14px] text-ph-ink">{summary}</p>
       </div>
-      <ChevronRight className="h-4 w-4 flex-none text-ph-text-meta" aria-hidden />
-    </button>
+      <button
+        type="button"
+        onClick={onEdit}
+        className="rounded-full bg-ph-fill px-3 py-1.5 text-xs font-medium text-ph-text-muted transition-colors hover:text-ph-text"
+      >
+        Edit
+      </button>
+    </div>
   );
 }
 
 const PROGRAM_NAME: Partial<Record<RewardsProgram, string>> = {
   qantas: 'Qantas',
   velocity: 'Velocity',
-  flexible: 'Amex MR',
+  flexible: 'Amex / Flexible',
   bank: 'Bank points',
 };
+
+const CARD_TYPE_LABEL: Record<CardTypePreference, string> = {
+  personal: 'Personal',
+  personal_and_business: 'Personal + Business',
+  business: 'Business',
+};
+
+// ── summary + hidden + bonus-eligible grid ──────────────────────────
+
+function SummaryTile({
+  activeCount,
+  eligibleCount,
+}: {
+  activeCount: number;
+  eligibleCount: number;
+}) {
+  return (
+    <Link
+      href="/eligibility-overview"
+      className="flex items-center gap-3 rounded-ph-card border border-ph-border bg-ph-card p-3 transition-colors hover:bg-ph-fill-warm"
+    >
+      <span className="grid h-9 w-9 flex-none place-items-center rounded-full bg-ph-fill-warm text-ph-brick">
+        <Layers className="h-4 w-4" aria-hidden />
+      </span>
+      <p className="min-w-0 flex-1 text-[14px] text-ph-ink">
+        <strong className="font-semibold tabular-nums">{activeCount} active</strong> ·{' '}
+        <strong className="font-semibold tabular-nums">{eligibleCount}</strong> cards eligible for
+        bonuses
+      </p>
+      <ChevronRight className="h-4 w-4 flex-none text-ph-text-meta" aria-hidden />
+    </Link>
+  );
+}
+
+function HiddenByPrefsTile({ count, onEdit }: { count: number; onEdit: () => void }) {
+  return (
+    <button
+      type="button"
+      onClick={onEdit}
+      className="flex w-full items-center gap-3 rounded-ph-card border border-ph-border bg-ph-fill-warm/60 p-3 text-left transition-colors hover:bg-ph-fill-warm"
+    >
+      <EyeOff className="h-4 w-4 flex-none text-ph-text-meta" aria-hidden />
+      <p className="min-w-0 flex-1 text-[13px] text-ph-text-muted">
+        <strong className="font-semibold text-ph-text tabular-nums">{count}</strong> business cards
+        hidden by your preferences
+      </p>
+      <span className="inline-flex items-center gap-1 text-[12px] font-medium text-ph-brick">
+        Edit
+        <ChevronRight className="h-3.5 w-3.5" aria-hidden />
+      </span>
+    </button>
+  );
+}
+
+interface BonusEligibleTile {
+  program: 'qantas' | 'velocity' | 'flexible';
+  label: string;
+  Icon: typeof Plane;
+  bg: string;
+  ink: string;
+  count: number;
+}
+
+function BonusEligibleGrid({
+  counts,
+  onPickProgram,
+}: {
+  counts: Record<RewardsProgram, number>;
+  onPickProgram: (p: 'qantas' | 'velocity' | 'flexible') => void;
+}) {
+  const tiles: BonusEligibleTile[] = [
+    {
+      program: 'qantas',
+      label: 'Qantas',
+      Icon: Plane,
+      bg: 'bg-rose-50',
+      ink: 'text-rose-700',
+      count: counts.qantas,
+    },
+    {
+      program: 'velocity',
+      label: 'Velocity',
+      Icon: Plane,
+      bg: 'bg-purple-50',
+      ink: 'text-purple-700',
+      count: counts.velocity,
+    },
+    {
+      program: 'flexible',
+      label: 'Bank',
+      Icon: Building2,
+      bg: 'bg-sky-50',
+      ink: 'text-sky-700',
+      count: counts.flexible,
+    },
+  ];
+  return (
+    <div>
+      <h3 className="mb-2 font-mono text-[10px] uppercase tracking-[0.14em] text-ph-text-meta">
+        Bonus eligible cards
+      </h3>
+      <ul className="grid grid-cols-3 gap-2">
+        {tiles.map((t) => (
+          <li key={t.program}>
+            <button
+              type="button"
+              onClick={() => onPickProgram(t.program)}
+              className={`flex w-full flex-col items-center gap-1 rounded-ph-card ${t.bg} px-2 py-3 transition-transform hover:-translate-y-0.5`}
+            >
+              <t.Icon className={`h-5 w-5 ${t.ink}`} aria-hidden />
+              <span className={`font-serif text-[26px] leading-none tabular-nums ${t.ink}`}>
+                {t.count}
+              </span>
+              <span className={`text-[11px] font-medium ${t.ink}`}>{t.label}</span>
+            </button>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
 
 function PreferencesSheet({
   open,
@@ -257,58 +423,102 @@ function PreferencesSheet({
 }) {
   const preferences = useUserPreferencesStore((s) => s.preferences);
   const setPrograms = useUserPreferencesStore((s) => s.setPrograms);
+  const setCardType = useUserPreferencesStore((s) => s.setCardType);
 
-  function toggle(program: RewardsProgram) {
+  function toggleProgram(program: RewardsProgram) {
     const cur = new Set(preferences.preferredPrograms);
     if (cur.has(program)) cur.delete(program);
     else cur.add(program);
     setPrograms(Array.from(cur));
   }
 
-  const OPTIONS: { key: RewardsProgram; label: string; blurb: string }[] = [
-    { key: 'qantas', label: 'Qantas Frequent Flyer', blurb: 'QFF + partner airline redemptions' },
-    { key: 'velocity', label: 'Velocity', blurb: 'Virgin + SkyTeam / SIA' },
+  const PROGRAM_OPTIONS: { key: RewardsProgram; label: string }[] = [
+    { key: 'qantas', label: 'Qantas' },
+    { key: 'velocity', label: 'Velocity' },
+    { key: 'flexible', label: 'Amex / Flexible' },
+    { key: 'bank', label: 'Bank points' },
+  ];
+
+  const CARD_TYPE_OPTIONS: {
+    key: CardTypePreference;
+    label: string;
+    blurb: string;
+    Icon: typeof User;
+  }[] = [
+    { key: 'personal', label: 'Personal only', blurb: "I don't have an ABN", Icon: User },
     {
-      key: 'flexible',
-      label: 'Amex Membership Rewards',
-      blurb: 'Transfer to QFF / KrisFlyer / more',
+      key: 'personal_and_business',
+      label: 'Personal + Business',
+      blurb: 'I have an ABN',
+      Icon: SlidersHorizontal,
     },
-    { key: 'bank', label: 'Bank / Loyalty points', blurb: 'Direct cash-value redemptions' },
+    { key: 'business', label: 'Business only', blurb: 'Business cards only', Icon: Building2 },
   ];
 
   return (
-    <BottomSheet open={open} onOpenChange={onOpenChange} title="Preferences">
-      <p className="mb-3 text-[13px] text-ph-text-muted">
-        Pick the programs you want the ranker to prefer. Everything else stays visible; preferred
-        ones just rise to the top.
+    <BottomSheet open={open} onOpenChange={onOpenChange} title="Your preferences">
+      <p className="mb-4 text-[13px] leading-snug text-ph-text-muted">
+        We&apos;ll boost matching cards in Next Card and hide ones you can&apos;t apply for.
+        You&apos;ll still see the absolute best move regardless of program preference.
       </p>
-      <ul className="space-y-2">
-        {OPTIONS.map((opt) => {
+
+      <h3 className="mb-2 font-mono text-[10px] uppercase tracking-[0.14em] text-ph-text-meta">
+        Preferred rewards programs
+      </h3>
+      <div className="grid grid-cols-2 gap-2">
+        {PROGRAM_OPTIONS.map((opt) => {
           const on = preferences.preferredPrograms.includes(opt.key);
+          return (
+            <button
+              key={opt.key}
+              type="button"
+              onClick={() => toggleProgram(opt.key)}
+              aria-pressed={on}
+              className={
+                on
+                  ? 'inline-flex items-center justify-center gap-1.5 rounded-full bg-ph-red px-4 py-2.5 text-sm font-medium text-white transition-opacity hover:opacity-90'
+                  : 'inline-flex items-center justify-center gap-1.5 rounded-full border border-ph-border-strong bg-ph-card px-4 py-2.5 text-sm font-medium text-ph-text-muted transition-colors hover:text-ph-text'
+              }
+            >
+              <Plane className="h-4 w-4" aria-hidden />
+              {opt.label}
+            </button>
+          );
+        })}
+      </div>
+      <p className="mt-2 text-[11px] text-ph-text-meta">
+        Leave all unselected to treat every program equally.
+      </p>
+
+      <h3 className="mt-6 mb-2 font-mono text-[10px] uppercase tracking-[0.14em] text-ph-text-meta">
+        Card type
+      </h3>
+      <ul className="space-y-2">
+        {CARD_TYPE_OPTIONS.map((opt) => {
+          const on = preferences.cardType === opt.key;
           return (
             <li key={opt.key}>
               <button
                 type="button"
-                onClick={() => toggle(opt.key)}
+                onClick={() => setCardType(opt.key)}
                 aria-pressed={on}
                 className={
                   on
-                    ? 'flex w-full items-start gap-3 rounded-ph-card border-2 border-ph-brick bg-ph-card p-3 text-left'
-                    : 'flex w-full items-start gap-3 rounded-ph-card border border-ph-border bg-ph-card p-3 text-left transition-colors hover:bg-ph-fill-warm'
+                    ? 'flex w-full items-center gap-3 rounded-ph-card border-[1.5px] border-ph-brick bg-ph-red/5 p-3 text-left'
+                    : 'flex w-full items-center gap-3 rounded-ph-card border border-ph-border bg-ph-card p-3 text-left transition-colors hover:bg-ph-fill-warm'
                 }
               >
                 <span
-                  aria-hidden
                   className={
                     on
-                      ? 'mt-0.5 grid h-5 w-5 flex-none place-items-center rounded-full bg-ph-brick text-ph-on-brick'
-                      : 'mt-0.5 grid h-5 w-5 flex-none place-items-center rounded-full border border-ph-border-strong'
+                      ? 'grid h-10 w-10 flex-none place-items-center rounded-full bg-ph-red text-white'
+                      : 'grid h-10 w-10 flex-none place-items-center rounded-full bg-ph-fill-warm text-ph-text-muted'
                   }
                 >
-                  {on ? <Check className="h-3 w-3" /> : null}
+                  <opt.Icon className="h-4 w-4" aria-hidden />
                 </span>
                 <div className="min-w-0 flex-1">
-                  <p className="font-serif text-[17px] leading-tight text-ph-ink">{opt.label}</p>
+                  <p className="text-[15px] font-semibold text-ph-ink">{opt.label}</p>
                   <p className="mt-0.5 text-[12px] text-ph-text-muted">{opt.blurb}</p>
                 </div>
               </button>
@@ -316,12 +526,14 @@ function PreferencesSheet({
           );
         })}
       </ul>
+
       <button
         type="button"
         onClick={() => onOpenChange(false)}
-        className="mt-5 w-full rounded-full bg-ph-red px-4 py-3 text-sm font-medium text-white transition-opacity hover:opacity-90"
+        className="mt-6 inline-flex w-full items-center justify-center gap-1.5 rounded-full bg-ph-red px-4 py-3 text-sm font-medium text-white transition-opacity hover:opacity-90"
       >
-        Done
+        <Check className="h-4 w-4" aria-hidden />
+        Save preferences
       </button>
     </BottomSheet>
   );
