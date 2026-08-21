@@ -39,12 +39,9 @@ import {
   ChevronDown,
   ChevronRight,
   Clock,
-  EyeOff,
   Grid2x2,
-  Layers,
   List,
   Plane,
-  Settings2,
   SlidersHorizontal,
   Sparkles,
   User,
@@ -57,7 +54,7 @@ import type {
   RewardsProgram,
 } from '@ph/shared';
 import { formatPoints, formatCurrency } from '@/lib/format';
-import { catalogue, selectRecommendations, useUserCardsStore } from '@/store/user-cards';
+import { selectRecommendations, useUserCardsStore } from '@/store/user-cards';
 import { useUserPreferencesStore } from '@/store/user-preferences';
 import { BottomSheet, CardArtFrame, EvidencePanel, LacquerChip } from '@/components/lacquer';
 
@@ -174,25 +171,9 @@ export function NextCardView() {
   const bestMove = recs[0] ?? null;
   const hasPreferences = preferences.preferredPrograms.length > 0;
 
-  // Counters for the summary + hidden tiles. Held cards come straight
-  // from useUserCardsStore.userCards (subscribed above). Eligible count
-  // is any rec with eligibility.status === 'eligible'. Hidden count is
-  // the delta between the full catalogue and what the engine returned
-  // — the engine hard-filters by cardType, so anything missing counts
-  // as \"hidden by preferences\".
-  const eligibleCount = useMemo(
-    () => recs.filter((r) => r.eligibility.status === 'eligible').length,
-    [recs],
-  );
-  const hiddenByCardType = useMemo(() => {
-    if (preferences.cardType === 'personal_and_business') return 0;
-    return catalogue.allCards().filter((c) => {
-      if (preferences.cardType === 'personal') return c.cardType === 'business';
-      if (preferences.cardType === 'business') return c.cardType === 'personal';
-      return false;
-    }).length;
-  }, [preferences.cardType]);
-
+  // Bonus-eligible counts per program feed the BonusEligibleGrid below
+  // the best-move card. Only counts recs where eligibility.status is
+  // exactly 'eligible'.
   const eligiblePerProgram = useMemo(() => {
     const c: Record<RewardsProgram, number> = { qantas: 0, velocity: 0, flexible: 0, bank: 0 };
     for (const r of recs) {
@@ -205,15 +186,11 @@ export function NextCardView() {
 
   return (
     <section className="mt-4 space-y-4">
-      <SummaryTile activeCount={userCards.length} eligibleCount={eligibleCount} />
       <PreferencesBanner
         programs={preferences.preferredPrograms}
         cardType={preferences.cardType}
         onEdit={() => setPrefsOpen(true)}
       />
-      {hiddenByCardType > 0 && (
-        <HiddenByPrefsTile count={hiddenByCardType} onEdit={() => setPrefsOpen(true)} />
-      )}
 
       {bestMove && <BestMoveCard rec={bestMove} />}
 
@@ -299,52 +276,7 @@ const CARD_TYPE_LABEL: Record<CardTypePreference, string> = {
   business: 'Business',
 };
 
-// ── summary + hidden + bonus-eligible grid ──────────────────────────
-
-function SummaryTile({
-  activeCount,
-  eligibleCount,
-}: {
-  activeCount: number;
-  eligibleCount: number;
-}) {
-  return (
-    <Link
-      href="/eligibility-overview"
-      className="flex items-center gap-3 rounded-ph-card border border-ph-border bg-ph-card p-3 transition-colors hover:bg-ph-fill-warm"
-    >
-      <span className="grid h-9 w-9 flex-none place-items-center rounded-full bg-ph-fill-warm text-ph-brick">
-        <Layers className="h-4 w-4" aria-hidden />
-      </span>
-      <p className="min-w-0 flex-1 text-[14px] text-ph-ink">
-        <strong className="font-semibold tabular-nums">{activeCount} active</strong> ·{' '}
-        <strong className="font-semibold tabular-nums">{eligibleCount}</strong> cards eligible for
-        bonuses
-      </p>
-      <ChevronRight className="h-4 w-4 flex-none text-ph-text-meta" aria-hidden />
-    </Link>
-  );
-}
-
-function HiddenByPrefsTile({ count, onEdit }: { count: number; onEdit: () => void }) {
-  return (
-    <button
-      type="button"
-      onClick={onEdit}
-      className="flex w-full items-center gap-3 rounded-ph-card border border-ph-border bg-ph-fill-warm/60 p-3 text-left transition-colors hover:bg-ph-fill-warm"
-    >
-      <EyeOff className="h-4 w-4 flex-none text-ph-text-meta" aria-hidden />
-      <p className="min-w-0 flex-1 text-[13px] text-ph-text-muted">
-        <strong className="font-semibold text-ph-text tabular-nums">{count}</strong> business cards
-        hidden by your preferences
-      </p>
-      <span className="inline-flex items-center gap-1 text-[12px] font-medium text-ph-brick">
-        Edit
-        <ChevronRight className="h-3.5 w-3.5" aria-hidden />
-      </span>
-    </button>
-  );
-}
+// ── bonus-eligible grid ─────────────────────────────────────────────
 
 interface BonusEligibleTile {
   program: 'qantas' | 'velocity' | 'flexible';
