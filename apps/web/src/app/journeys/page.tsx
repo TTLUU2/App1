@@ -3,16 +3,15 @@
 // /journeys — Journeys tab shell with two sub-tabs (Phase 4d + 4e,
 // Decision #33, HANDOFF § Second level).
 //
-//   ?tab=destinations (default) → DestinationsView  — brick hero + tiles
-//   ?tab=balances               → BalancesView      — brick hero + rows
+//   ?tab=destinations (default) → DestinationsView
+//   ?tab=balances               → BalancesView
 //
-// Replaces the Phase 3 stub that just mounted the pre-Lacquer
-// JourneysView from /components/home/journeys-view.tsx. The stub is
-// deleted in this commit; the wizard at /journeys/track still uses
-// this page as its back-navigation target.
+// See /optimisation/page.tsx for the state-model rationale — same
+// local-useState + history.replaceState pattern here for the same
+// Next 16 useSearchParams re-render caveat.
 
-import { Suspense } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { Suspense, useEffect, useState } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { SegmentedControl } from '@/components/lacquer';
 import { DestinationsView } from '@/components/journeys/destinations-view';
 import { BalancesView } from '@/components/journeys/balances-view';
@@ -34,14 +33,18 @@ export default function JourneysPage() {
 
 function JourneysShell() {
   const params = useSearchParams();
-  const router = useRouter();
-  const tab: JourneysTab = params.get('tab') === 'balances' ? 'balances' : 'destinations';
+  const initialTab: JourneysTab = params.get('tab') === 'balances' ? 'balances' : 'destinations';
+  const [tab, setTab] = useState<JourneysTab>(initialTab);
 
-  function switchTo(next: JourneysTab) {
-    router.replace(next === 'destinations' ? '/journeys' : `/journeys?tab=${next}`, {
-      scroll: false,
-    });
-  }
+  useEffect(() => {
+    const url = tab === 'destinations' ? '/journeys' : `/journeys?tab=${tab}`;
+    if (
+      typeof window !== 'undefined' &&
+      window.location.pathname + window.location.search !== url
+    ) {
+      window.history.replaceState(null, '', url);
+    }
+  }, [tab]);
 
   return (
     <main className="min-h-dvh bg-ph-paper text-ph-text">
@@ -54,7 +57,7 @@ function JourneysShell() {
           <SegmentedControl<JourneysTab>
             items={TAB_ITEMS}
             activeId={tab}
-            onChange={switchTo}
+            onChange={setTab}
             ariaLabel="Journeys view"
           />
         </div>

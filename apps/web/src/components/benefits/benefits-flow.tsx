@@ -132,22 +132,22 @@ export function BenefitsFlow() {
         <Link
           href="/"
           aria-label="Back"
-          className="grid h-9 w-9 place-items-center rounded-full text-zinc-600 hover:bg-zinc-100 dark:text-zinc-300 dark:hover:bg-zinc-800"
+          className="grid h-9 w-9 place-items-center rounded-full text-ph-text-muted hover:bg-ph-fill-warm dark:text-zinc-300 dark:hover:bg-zinc-800"
         >
           <ChevronLeft className="h-5 w-5" aria-hidden />
         </Link>
       </div>
       <header className="mt-2 flex items-center gap-2">
-        <Sparkles className="h-5 w-5 text-[var(--color-ph-red)]" aria-hidden />
+        <Sparkles className="h-5 w-5 text-ph-brick" aria-hidden />
         <h1 className="text-lg font-semibold tracking-tight">Mark benefit used</h1>
       </header>
-      <p className="mt-1 text-xs text-zinc-500">
+      <p className="mt-1 text-xs text-ph-text-meta">
         Speak or type something like &ldquo;Used my Amex hotel credit&rdquo; or &ldquo;Burned my
         $400 travel credit on the Plat&rdquo;.
       </p>
 
       {loaded && benefitOptions.length === 0 && (
-        <div className="mt-6 rounded-xl border border-dashed border-zinc-300 bg-white p-4 text-center text-sm dark:border-zinc-700 dark:bg-zinc-900">
+        <div className="mt-6 rounded-xl border border-dashed border-ph-border-strong bg-ph-card p-4 text-center text-sm dark:border-zinc-700 dark:bg-zinc-900">
           Your held cards have no tracked benefits in the catalogue.
         </div>
       )}
@@ -165,7 +165,7 @@ export function BenefitsFlow() {
         </div>
       )}
 
-      {phase === 'submitting' && <p className="mt-4 text-xs text-zinc-500">Parsing…</p>}
+      {phase === 'submitting' && <p className="mt-4 text-xs text-ph-text-meta">Parsing…</p>}
 
       {phase === 'confirm' && parseResult?.userCardId && parseResult.benefitId && (
         <div className="mt-4 rounded-2xl border border-emerald-200 bg-emerald-50 p-4 text-sm dark:border-emerald-900 dark:bg-emerald-950/40">
@@ -179,14 +179,14 @@ export function BenefitsFlow() {
             <button
               type="button"
               onClick={() => apply(parseResult.userCardId!, parseResult.benefitId!)}
-              className="flex-1 rounded-full bg-[var(--color-ph-red)] px-3 py-2 text-sm font-medium text-white"
+              className="flex-1 rounded-full bg-ph-red px-3 py-2 text-sm font-medium text-white"
             >
               Confirm
             </button>
             <button
               type="button"
               onClick={() => setPhase('disambiguate')}
-              className="rounded-full border border-zinc-300 px-3 py-2 text-sm font-medium text-zinc-700 dark:border-zinc-700 dark:text-zinc-300"
+              className="rounded-full border border-ph-border-strong px-3 py-2 text-sm font-medium text-ph-text dark:border-zinc-700 dark:text-zinc-300"
             >
               Pick another
             </button>
@@ -210,10 +210,10 @@ export function BenefitsFlow() {
                 <button
                   type="button"
                   onClick={() => apply(b.userCardId, b.benefitId)}
-                  className="flex w-full items-center justify-between rounded-lg bg-white px-3 py-2 text-xs hover:bg-amber-100 dark:bg-zinc-900 dark:hover:bg-zinc-800"
+                  className="flex w-full items-center justify-between rounded-lg bg-ph-card px-3 py-2 text-xs hover:bg-amber-100 dark:bg-zinc-900 dark:hover:bg-zinc-800"
                 >
                   <span className="font-medium">{b.benefitName}</span>
-                  <span className="text-zinc-500">{b.cardName}</span>
+                  <span className="text-ph-text-meta">{b.cardName}</span>
                 </button>
               </li>
             ))}

@@ -6,14 +6,16 @@
 //   ?tab=cards (default) → YourCardsView  — min-spend pace anchor
 //   ?tab=next            → NextCardView   — best-move + ranked list
 //
-// Route replaced wholesale from the pre-Lacquer PRD-§9 layout. Old
-// components under apps/web/src/components/tab3/* remain in the tree
-// as dead code for now — they'll be swept in Phase 6 once every
-// Optimise-adjacent feature (Cancel confirm, Three-month CTA, etc.)
-// has a Lacquer replacement.
+// State model: local useState is the source of truth for the toggle,
+// seeded from ?tab once on mount. The URL still updates on switch
+// (deep-link-shareable), but the render doesn't depend on
+// useSearchParams re-firing — Next 16 App Router with
+// router.replace({scroll:false}) is unreliable at re-emitting
+// useSearchParams when only the query string changes, which is
+// exactly the shape our toggle produces.
 
-import { Suspense } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { Suspense, useEffect, useState } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { SegmentedControl } from '@/components/lacquer';
 import { YourCardsView } from '@/components/optimise/your-cards-view';
 import { NextCardView } from '@/components/optimise/next-card-view';
@@ -35,16 +37,22 @@ export default function OptimisationPage() {
 
 function OptimisationShell() {
   const params = useSearchParams();
-  const router = useRouter();
-  const tab: OptimiseTab = params.get('tab') === 'next' ? 'next' : 'cards';
+  const initialTab: OptimiseTab = params.get('tab') === 'next' ? 'next' : 'cards';
+  const [tab, setTab] = useState<OptimiseTab>(initialTab);
 
-  function switchTo(next: OptimiseTab) {
-    // scroll: false so the segmented thumb slide doesn't get overrun
-    // by the browser's default "scroll to top on route change".
-    router.replace(next === 'cards' ? '/optimisation' : `/optimisation?tab=${next}`, {
-      scroll: false,
-    });
-  }
+  // Keep the URL in sync with local state so deep-links + browser
+  // refresh preserve the sub-tab. history.replaceState avoids a
+  // router-level re-render (which is exactly what tripped up the
+  // previous router.replace + useSearchParams pairing).
+  useEffect(() => {
+    const url = tab === 'cards' ? '/optimisation' : `/optimisation?tab=${tab}`;
+    if (
+      typeof window !== 'undefined' &&
+      window.location.pathname + window.location.search !== url
+    ) {
+      window.history.replaceState(null, '', url);
+    }
+  }, [tab]);
 
   return (
     <main className="min-h-dvh bg-ph-paper text-ph-text">
@@ -57,7 +65,7 @@ function OptimisationShell() {
           <SegmentedControl<OptimiseTab>
             items={TAB_ITEMS}
             activeId={tab}
-            onChange={switchTo}
+            onChange={setTab}
             ariaLabel="Optimise view"
           />
         </div>

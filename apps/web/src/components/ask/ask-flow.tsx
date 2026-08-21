@@ -113,7 +113,7 @@ export function AskFlow() {
         <Link
           href="/"
           aria-label="Back"
-          className="grid h-9 w-9 place-items-center rounded-full text-zinc-600 hover:bg-zinc-100 dark:text-zinc-300 dark:hover:bg-zinc-800"
+          className="grid h-9 w-9 place-items-center rounded-full text-ph-text-muted hover:bg-ph-fill-warm dark:text-zinc-300 dark:hover:bg-zinc-800"
         >
           <ChevronLeft className="h-5 w-5" aria-hidden />
         </Link>
@@ -123,7 +123,7 @@ export function AskFlow() {
             onClick={() => setSpeakOutput((v) => !v)}
             aria-pressed={speakOutput}
             aria-label={speakOutput ? 'Mute spoken answers' : 'Speak answers'}
-            className="grid h-9 w-9 place-items-center rounded-full text-zinc-600 hover:bg-zinc-100 dark:text-zinc-300 dark:hover:bg-zinc-800"
+            className="grid h-9 w-9 place-items-center rounded-full text-ph-text-muted hover:bg-ph-fill-warm dark:text-zinc-300 dark:hover:bg-zinc-800"
           >
             {speakOutput ? (
               <Volume2 className="h-4 w-4" aria-hidden />
@@ -134,10 +134,10 @@ export function AskFlow() {
         )}
       </div>
       <header className="mt-2 flex items-center gap-2">
-        <Mic className="h-5 w-5 text-[var(--color-ph-red)]" aria-hidden />
+        <Mic className="h-5 w-5 text-ph-brick" aria-hidden />
         <h1 className="text-lg font-semibold tracking-tight">Ask Copilot</h1>
       </header>
-      <p className="mt-1 text-xs text-zinc-500">
+      <p className="mt-1 text-xs text-ph-text-meta">
         Read-only. I can answer about your min-spend, benefits, eligibility, fees, and
         recommendations.
       </p>
@@ -145,7 +145,7 @@ export function AskFlow() {
       <ul className="mt-4 space-y-3">
         {turns.map((t, i) => (
           <li key={i} className="space-y-1.5">
-            <div className="ml-auto max-w-[85%] rounded-2xl rounded-tr-sm bg-zinc-200 px-3 py-2 text-sm dark:bg-zinc-800">
+            <div className="ml-auto max-w-[85%] rounded-2xl rounded-tr-sm bg-ph-fill px-3 py-2 text-sm dark:bg-zinc-800">
               {t.question}
             </div>
             <div
@@ -161,7 +161,7 @@ export function AskFlow() {
         ))}
       </ul>
 
-      {pending && <p className="mt-3 text-xs text-zinc-500">Thinking…</p>}
+      {pending && <p className="mt-3 text-xs text-ph-text-meta">Thinking…</p>}
 
       {error && (
         <div

@@ -136,24 +136,24 @@ export function SpendFlow() {
         <Link
           href="/"
           aria-label="Back"
-          className="grid h-9 w-9 place-items-center rounded-full text-zinc-600 hover:bg-zinc-100 dark:text-zinc-300 dark:hover:bg-zinc-800"
+          className="grid h-9 w-9 place-items-center rounded-full text-ph-text-muted hover:bg-ph-fill-warm dark:text-zinc-300 dark:hover:bg-zinc-800"
         >
           <ChevronLeft className="h-5 w-5" aria-hidden />
         </Link>
       </div>
       <header className="mt-2 flex items-center gap-2">
-        <Receipt className="h-5 w-5 text-[var(--color-ph-red)]" aria-hidden />
+        <Receipt className="h-5 w-5 text-ph-brick" aria-hidden />
         <h1 className="text-lg font-semibold tracking-tight">Update spend</h1>
       </header>
-      <p className="mt-1 text-xs text-zinc-500">
+      <p className="mt-1 text-xs text-ph-text-meta">
         Speak or type something like &ldquo;Add 250 to the Amex Plat&rdquo; or &ldquo;Spent
         four-thirty on my Velocity card today&rdquo;.
       </p>
 
-      {!loaded && <p className="mt-6 text-sm text-zinc-500">Loading your cards…</p>}
+      {!loaded && <p className="mt-6 text-sm text-ph-text-meta">Loading your cards…</p>}
 
       {loaded && heldCards.length === 0 && (
-        <div className="mt-6 rounded-xl border border-dashed border-zinc-300 bg-white p-4 text-center text-sm dark:border-zinc-700 dark:bg-zinc-900">
+        <div className="mt-6 rounded-xl border border-dashed border-ph-border-strong bg-ph-card p-4 text-center text-sm dark:border-zinc-700 dark:bg-zinc-900">
           You don&apos;t have any active cards yet. Add one via the FAB.
         </div>
       )}
@@ -171,7 +171,7 @@ export function SpendFlow() {
             />
           </div>
 
-          {phase === 'submitting' && <p className="mt-4 text-xs text-zinc-500">Parsing…</p>}
+          {phase === 'submitting' && <p className="mt-4 text-xs text-ph-text-meta">Parsing…</p>}
 
           {phase === 'confirm' &&
             parseResult &&
@@ -245,7 +245,7 @@ export function SpendFlow() {
           )}
 
           {preselectedId && (
-            <p className="mt-6 text-[11px] text-zinc-500">
+            <p className="mt-6 text-[11px] text-ph-text-meta">
               Preselected from Tab 3 — your phrase will default to this card if unclear.
             </p>
           )}
@@ -282,10 +282,10 @@ function DisambiguateCard({
             <button
               type="button"
               onClick={() => onPick(uc.id)}
-              className="flex w-full items-center justify-between rounded-lg bg-white px-3 py-2 text-xs hover:bg-amber-100 dark:bg-zinc-900 dark:hover:bg-zinc-800"
+              className="flex w-full items-center justify-between rounded-lg bg-ph-card px-3 py-2 text-xs hover:bg-amber-100 dark:bg-zinc-900 dark:hover:bg-zinc-800"
             >
               <span className="font-medium">{uc.card.name}</span>
-              {uc.nickname && <span className="text-zinc-500">aka {uc.nickname}</span>}
+              {uc.nickname && <span className="text-ph-text-meta">aka {uc.nickname}</span>}
             </button>
           </li>
         ))}
@@ -293,7 +293,7 @@ function DisambiguateCard({
       <button
         type="button"
         onClick={onCancel}
-        className="mt-3 w-full rounded-full border border-zinc-300 px-3 py-2 text-xs font-medium text-zinc-700 dark:border-zinc-700 dark:text-zinc-300"
+        className="mt-3 w-full rounded-full border border-ph-border-strong px-3 py-2 text-xs font-medium text-ph-text dark:border-zinc-700 dark:text-zinc-300"
       >
         Cancel
       </button>

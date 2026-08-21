@@ -176,7 +176,7 @@ export function SpendGovCheck({
               type="button"
               onClick={() => void apply(0)}
               disabled={submitting}
-              className="flex-1 rounded-full bg-[var(--color-ph-red)] px-3 py-2 text-sm font-medium text-white disabled:opacity-50"
+              className="flex-1 rounded-full bg-ph-red px-3 py-2 text-sm font-medium text-white disabled:opacity-50"
             >
               No, all counts
             </button>
@@ -205,7 +205,7 @@ export function SpendGovCheck({
               type="button"
               onClick={() => void apply(govAmount)}
               disabled={submitting}
-              className="flex-1 inline-flex items-center justify-center gap-1.5 rounded-full bg-[var(--color-ph-red)] px-3 py-2 text-sm font-medium text-white disabled:opacity-50"
+              className="flex-1 inline-flex items-center justify-center gap-1.5 rounded-full bg-ph-red px-3 py-2 text-sm font-medium text-white disabled:opacity-50"
             >
               <CheckCircle2 className="h-4 w-4" aria-hidden />
               {submitting ? 'Saving…' : `Apply ${formatCurrency(adjusted)}`}
