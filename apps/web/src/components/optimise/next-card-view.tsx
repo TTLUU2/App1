@@ -53,32 +53,59 @@ import { BottomSheet, CardArtFrame, EvidencePanel, LacquerChip } from '@/compone
 // ── constants ────────────────────────────────────────────────────────
 
 type ProgramFilter = 'all' | RewardsProgram;
-type SortKey = 'best' | 'points' | 'fee' | 'value';
+type SortKey = 'best' | 'points' | 'fee';
 type ViewMode = 'list' | 'carousel';
 
-const PROGRAM_META: { key: ProgramFilter; label: string; program: RewardsProgram | null }[] = [
-  { key: 'all', label: 'All', program: null },
-  { key: 'qantas', label: 'Qantas', program: 'qantas' },
-  { key: 'velocity', label: 'Velocity', program: 'velocity' },
-  { key: 'flexible', label: 'Bank', program: 'flexible' },
+// Per-program active-chip colour. Matches the pre-Lacquer program-pill
+// palette (rose for Qantas, purple for Velocity, sky for Bank) — the
+// spec doesn't ban brand-adjacent colour here because these pills stand
+// FOR the programs, they don't act as UI status. \"All\" stays on the
+// ink token so the neutral option reads as chrome.
+const PROGRAM_META: {
+  key: ProgramFilter;
+  label: string;
+  program: RewardsProgram | null;
+  activeBg: string;
+  activeText: string;
+}[] = [
+  {
+    key: 'all',
+    label: 'All',
+    program: null,
+    activeBg: 'bg-ph-ink',
+    activeText: 'text-ph-on-brick',
+  },
+  {
+    key: 'qantas',
+    label: 'Qantas',
+    program: 'qantas',
+    activeBg: 'bg-rose-600',
+    activeText: 'text-white',
+  },
+  {
+    key: 'velocity',
+    label: 'Velocity',
+    program: 'velocity',
+    activeBg: 'bg-purple-600',
+    activeText: 'text-white',
+  },
+  {
+    key: 'flexible',
+    label: 'Bank',
+    program: 'flexible',
+    activeBg: 'bg-sky-600',
+    activeText: 'text-white',
+  },
 ];
 
+// Value sort dropped — it depended on the net-value estimate the ranked
+// rows no longer surface, so the option would sort by a number the user
+// couldn't see. Best / Points / Fee cover the useful axes.
 const SORT_LABELS: Record<SortKey, string> = {
   best: 'Best',
   points: 'Points',
   fee: 'Fee',
-  value: 'Value',
 };
-
-// Mid-range AU CPP for the value estimate — 1.4c/pt is a reasonable
-// blended anchor (Qantas J redemptions come in higher, plain retail
-// redemptions lower). Not the source of truth; the point of the value
-// column is direction, not precision.
-const CPP = 0.014;
-
-function netValueAud(bonusPoints: number | null, annualFee: number | null): number {
-  return Math.round((bonusPoints ?? 0) * CPP - (annualFee ?? 0));
-}
 
 // ── main ─────────────────────────────────────────────────────────────
 
@@ -110,12 +137,6 @@ export function NextCardView() {
     if (sortBy === 'points')
       copy.sort((a, b) => (b.card.bonusPoints ?? 0) - (a.card.bonusPoints ?? 0));
     else if (sortBy === 'fee') copy.sort((a, b) => a.card.annualFee - b.card.annualFee);
-    else if (sortBy === 'value')
-      copy.sort(
-        (a, b) =>
-          netValueAud(b.card.bonusPoints, b.card.annualFee) -
-          netValueAud(a.card.bonusPoints, a.card.annualFee),
-      );
     return copy;
   }, [recs, program, sortBy]);
 
@@ -310,7 +331,6 @@ function PreferencesSheet({
 
 function BestMoveCard({ rec }: { rec: Recommendation }) {
   const card = rec.card;
-  const net = netValueAud(card.bonusPoints, card.annualFee);
   const eligibleTone: 'pine' | 'amber' | 'negative' =
     rec.eligibility.status === 'eligible'
       ? 'pine'
@@ -360,15 +380,6 @@ function BestMoveCard({ rec }: { rec: Recommendation }) {
                 <>
                   Earns <strong>{card.earnRatePer1Aud ?? '?'} pts / $1</strong>. Bonus{' '}
                   {formatPoints(card.bonusPoints ?? 0)} on sign-up.
-                </>
-              ),
-            },
-            {
-              tone: 'amber-brown',
-              children: (
-                <>
-                  Net <strong>{formatCurrency(Math.max(0, net))}</strong> after the{' '}
-                  {formatCurrency(card.annualFee)} fee (~{CPP * 100}c/pt).
                 </>
               ),
             },
@@ -429,7 +440,7 @@ function ControlStrip({
               onClick={() => onProgram(chip.key)}
               className={
                 isActive
-                  ? 'inline-flex flex-none items-center gap-1.5 rounded-full bg-ph-ink px-3 py-1.5 text-xs font-medium text-ph-on-brick'
+                  ? `inline-flex flex-none items-center gap-1.5 rounded-full ${chip.activeBg} px-3 py-1.5 text-xs font-medium ${chip.activeText}`
                   : 'inline-flex flex-none items-center gap-1.5 rounded-full bg-ph-fill px-3 py-1.5 text-xs font-medium text-ph-text-muted hover:text-ph-text'
               }
             >
@@ -437,7 +448,7 @@ function ControlStrip({
               <span
                 className={
                   isActive
-                    ? 'text-ph-on-brick-secondary tabular-nums'
+                    ? `${chip.activeText} opacity-80 tabular-nums`
                     : 'text-ph-text-meta tabular-nums'
                 }
               >
@@ -537,9 +548,11 @@ function RankedRow({
 }) {
   const card = r.card;
   const status = r.eligibility.status as EligibilityStatus;
-  const net = netValueAud(card.bonusPoints, card.annualFee);
   return (
-    <div className="rounded-ph-card border border-ph-border bg-ph-card p-[15px]">
+    <Link
+      href={`/cards/${card.id}`}
+      className="block rounded-ph-card border border-ph-border bg-ph-card p-[15px] transition-colors hover:bg-ph-fill-warm"
+    >
       <div className="flex items-center gap-3">
         <span className="w-5 font-mono text-[13px] font-medium text-ph-text-meta tabular-nums">
           {rank}
@@ -554,9 +567,9 @@ function RankedRow({
         </div>
         <div className="flex flex-none flex-col items-end gap-1">
           {status === 'eligible' ? (
-            <p className="font-serif text-[19px] leading-none text-ph-pine tabular-nums">
-              +{formatCurrency(Math.max(0, net))}
-            </p>
+            <LacquerChip variant="pine" Icon={Check} size="sm">
+              Eligible
+            </LacquerChip>
           ) : status === 'grey_area' ? (
             <LacquerChip variant="amber" Icon={Clock} size="sm">
               Grey area
@@ -574,7 +587,7 @@ function RankedRow({
           Top 3 pick · matches your preferences
         </p>
       )}
-    </div>
+    </Link>
   );
 }
 
@@ -609,9 +622,11 @@ function CarouselCard({
 }) {
   const card = r.card;
   const status = r.eligibility.status as EligibilityStatus;
-  const net = netValueAud(card.bonusPoints, card.annualFee);
   return (
-    <article className="flex h-full flex-col overflow-hidden rounded-ph-card border border-ph-border bg-ph-card">
+    <Link
+      href={`/cards/${card.id}`}
+      className="flex h-full flex-col overflow-hidden rounded-ph-card border border-ph-border bg-ph-card transition-colors hover:bg-ph-fill-warm"
+    >
       <div className="border-b border-ph-border p-3">
         <CardArtFrame alt={card.name} src={card.cardArtUrl ?? undefined} size="md" />
       </div>
@@ -628,9 +643,9 @@ function CarouselCard({
         </p>
         <div className="mt-auto pt-2">
           {status === 'eligible' ? (
-            <p className="font-serif text-[17px] leading-none text-ph-pine tabular-nums">
-              +{formatCurrency(Math.max(0, net))} net
-            </p>
+            <LacquerChip variant="pine" Icon={Check} size="sm">
+              Eligible
+            </LacquerChip>
           ) : status === 'grey_area' ? (
             <LacquerChip variant="amber" Icon={Clock} size="sm">
               Grey area
@@ -648,7 +663,7 @@ function CarouselCard({
           )}
         </div>
       </div>
-    </article>
+    </Link>
   );
 }
 
