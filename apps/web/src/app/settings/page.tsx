@@ -1,18 +1,22 @@
 'use client';
 
 /**
- * /settings — Alert Centre. The control surface for which nudges fire
- * and when. Global toggles (quiet hours, pause-all) at the top, then a
- * per-card section where each card expands to four alert-type toggles
- * (min-spend deadline / annual fee / benefit expiring / 3m-to-bonus).
+ * /settings — the header ☰ target. Two things live here:
  *
- * v1 just persists preferences to the shared alerts store — no real
- * web-push wiring. When notifications are wired, they read from this
- * same store to decide what to send.
+ *   1. Preferences  — voice output + theme (moved off the header
+ *      cluster in Phase 3, HANDOFF § Header).
+ *   2. Alert Centre — global quiet hours + pause-all + per-card alert
+ *      toggles. Phase 4 polish: full Lacquer palette + Instrument
+ *      Serif titles + mono eyebrows. Behaviour unchanged; the shared
+ *      alerts store still owns the state.
+ *
+ * Preferences uses ph-fill-warm tiles to keep visual weight low —
+ * these are per-user chrome, not the Alert Centre content. Alert
+ * Centre proper reads as the main body.
  */
 
 import { useState } from 'react';
-import { Bell, ChevronDown, Settings } from 'lucide-react';
+import { Bell, ChevronDown, Sliders } from 'lucide-react';
 import {
   useAlertsStore,
   type AlertKind,
@@ -47,63 +51,76 @@ export default function SettingsPage() {
   const setGlobal = useAlertsStore((s) => s.setGlobal);
 
   return (
-    <main className="px-4 pt-4 pb-32">
-      <header className="mb-4">
-        <h1 className="flex items-center gap-2 text-lg font-semibold tracking-tight">
-          <Bell className="h-5 w-5 text-[var(--color-ph-red)]" aria-hidden />
-          Alert Centre
-        </h1>
-        <p className="mt-1 text-xs text-zinc-500">
-          Per-card alert toggles + global quiet hours. Conservative defaults — turn the high-value
-          ones up first.
+    <main className="min-h-dvh bg-ph-paper text-ph-text">
+      <div className="px-6 pt-6 pb-32">
+        <header>
+          <h1 className="font-serif text-[28px] leading-none text-ph-ink">Settings</h1>
+        </header>
+
+        {/* ── Preferences ─────────────────────────────────────────────── */}
+        <h2 className="mt-6 mb-2 font-mono text-[10px] uppercase tracking-[0.14em] text-ph-text-meta">
+          Preferences
+        </h2>
+        <section
+          aria-label="Preferences"
+          className="overflow-hidden rounded-ph-card border border-ph-border bg-ph-card"
+        >
+          <div className="flex items-center justify-between gap-3 border-b border-ph-border p-4">
+            <div className="min-w-0">
+              <p className="font-serif text-[17px] leading-tight text-ph-ink">Spoken voice</p>
+              <p className="mt-1 text-[13px] text-ph-text-muted">
+                Mute Copilot&apos;s spoken replies. Voice input (mic) stays on either way.
+              </p>
+            </div>
+            <VoiceToggle />
+          </div>
+          <div className="flex items-center justify-between gap-3 p-4">
+            <div className="min-w-0">
+              <p className="font-serif text-[17px] leading-tight text-ph-ink">Appearance</p>
+              <p className="mt-1 text-[13px] text-ph-text-muted">
+                Follow system, or lock to light / dark.
+              </p>
+            </div>
+            <ThemeToggle />
+          </div>
+        </section>
+
+        {/* ── Alert Centre ────────────────────────────────────────────── */}
+        <div className="mt-8">
+          <div className="flex items-center gap-2">
+            <Bell className="h-4 w-4 text-ph-brick" aria-hidden />
+            <h2 className="font-mono text-[10px] uppercase tracking-[0.14em] text-ph-brick">
+              Alert Centre
+            </h2>
+          </div>
+          <p className="mt-1 text-[13px] text-ph-text-muted">
+            Which nudges fire, and when. Conservative defaults — turn the high-value ones up first.
+          </p>
+        </div>
+
+        <div className="mt-4">
+          <GlobalSection global={global} onChange={setGlobal} />
+        </div>
+
+        <h3 className="mt-6 mb-2 font-mono text-[10px] uppercase tracking-[0.14em] text-ph-text-meta">
+          Per card
+        </h3>
+        <ul className="space-y-2">
+          {cards.map((c) => (
+            <li key={c.cardId}>
+              <CardCard card={c} />
+            </li>
+          ))}
+        </ul>
+
+        <p className="mt-6 flex items-start gap-2 rounded-ph-inner border border-ph-tint-border bg-ph-tint p-3 text-[12px] leading-snug text-ph-text-muted">
+          <Sliders className="mt-0.5 h-3.5 w-3.5 flex-none text-ph-brick" aria-hidden />
+          <span>
+            Real notifications switch on once you turn on push. For now your choices here decide
+            which alerts show in the inbox.
+          </span>
         </p>
-      </header>
-
-      {/* Preferences: voice output + theme toggles. Relocated here
-          from the top-right cluster in Phase 3 (HANDOFF § Header) —
-          the header carries only Today / Alerts / Settings now. */}
-      <section
-        aria-label="Preferences"
-        className="mb-6 overflow-hidden rounded-2xl bg-white ring-1 ring-zinc-200 dark:bg-zinc-900 dark:ring-zinc-800"
-      >
-        <div className="flex items-center justify-between gap-3 border-b border-zinc-100 p-3 dark:border-zinc-800">
-          <div className="min-w-0">
-            <p className="text-sm font-semibold">Spoken voice</p>
-            <p className="mt-0.5 text-xs text-zinc-500">
-              Mute Copilot&apos;s spoken replies. Voice input (mic) stays on either way.
-            </p>
-          </div>
-          <VoiceToggle />
-        </div>
-        <div className="flex items-center justify-between gap-3 p-3">
-          <div className="min-w-0">
-            <p className="text-sm font-semibold">Appearance</p>
-            <p className="mt-0.5 text-xs text-zinc-500">Follow system, or lock to light / dark.</p>
-          </div>
-          <ThemeToggle />
-        </div>
-      </section>
-
-      <GlobalSection global={global} onChange={setGlobal} />
-
-      <h2 className="mb-2 mt-6 text-[10px] font-bold uppercase tracking-wide text-zinc-500">
-        Per card
-      </h2>
-      <ul className="space-y-2">
-        {cards.map((c) => (
-          <li key={c.cardId}>
-            <CardCard card={c} />
-          </li>
-        ))}
-      </ul>
-
-      <p className="mt-6 flex items-start gap-2 rounded-xl bg-zinc-50 p-3 text-xs text-zinc-500 ring-1 ring-zinc-200 dark:bg-zinc-900/60 dark:ring-zinc-800">
-        <Settings className="mt-0.5 h-3.5 w-3.5 flex-none" aria-hidden />
-        <span>
-          Real notifications switch on once you turn on push. For now your choices here decide which
-          alerts show in the inbox.
-        </span>
-      </p>
+      </div>
     </main>
   );
 }
@@ -118,13 +135,13 @@ function GlobalSection({
   return (
     <section
       aria-label="Global alert preferences"
-      className="overflow-hidden rounded-2xl bg-white ring-1 ring-zinc-200 dark:bg-zinc-900 dark:ring-zinc-800"
+      className="overflow-hidden rounded-ph-card border border-ph-border bg-ph-card"
     >
-      <div className="border-b border-zinc-100 p-3 dark:border-zinc-800">
-        <div className="flex items-center justify-between">
+      <div className="border-b border-ph-border p-4">
+        <div className="flex items-center justify-between gap-3">
           <div className="min-w-0">
-            <p className="text-sm font-semibold">Quiet hours</p>
-            <p className="mt-0.5 text-xs text-zinc-500">
+            <p className="font-serif text-[17px] leading-tight text-ph-ink">Quiet hours</p>
+            <p className="mt-1 font-mono text-[11px] tabular-nums text-ph-text-muted">
               {global.quietStart} – {global.quietEnd}
             </p>
           </div>
@@ -149,10 +166,10 @@ function GlobalSection({
           </div>
         )}
       </div>
-      <div className="flex items-center justify-between p-3">
+      <div className="flex items-center justify-between gap-3 p-4">
         <div className="min-w-0">
-          <p className="text-sm font-semibold">Pause all alerts</p>
-          <p className="mt-0.5 text-xs text-zinc-500">
+          <p className="font-serif text-[17px] leading-tight text-ph-ink">Pause all alerts</p>
+          <p className="mt-1 text-[13px] text-ph-text-muted">
             Stop everything until you switch it back on.
           </p>
         </div>
@@ -174,34 +191,46 @@ function CardCard({ card }: { card: CardAlertPrefs }) {
   const totalCount = Object.keys(card.enabled).length;
 
   return (
-    <div className="overflow-hidden rounded-xl bg-white ring-1 ring-zinc-200 dark:bg-zinc-900 dark:ring-zinc-800">
+    <div className="overflow-hidden rounded-ph-card border border-ph-border bg-ph-card">
       <button
         type="button"
         onClick={() => setExpanded((e) => !e)}
         aria-expanded={expanded}
-        className="flex w-full items-center gap-3 p-3 text-left transition-colors hover:bg-zinc-50 dark:hover:bg-zinc-800/60"
+        className="flex w-full items-center gap-3 p-4 text-left transition-colors hover:bg-ph-fill-warm"
       >
         <div className="min-w-0 flex-1">
-          <p className="truncate text-sm font-semibold">{card.cardName}</p>
-          <p className="mt-0.5 text-xs text-zinc-500">
+          <p className="truncate font-serif text-[17px] leading-tight text-ph-ink">
+            {card.cardName}
+          </p>
+          <p className="mt-1 font-mono text-[10px] uppercase tracking-[0.14em] text-ph-text-meta tabular-nums">
             {enabledCount} of {totalCount} alerts on
           </p>
         </div>
         <ChevronDown
-          className={`h-4 w-4 flex-none text-zinc-400 transition-transform ${expanded ? 'rotate-180' : ''}`}
+          className={`h-4 w-4 flex-none text-ph-text-meta transition-transform ${
+            expanded ? 'rotate-180' : ''
+          }`}
           aria-hidden
         />
       </button>
 
       {expanded && (
-        <ul className="border-t border-zinc-100 p-2 dark:border-zinc-800">
-          {(Object.keys(card.enabled) as AlertKind[]).map((kind) => {
+        <ul className="border-t border-ph-border">
+          {(Object.keys(card.enabled) as AlertKind[]).map((kind, i, arr) => {
             const meta = ALERT_KIND_LABELS[kind];
+            const isLast = i === arr.length - 1;
             return (
-              <li key={kind} className="flex items-center gap-3 px-1.5 py-2">
+              <li
+                key={kind}
+                className={
+                  isLast
+                    ? 'flex items-center gap-3 px-4 py-3'
+                    : 'flex items-center gap-3 border-b border-ph-border px-4 py-3'
+                }
+              >
                 <div className="min-w-0 flex-1">
-                  <p className="text-sm font-medium">{meta.title}</p>
-                  <p className="mt-0.5 text-xs text-zinc-500">{meta.sub}</p>
+                  <p className="text-[14px] font-semibold text-ph-ink">{meta.title}</p>
+                  <p className="mt-0.5 text-[12px] text-ph-text-muted">{meta.sub}</p>
                 </div>
                 <Toggle
                   checked={card.enabled[kind]}
@@ -217,6 +246,9 @@ function CardCard({ card }: { card: CardAlertPrefs }) {
   );
 }
 
+/** Lacquer toggle switch. Track flips to ph-red (action colour) when
+ *  on; ph-fill when off. Ink border-strong for the ring so the switch
+ *  reads on either the card or the paper background. */
 function Toggle({
   checked,
   onChange,
@@ -235,14 +267,15 @@ function Toggle({
       onClick={() => onChange(!checked)}
       className={
         checked
-          ? 'relative h-6 w-10 flex-none rounded-full bg-[var(--color-ph-red)] transition-colors'
-          : 'relative h-6 w-10 flex-none rounded-full bg-zinc-300 transition-colors dark:bg-zinc-700'
+          ? 'relative h-6 w-10 flex-none rounded-full bg-ph-red transition-colors'
+          : 'relative h-6 w-10 flex-none rounded-full bg-ph-fill ring-1 ring-ph-border-strong transition-colors'
       }
     >
       <span
-        className={`absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform ${
+        className={`absolute top-0.5 h-5 w-5 rounded-full bg-white transition-transform ${
           checked ? 'translate-x-[1.125rem]' : 'translate-x-0.5'
         }`}
+        style={{ boxShadow: 'var(--shadow-ph-thumb)' }}
       />
     </button>
   );
@@ -258,13 +291,13 @@ function TimeInput({
   onChange: (next: string) => void;
 }) {
   return (
-    <label className="flex flex-1 items-center gap-2 rounded-lg border border-zinc-200 px-2.5 py-1.5 text-xs dark:border-zinc-700">
-      <span className="font-medium text-zinc-500">{label}</span>
+    <label className="flex flex-1 items-center gap-2 rounded-full border border-ph-border-strong bg-ph-card px-3 py-1.5 text-[12px]">
+      <span className="font-mono uppercase tracking-[0.14em] text-ph-text-meta">{label}</span>
       <input
         type="time"
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        className="flex-1 bg-transparent font-semibold tabular-nums focus:outline-none"
+        className="flex-1 bg-transparent font-semibold text-ph-ink tabular-nums focus:outline-none"
       />
     </label>
   );
