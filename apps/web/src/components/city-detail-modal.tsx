@@ -1,19 +1,19 @@
 'use client';
 
 /**
- * CityDetailModal — shown when the user taps a destination pin (or
- * grid card) in the Track-a-journey wizard's Step 1. Surfaces the
- * city's full airport name, IATA code, and the per-cabin point
- * estimates so the user can compare destinations before committing.
+ * CityDetailModal — the "Book now / Track to here" popup from the
+ * Track-a-journey wizard's Step 1. Surfaces the city's airport name,
+ * IATA code, and per-cabin point estimates so the user can compare
+ * destinations before committing.
  *
  * Two outs:
- *   - Close (X / backdrop)            → returns to Step 1
- *   - "Track to here" primary CTA     → calls onTrack(id), which is
- *     wired in the wizard to set the destination + advance to Step 2
+ *   - Close (X / backdrop)          → returns to Step 1
+ *   - "Track to {city}" primary CTA → wizard advances to Step 2
  *
- * Layout follows the PushOptInModal convention — bottom sheet on
- * mobile, centred dialog on sm+. The city illustration is rendered
- * faintly behind the header as a passport-stamp watermark.
+ * Bottom sheet on mobile, centred dialog on sm+. Lacquer palette
+ * applied in Phase 4 polish; the CityIllustration silhouette watermark
+ * carries over from the pre-Lacquer version and now paints in
+ * ph-brick against a cream wash.
  */
 
 import { Plane, X } from 'lucide-react';
@@ -23,8 +23,6 @@ import type { CabinClass, CabinPoints, DestinationOption, OriginPort } from '@/s
 
 interface CityDetailModalProps {
   destination: DestinationOption | null;
-  /** AU departure port — surfaced in the route line and the points
-   *  blurb so the cabin points read in context. */
   origin: OriginPort;
   onClose: () => void;
   onTrack: (id: string) => void;
@@ -53,54 +51,65 @@ export function CityDetailModal({ destination, origin, onClose, onTrack }: CityD
       role="dialog"
       aria-modal="true"
       aria-labelledby="city-detail-title"
-      className="fixed inset-0 z-[70] flex items-end justify-center bg-black/50 backdrop-blur-sm sm:items-center"
+      // Scrim uses the same ink-42% recipe as the Lacquer BottomSheet.
+      className="fixed inset-0 z-[70] flex items-end justify-center backdrop-blur-sm sm:items-center"
+      style={{ backgroundColor: 'rgba(46,10,8,0.42)' }}
       onClick={onClose}
     >
       <div
         onClick={(e) => e.stopPropagation()}
-        className="w-full max-w-md overflow-hidden rounded-t-3xl bg-white shadow-2xl sm:rounded-3xl dark:bg-zinc-900"
+        className="w-full max-w-md overflow-hidden rounded-t-ph-sheet bg-ph-paper shadow-2xl sm:rounded-ph-sheet"
       >
-        {/* Header — silhouette + caption */}
-        <div className="relative overflow-hidden bg-gradient-to-b from-red-50 to-white px-5 pt-5 pb-4 dark:from-red-500/10 dark:to-zinc-900">
+        {/* Header — cream wash + city silhouette watermark. */}
+        <div
+          className="relative overflow-hidden px-5 pt-5 pb-4"
+          style={{
+            background:
+              'linear-gradient(to bottom, var(--color-ph-fill-warm), var(--color-ph-card))',
+          }}
+        >
           <CityIllustration
             destinationId={destination.id}
             preserveAspectRatio="xMaxYMax meet"
-            className="pointer-events-none absolute inset-y-0 right-0 h-full w-1/2 text-[var(--color-ph-red)] opacity-25 dark:opacity-30"
+            className="pointer-events-none absolute inset-y-0 right-0 h-full w-1/2 text-ph-brick opacity-30"
           />
           <button
             type="button"
             onClick={onClose}
             aria-label="Close city details"
-            className="absolute right-3 top-3 grid h-8 w-8 place-items-center rounded-full bg-white/80 text-zinc-700 hover:bg-white dark:bg-zinc-800/80 dark:text-zinc-200 dark:hover:bg-zinc-800"
+            className="absolute right-3 top-3 grid h-8 w-8 place-items-center rounded-full bg-ph-card text-ph-text-muted ring-1 ring-ph-border transition-colors hover:text-ph-text"
           >
             <X className="h-4 w-4" aria-hidden />
           </button>
 
           <div className="relative">
-            <p className="text-[10px] font-bold uppercase tracking-wider text-[var(--color-ph-red)]">
+            <p className="font-mono text-[10px] uppercase tracking-[0.14em] text-ph-brick">
               {destination.country}
             </p>
-            <h2 id="city-detail-title" className="mt-0.5 text-xl font-semibold tracking-tight">
+            <h2
+              id="city-detail-title"
+              className="mt-1 font-serif text-[26px] leading-tight text-ph-ink"
+            >
               {destination.city}{' '}
-              <span className="text-sm font-bold tabular-nums text-zinc-500">· {code}</span>
+              <span className="font-mono text-[13px] tabular-nums text-ph-text-meta">· {code}</span>
             </h2>
-            <p className="mt-1 text-xs leading-snug text-zinc-600 dark:text-zinc-400">
+            <p className="mt-1 text-[12px] leading-snug text-ph-text-muted">
               {destination.airport}
             </p>
           </div>
         </div>
 
-        {/* Body — cabin points */}
+        {/* Body — cabin points table. */}
         <div className="px-5 pt-4 pb-2">
-          <p className="text-[10px] font-bold uppercase tracking-wide text-zinc-500">
+          <p className="font-mono text-[10px] uppercase tracking-[0.14em] text-ph-text-meta">
             Estimated return points
           </p>
-          <p className="mt-0.5 text-[11px] text-zinc-500">
+          <p className="mt-1 text-[11px] text-ph-text-muted">
             Per person, {origin.city} ({originCode}) → {destination.city} ({code}). Real award costs
             vary by program and date.
           </p>
 
-          <ul className="mt-3 divide-y divide-zinc-100 dark:divide-zinc-800">
+          <ul className="mt-3 divide-y divide-ph-border">
             {CABIN_ROWS.map((row) => {
               const pts = destination.pointsByCabin[row.key];
               const headline = row.cabin === 'Business';
@@ -109,27 +118,27 @@ export function CityDetailModal({ destination, origin, onClose, onTrack }: CityD
                   key={row.key}
                   className={
                     headline
-                      ? 'flex items-baseline justify-between gap-3 rounded-lg bg-red-50/60 px-2 py-2.5 dark:bg-red-500/10'
-                      : 'flex items-baseline justify-between gap-3 px-2 py-2'
+                      ? 'flex items-baseline justify-between gap-3 rounded-ph-inner bg-ph-tint px-2 py-2.5'
+                      : 'flex items-baseline justify-between gap-3 px-2 py-2.5'
                   }
                 >
                   <div className="min-w-0 flex-1">
                     <p
                       className={
                         headline
-                          ? 'text-sm font-bold text-[var(--color-ph-red)]'
-                          : 'text-sm font-semibold'
+                          ? 'font-serif text-[17px] leading-tight text-ph-brick'
+                          : 'font-serif text-[17px] leading-tight text-ph-ink'
                       }
                     >
                       {row.cabin}
                     </p>
-                    <p className="mt-0.5 text-[11px] text-zinc-500">{row.blurb}</p>
+                    <p className="mt-0.5 text-[11px] text-ph-text-muted">{row.blurb}</p>
                   </div>
                   <p
                     className={
                       headline
-                        ? 'flex-none text-base font-bold tabular-nums text-[var(--color-ph-red)]'
-                        : 'flex-none text-sm font-semibold tabular-nums text-zinc-700 dark:text-zinc-200'
+                        ? 'flex-none font-serif text-[21px] leading-none text-ph-brick tabular-nums'
+                        : 'flex-none font-serif text-[17px] leading-none text-ph-ink tabular-nums'
                     }
                   >
                     {formatPoints(pts)}
@@ -140,12 +149,12 @@ export function CityDetailModal({ destination, origin, onClose, onTrack }: CityD
           </ul>
         </div>
 
-        {/* Footer — primary CTA */}
-        <div className="px-5 pt-4 pb-5">
+        {/* Footer — primary CTA + secondary out. */}
+        <div className="px-5 pt-4 pb-6">
           <button
             type="button"
             onClick={() => onTrack(destination.id)}
-            className="flex w-full items-center justify-center gap-2 rounded-xl bg-[var(--color-ph-red)] px-4 py-3 text-sm font-bold text-white shadow-sm hover:bg-red-700"
+            className="flex w-full items-center justify-center gap-2 rounded-full bg-ph-red px-4 py-3 text-sm font-medium text-white transition-opacity hover:opacity-90"
           >
             <Plane className="h-4 w-4" aria-hidden />
             Track to {destination.city}
@@ -153,7 +162,7 @@ export function CityDetailModal({ destination, origin, onClose, onTrack }: CityD
           <button
             type="button"
             onClick={onClose}
-            className="mt-2 block w-full text-center text-[11px] font-semibold text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100"
+            className="mt-3 block w-full text-center text-[12px] font-medium text-ph-text-muted hover:text-ph-text"
           >
             Browse more cities
           </button>

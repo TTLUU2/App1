@@ -3,26 +3,14 @@
 /**
  * /journeys/track — Track-a-journey wizard. Three steps:
  *
- *   Step 1 — Pick destination
- *     Inline SVG world map with city pins at each catalogue entry's
- *     geographic position. Tap a pin or a card below to select.
- *     Search input filters both.
- *   Step 2 — Set the target
- *     Pax (1/2/3/4+), Trip (Return/One-way), Cabin (E/PE/J/F), Redeem
- *     with (program list), Departure month (optional), Target points
- *     (preset chips, no manual input).
- *   Step 3 — Confirm
- *     Preview the goal + progress meter, then "Start tracking" →
- *     writes a TrackedJourney to the store and routes to /journeys.
+ *   Step 1 — Pick destination (region → cities on the world map)
+ *   Step 2 — Set the target (pax, cabin, trip, program, month)
+ *   Step 3 — Confirm (goal preview, progress ring, Start tracking)
  *
- * State stays in this component (single-flow). Map projection is
- * equirectangular over viewBox 0 0 360 180 — same coords as raw
- * (lng + 180, 90 - lat) so updating the catalogue's lat/lng moves
- * the pin without any other code change.
- *
- * Target-points chips are placeholder ranges keyed to typical AU
- * Business-class redemption costs — swap in your real bands when
- * you have them.
+ * Lacquer overlay applied in Phase 4 polish: paper background, brick
+ * heros/accents, Instrument Serif titles, ph-red action pill, mono
+ * eyebrows. Flow + state preserved verbatim — this pass only touches
+ * chrome + typography.
  */
 
 import { Suspense, useMemo, useState } from 'react';
@@ -47,6 +35,7 @@ import { Dropdown, type DropdownOption } from '@/components/dropdown';
 import { JourneyProgress } from '@/components/journey-progress';
 import { MonthYearPicker, formatMonthYear } from '@/components/month-year-picker';
 import { WorldMap } from '@/components/world-map';
+import { HeroCard } from '@/components/lacquer';
 import { formatPoints } from '@/lib/format';
 import { selectTotalPoints, useBalancesStore } from '@/store/balances';
 import {
@@ -81,7 +70,7 @@ const ORIGIN_OPTIONS: DropdownOption<string>[] = ORIGIN_PORTS.map((p) => ({
 
 export default function TrackJourneyPage() {
   return (
-    <Suspense fallback={<main className="px-4 pt-4 pb-32" aria-busy="true" />}>
+    <Suspense fallback={<main className="min-h-dvh bg-ph-paper" aria-busy="true" />}>
       <TrackJourneyWizard />
     </Suspense>
   );
@@ -111,10 +100,6 @@ function TrackJourneyWizard() {
   const [programId, setProgramId] = useState(programs[0]?.id ?? '');
   const [departureMonth, setDepartureMonth] = useState('');
 
-  // Effective target auto-computes from the catalogue's per-cabin
-  // estimate × pax. No more "pick a target band" — the destination +
-  // cabin already determine the number, so the band step was forcing
-  // the user to choose something redundant.
   const perPersonTarget = dest ? dest.pointsByCabin[cabinKeyFor(cabin)] : 0;
   const effectiveTarget = perPersonTarget * pax;
 
@@ -131,65 +116,68 @@ function TrackJourneyWizard() {
       departureMonth: departureMonth || null,
       programId,
     });
-    router.push('/home?view=journeys');
+    // Lands on Journeys tab; sub-tab defaults to destinations.
+    router.push('/journeys');
   }
 
   return (
-    <main className="px-4 pt-4 pb-32">
-      <WizardHeader
-        step={step}
-        onBack={() => (step === 1 ? router.back() : setStep((step - 1) as 1 | 2 | 3))}
-      />
-
-      {step === 1 && (
-        <Step1PickDestination
-          selectedId={destId}
-          originId={originId}
-          origin={origin}
-          onChangeOrigin={setOriginId}
-          onPick={(id) => {
-            setDestId(id);
-            setStep(2);
-          }}
+    <main className="min-h-dvh bg-ph-paper text-ph-text">
+      <div className="px-6 pt-6 pb-32">
+        <WizardHeader
+          step={step}
+          onBack={() => (step === 1 ? router.back() : setStep((step - 1) as 1 | 2 | 3))}
         />
-      )}
 
-      {step === 2 && dest && (
-        <Step2Configure
-          dest={dest}
-          origin={origin}
-          pax={pax}
-          tripType={tripType}
-          cabin={cabin}
-          programId={programId}
-          departureMonth={departureMonth}
-          perPersonTarget={perPersonTarget}
-          totalTarget={effectiveTarget}
-          programs={programs.map((p) => ({ id: p.id, name: p.name, balance: p.balance }))}
-          onPax={setPax}
-          onTripType={setTripType}
-          onCabin={setCabin}
-          onProgram={setProgramId}
-          onDepartureMonth={setDepartureMonth}
-          onNext={() => setStep(3)}
-        />
-      )}
+        {step === 1 && (
+          <Step1PickDestination
+            selectedId={destId}
+            originId={originId}
+            origin={origin}
+            onChangeOrigin={setOriginId}
+            onPick={(id) => {
+              setDestId(id);
+              setStep(2);
+            }}
+          />
+        )}
 
-      {step === 3 && dest && (
-        <Step3Confirm
-          dest={dest}
-          origin={origin}
-          pax={pax}
-          tripType={tripType}
-          cabin={cabin}
-          programs={programs}
-          programId={programId}
-          totalPoints={total}
-          targetPoints={effectiveTarget}
-          departureMonth={departureMonth}
-          onStart={handleStart}
-        />
-      )}
+        {step === 2 && dest && (
+          <Step2Configure
+            dest={dest}
+            origin={origin}
+            pax={pax}
+            tripType={tripType}
+            cabin={cabin}
+            programId={programId}
+            departureMonth={departureMonth}
+            perPersonTarget={perPersonTarget}
+            totalTarget={effectiveTarget}
+            programs={programs.map((p) => ({ id: p.id, name: p.name, balance: p.balance }))}
+            onPax={setPax}
+            onTripType={setTripType}
+            onCabin={setCabin}
+            onProgram={setProgramId}
+            onDepartureMonth={setDepartureMonth}
+            onNext={() => setStep(3)}
+          />
+        )}
+
+        {step === 3 && dest && (
+          <Step3Confirm
+            dest={dest}
+            origin={origin}
+            pax={pax}
+            tripType={tripType}
+            cabin={cabin}
+            programs={programs}
+            programId={programId}
+            totalPoints={total}
+            targetPoints={effectiveTarget}
+            departureMonth={departureMonth}
+            onStart={handleStart}
+          />
+        )}
+      </div>
     </main>
   );
 }
@@ -198,28 +186,25 @@ function WizardHeader({ step, onBack }: { step: 1 | 2 | 3; onBack: () => void })
   const labels: Record<1 | 2 | 3, string> = {
     1: 'Pick a destination',
     2: 'Set the target',
-    3: 'You’re tracking',
+    3: "You're tracking",
   };
   return (
-    <header className="mb-4">
+    <header className="mb-5">
       <div className="mb-3 flex items-center justify-between">
         <button
           type="button"
           onClick={onBack}
-          className="flex items-center gap-1 text-xs font-bold text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100"
+          className="inline-flex items-center gap-1 text-[13px] font-medium text-ph-text-muted hover:text-ph-text"
           aria-label="Back"
         >
           {step === 1 ? <ChevronLeft className="h-4 w-4" /> : <ArrowLeft className="h-4 w-4" />}
           Back
         </button>
-        <p className="text-[10px] font-bold uppercase tracking-wide text-zinc-500">
+        <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-ph-text-meta">
           Step {step} of 3
         </p>
       </div>
-      <h1 className="flex items-center gap-2 text-lg font-semibold tracking-tight">
-        <Plane className="h-5 w-5 text-[var(--color-ph-red)]" aria-hidden />
-        {labels[step]}
-      </h1>
+      <h1 className="font-serif text-[28px] leading-none text-ph-ink">{labels[step]}</h1>
     </header>
   );
 }
@@ -241,13 +226,8 @@ function Step1PickDestination({
 }) {
   const [region, setRegion] = useState<RegionId | null>(null);
   const [query, setQuery] = useState('');
-  /** Pin/card tap opens the detail modal first — the modal's "Track
-   *  to here" CTA is what actually advances the wizard. Lets the user
-   *  browse cabin points before committing. */
   const [previewId, setPreviewId] = useState<string | null>(null);
 
-  // Pre-select the region of the currently-selected destination (e.g.
-  // when arriving via /journeys/track?destinationId=…).
   if (region === null && selectedId) {
     const dest = DESTINATION_CATALOGUE.find((d) => d.id === selectedId);
     if (dest) {
@@ -287,18 +267,18 @@ function Step1PickDestination({
         onBack={() => setRegion(null)}
       />
 
-      <label className="mt-4 flex items-center gap-2 rounded-xl border border-zinc-200 bg-white px-3 py-2 shadow-sm dark:border-zinc-700 dark:bg-zinc-900">
-        <Search className="h-4 w-4 text-zinc-400" aria-hidden />
+      <label className="mt-4 flex items-center gap-2 rounded-ph-card border border-ph-border bg-ph-card px-3 py-2.5">
+        <Search className="h-4 w-4 text-ph-text-meta" aria-hidden />
         <input
           type="search"
           placeholder={`Search in ${regionDef?.label ?? 'this region'}`}
           value={query}
           onChange={(e) => setQuery(e.target.value)}
-          className="flex-1 bg-transparent text-sm focus:outline-none"
+          className="flex-1 bg-transparent text-[13px] text-ph-ink placeholder:text-ph-text-meta focus:outline-none"
         />
       </label>
 
-      <p className="mt-3 text-[10px] font-bold uppercase tracking-wide text-zinc-500">
+      <p className="mt-4 font-mono text-[10px] uppercase tracking-[0.14em] text-ph-text-meta">
         In {regionDef?.label ?? 'this region'}
       </p>
       <ul className="mt-2 grid grid-cols-2 gap-2">
@@ -311,13 +291,13 @@ function Step1PickDestination({
                 onClick={() => setPreviewId(d.id)}
                 className={
                   active
-                    ? 'w-full rounded-xl bg-white p-3 text-left ring-2 ring-[var(--color-ph-red)] dark:bg-zinc-900'
-                    : 'w-full rounded-xl bg-white p-3 text-left ring-1 ring-zinc-200 transition-colors hover:ring-zinc-300 dark:bg-zinc-900 dark:ring-zinc-800'
+                    ? 'w-full rounded-ph-card bg-ph-card p-3 text-left ring-2 ring-ph-brick'
+                    : 'w-full rounded-ph-card border border-ph-border bg-ph-card p-3 text-left transition-colors hover:bg-ph-fill-warm'
                 }
               >
-                <p className="text-sm font-semibold">{d.city}</p>
-                <p className="mt-0.5 text-[11px] text-zinc-500">{d.country}</p>
-                <p className="mt-1 text-[11px] font-medium tabular-nums text-zinc-500">
+                <p className="font-serif text-[17px] leading-tight text-ph-ink">{d.city}</p>
+                <p className="mt-0.5 text-[11px] text-ph-text-muted">{d.country}</p>
+                <p className="mt-1 text-[11px] font-medium tabular-nums text-ph-text-meta">
                   ~{formatPoints(d.pointsBusinessReturn)} · Business
                 </p>
               </button>
@@ -336,12 +316,12 @@ function Step1PickDestination({
         }}
       />
       {matches.length === 0 && (
-        <p className="mt-4 text-center text-xs text-zinc-500">
+        <p className="mt-4 text-center text-[12px] text-ph-text-muted">
           No matches — try another city or{' '}
           <button
             type="button"
             onClick={() => setRegion(null)}
-            className="font-semibold text-[var(--color-ph-red)] hover:underline"
+            className="font-semibold text-ph-brick hover:underline"
           >
             switch region
           </button>
@@ -352,15 +332,6 @@ function Step1PickDestination({
   );
 }
 
-/** Phase 1 of Step 1: pick a region before drilling into cities.
- *  Each region card shows the world map zoomed into that region as a
- *  preview, so the user sees what they'd be picking from. */
-/**
- * OriginPickerStrip — small "departing from {city}" row that sits at
- * the top of Step 1. Plane-takeoff icon + Dropdown of AU ports.
- * v1 restricts origins to Australia; international AU-bound users
- * are out of scope until the wizard learns to scale points by route.
- */
 function OriginPickerStrip({
   originId,
   onChange,
@@ -371,13 +342,15 @@ function OriginPickerStrip({
   return (
     <section
       aria-label="Departure port"
-      className="mb-3 flex items-center gap-3 rounded-xl bg-white p-3 ring-1 ring-zinc-200 dark:bg-zinc-900 dark:ring-zinc-800"
+      className="mb-3 flex items-center gap-3 rounded-ph-card border border-ph-border bg-ph-card p-3"
     >
-      <span className="grid h-8 w-8 flex-none place-items-center rounded-full bg-red-50 text-[var(--color-ph-red)] dark:bg-red-500/10">
+      <span className="grid h-9 w-9 flex-none place-items-center rounded-full bg-ph-fill-warm text-ph-brick">
         <PlaneTakeoff className="h-4 w-4" aria-hidden />
       </span>
       <div className="min-w-0 flex-1">
-        <p className="text-[10px] font-bold uppercase tracking-wide text-zinc-500">Flying from</p>
+        <p className="font-mono text-[10px] uppercase tracking-[0.14em] text-ph-text-meta">
+          Flying from
+        </p>
         <div className="mt-1">
           <Dropdown<string>
             value={originId}
@@ -394,24 +367,24 @@ function OriginPickerStrip({
 function RegionPicker({ onPick }: { onPick: (id: RegionId) => void }) {
   return (
     <>
-      <p className="text-[10px] font-bold uppercase tracking-wide text-zinc-500">
+      <p className="font-mono text-[10px] uppercase tracking-[0.14em] text-ph-text-meta">
         Where in the world?
       </p>
-      <p className="mt-1 text-xs text-zinc-500">Pick a region to zoom in.</p>
+      <p className="mt-1 text-[13px] text-ph-text-muted">Pick a region to zoom in.</p>
       <ul className="mt-3 grid grid-cols-2 gap-2">
         {REGIONS.map((r) => (
           <li key={r.id}>
             <button
               type="button"
               onClick={() => onPick(r.id)}
-              className="block w-full overflow-hidden rounded-xl bg-white text-left ring-1 ring-zinc-200 transition-colors hover:ring-[var(--color-ph-red)] dark:bg-zinc-900 dark:ring-zinc-800"
+              className="block w-full overflow-hidden rounded-ph-card border border-ph-border bg-ph-card text-left transition-colors hover:border-ph-brick"
             >
-              <div className="bg-slate-100/60 dark:bg-slate-800/40">
+              <div className="bg-ph-fill">
                 <RegionPreview region={r} />
               </div>
               <div className="p-3">
-                <p className="text-sm font-semibold">{r.label}</p>
-                <p className="mt-0.5 text-[11px] text-zinc-500">{r.blurb}</p>
+                <p className="font-serif text-[17px] leading-tight text-ph-ink">{r.label}</p>
+                <p className="mt-0.5 text-[11px] text-ph-text-muted">{r.blurb}</p>
               </div>
             </button>
           </li>
@@ -421,9 +394,6 @@ function RegionPicker({ onPick }: { onPick: (id: RegionId) => void }) {
   );
 }
 
-/** Mini WorldMap preview already zoomed into the region — no pin
- *  interactivity, smaller height. Reuses the same component so the
- *  zoom math stays a single source of truth. */
 function RegionPreview({
   region,
 }: {
@@ -485,16 +455,20 @@ function Step2Configure({
 
   return (
     <>
-      <section className="rounded-2xl bg-white p-4 ring-1 ring-zinc-200 dark:bg-zinc-900 dark:ring-zinc-800">
-        <p className="text-[10px] font-bold uppercase tracking-wide text-zinc-500">Route</p>
-        <p className="mt-1 text-lg font-semibold">
+      <section className="rounded-ph-card border border-ph-border bg-ph-card p-4">
+        <p className="font-mono text-[10px] uppercase tracking-[0.14em] text-ph-text-meta">Route</p>
+        <p className="mt-1 font-serif text-[21px] leading-tight text-ph-ink">
           {origin.city}{' '}
-          <span className="font-bold tabular-nums text-zinc-400">{origin.id.toUpperCase()}</span>
+          <span className="font-mono text-[12px] tabular-nums text-ph-text-meta">
+            {origin.id.toUpperCase()}
+          </span>
           {' → '}
           {dest.city}{' '}
-          <span className="font-bold tabular-nums text-zinc-400">{dest.id.toUpperCase()}</span>
+          <span className="font-mono text-[12px] tabular-nums text-ph-text-meta">
+            {dest.id.toUpperCase()}
+          </span>
         </p>
-        <p className="mt-0.5 text-[11px] text-zinc-500">{dest.country}</p>
+        <p className="mt-0.5 text-[11px] text-ph-text-muted">{dest.country}</p>
       </section>
 
       <div className="mt-4 grid grid-cols-2 gap-3">
@@ -512,7 +486,7 @@ function Step2Configure({
       </div>
 
       <FieldGroup label="Trip" Icon={ArrowLeftRight}>
-        <SegmentedControl value={tripType} options={TRIP_TYPES} onChange={onTripType} />
+        <WizardSegmented value={tripType} options={TRIP_TYPES} onChange={onTripType} />
       </FieldGroup>
 
       <FieldGroup label="Redeem with" Icon={Coins}>
@@ -526,12 +500,12 @@ function Step2Configure({
                   onClick={() => onProgram(p.id)}
                   className={
                     active
-                      ? 'flex w-full items-center justify-between rounded-xl bg-white p-3 ring-2 ring-[var(--color-ph-red)] dark:bg-zinc-900'
-                      : 'flex w-full items-center justify-between rounded-xl bg-white p-3 ring-1 ring-zinc-200 hover:ring-zinc-300 dark:bg-zinc-900 dark:ring-zinc-800'
+                      ? 'flex w-full items-center justify-between rounded-ph-card bg-ph-card p-3 ring-2 ring-ph-brick'
+                      : 'flex w-full items-center justify-between rounded-ph-card border border-ph-border bg-ph-card p-3 transition-colors hover:bg-ph-fill-warm'
                   }
                 >
-                  <span className="text-sm font-semibold">{p.name}</span>
-                  <span className="text-xs font-medium tabular-nums text-zinc-500">
+                  <span className="font-serif text-[17px] leading-tight text-ph-ink">{p.name}</span>
+                  <span className="text-[12px] font-medium tabular-nums text-ph-text-meta">
                     {formatPoints(p.balance)}
                   </span>
                 </button>
@@ -549,27 +523,24 @@ function Step2Configure({
         />
       </FieldGroup>
 
-      {/* Auto-computed target — destination + cabin + pax already
-          determine the required points, so we surface the math
-          instead of asking the user to pick a band. The 3-month
-          buffer ahead of departure ("points by …") falls out of
-          pointsDeadlineForDeparture and reads as a soft deadline. */}
-      <section className="mt-4 rounded-xl bg-red-50/60 p-4 ring-1 ring-[var(--color-ph-red)]/20 dark:bg-red-500/10 dark:ring-red-500/20">
+      {/* Auto-computed target — tint panel so it reads as an informational
+          panel, not a card the user picked. */}
+      <section className="mt-4 rounded-ph-inner border border-ph-tint-border bg-ph-tint p-4">
         <div className="flex items-center gap-2">
-          <Target className="h-3.5 w-3.5 text-[var(--color-ph-red)]" aria-hidden />
-          <p className="text-[10px] font-bold uppercase tracking-wide text-[var(--color-ph-red)]">
-            Target
-          </p>
+          <Target className="h-3.5 w-3.5 text-ph-brick" aria-hidden />
+          <p className="font-mono text-[10px] uppercase tracking-[0.14em] text-ph-brick">Target</p>
         </div>
-        <p className="mt-1 text-xl font-semibold tabular-nums">{formatPoints(totalTarget)}</p>
-        <p className="mt-0.5 text-[11px] text-zinc-600 dark:text-zinc-300 tabular-nums">
+        <p className="mt-1 font-serif text-[27px] leading-none text-ph-ink tabular-nums">
+          {formatPoints(totalTarget)}
+        </p>
+        <p className="mt-1 text-[11px] text-ph-text-muted tabular-nums">
           {formatPoints(perPersonTarget)} × {pax} pax · {cabin}
         </p>
         {pointsDeadline && (
-          <p className="mt-2 flex items-center gap-1.5 text-[11px] font-semibold text-zinc-700 dark:text-zinc-200">
-            <Calendar className="h-3 w-3 text-[var(--color-ph-red)]" aria-hidden />
+          <p className="mt-2 flex items-center gap-1.5 text-[11px] font-semibold text-ph-ink">
+            <Calendar className="h-3 w-3 text-ph-brick" aria-hidden />
             Points needed by {formatMonthYear(pointsDeadline)}
-            <span className="font-normal text-zinc-500">· 3-month buffer before departure</span>
+            <span className="font-normal text-ph-text-muted">· 3-month buffer</span>
           </p>
         )}
       </section>
@@ -578,7 +549,7 @@ function Step2Configure({
         type="button"
         onClick={onNext}
         disabled={!canContinue}
-        className="mt-6 flex w-full items-center justify-center gap-2 rounded-xl bg-[var(--color-ph-red)] px-4 py-3 text-sm font-bold text-white shadow-sm transition-opacity hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-50"
+        className="mt-6 flex w-full items-center justify-center gap-2 rounded-full bg-ph-red px-4 py-3 text-sm font-medium text-white transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-40"
       >
         Continue
         <ArrowRight className="h-4 w-4" aria-hidden />
@@ -623,67 +594,74 @@ function Step3Confirm({
 
   return (
     <>
-      <section className="rounded-2xl bg-white p-4 ring-1 ring-zinc-200 dark:bg-zinc-900 dark:ring-zinc-800">
-        <p className="text-[10px] font-bold uppercase tracking-wide text-zinc-500">Goal</p>
-        <p className="mt-1 text-lg font-semibold">
+      <HeroCard
+        aria-labelledby="goal-heading"
+        as="section"
+        style={{ padding: 20, gap: 0, flexDirection: 'column', alignItems: 'stretch' }}
+      >
+        <p className="font-mono text-[10px] uppercase tracking-[0.14em] text-ph-on-brick-meta">
+          Goal
+        </p>
+        <p id="goal-heading" className="mt-1 font-serif text-[26px] leading-tight text-ph-on-brick">
           {dest.city} · {cabin}
         </p>
-        <p className="mt-0.5 text-xs text-zinc-500">
+        <p className="mt-0.5 text-[12px] text-ph-on-brick-secondary">
           {origin.id.toUpperCase()} → {dest.id.toUpperCase()} · {tripType} · {paxLabel}
           {departureMonth ? ` · ${formatMonthYear(departureMonth)}` : ' · Flexible date'}
           {program ? ` · via ${program.name}` : ''}
         </p>
         {pointsDeadline && (
-          <p className="mt-2 flex items-center gap-1.5 text-[11px] font-semibold text-[var(--color-ph-red)]">
+          <p className="mt-2 flex items-center gap-1.5 text-[11px] font-medium text-ph-on-brick-row">
             <Calendar className="h-3 w-3" aria-hidden />
             Points needed by {formatMonthYear(pointsDeadline)}
-            <span className="font-normal text-zinc-500">· 3-month buffer</span>
           </p>
         )}
 
-        <div className="mt-4 flex flex-col items-center">
+        <div className="mt-5 flex flex-col items-center">
           <JourneyProgress
             progress={targetPoints === 0 ? 0 : totalPoints / targetPoints}
             tripType={tripType}
             size={200}
           >
-            <p className="text-3xl font-semibold tabular-nums">{progress}%</p>
-            <p className="mt-0.5 text-[11px] font-semibold tabular-nums text-zinc-500">
+            <p className="font-serif text-[42px] leading-none text-ph-on-brick tabular-nums">
+              {progress}%
+            </p>
+            <p className="mt-1 font-mono text-[10px] tracking-[0.08em] text-ph-on-brick-secondary tabular-nums">
               {formatPoints(totalPoints)} / {formatPoints(targetPoints)}
             </p>
           </JourneyProgress>
-          <p className="mt-3 text-[11px] font-semibold tabular-nums text-zinc-500">
+          <p className="mt-3 font-mono text-[10px] uppercase tracking-[0.14em] text-ph-on-brick-secondary tabular-nums">
             {gap === 0 ? "You're there — go book it." : `${formatPoints(gap)} to go`}
           </p>
         </div>
-      </section>
+      </HeroCard>
 
-      <ul className="mt-4 space-y-1.5 text-[11px] text-zinc-500">
+      <ul className="mt-5 space-y-2 text-[12px] text-ph-text-muted">
         <li className="flex items-start gap-2">
-          <Check className="mt-0.5 h-3.5 w-3.5 flex-none text-[var(--color-ph-red)]" aria-hidden />
-          We'll watch your balances and surface progress on Home.
+          <Check className="mt-0.5 h-3.5 w-3.5 flex-none text-ph-pine" aria-hidden />
+          We&apos;ll watch your balances and surface progress on Journeys.
         </li>
         <li className="flex items-start gap-2">
-          <Check className="mt-0.5 h-3.5 w-3.5 flex-none text-[var(--color-ph-red)]" aria-hidden />
-          You'll get a nudge when sweet-spot redemptions open up.
+          <Check className="mt-0.5 h-3.5 w-3.5 flex-none text-ph-pine" aria-hidden />
+          You&apos;ll get a nudge when sweet-spot redemptions open up.
         </li>
         <li className="flex items-start gap-2">
-          <Check className="mt-0.5 h-3.5 w-3.5 flex-none text-[var(--color-ph-red)]" aria-hidden />
-          Stop tracking any time from Home → Journeys.
+          <Check className="mt-0.5 h-3.5 w-3.5 flex-none text-ph-pine" aria-hidden />
+          Stop tracking any time from Journeys.
         </li>
       </ul>
 
       <button
         type="button"
         onClick={onStart}
-        className="mt-6 flex w-full items-center justify-center gap-2 rounded-xl bg-[var(--color-ph-red)] px-4 py-3 text-sm font-bold text-white shadow-sm hover:bg-red-700"
+        className="mt-6 flex w-full items-center justify-center gap-2 rounded-full bg-ph-red px-4 py-3 text-sm font-medium text-white transition-opacity hover:opacity-90"
       >
         Start tracking
       </button>
 
       <Link
-        href="/home?view=journeys"
-        className="mt-2 block text-center text-[11px] font-semibold text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100"
+        href="/journeys"
+        className="mt-3 block text-center text-[12px] font-medium text-ph-text-muted hover:text-ph-text"
       >
         Not now
       </Link>
@@ -702,13 +680,11 @@ function FieldGroup({
   label: string;
   Icon: typeof Users;
   children: React.ReactNode;
-  /** Drop the top margin — for use inside a grid that already
-   *  manages spacing (e.g. two-up Pax + Cabin row). */
   flush?: boolean;
 }) {
   return (
     <div className={flush ? '' : 'mt-4'}>
-      <p className="mb-1.5 flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wide text-zinc-500">
+      <p className="mb-1.5 flex items-center gap-1.5 font-mono text-[10px] uppercase tracking-[0.14em] text-ph-text-meta">
         <Icon className="h-3 w-3" aria-hidden />
         {label}
       </p>
@@ -721,11 +697,14 @@ function PaxStepper({ value, onChange }: { value: number; onChange: (next: numbe
   const dec = () => onChange(Math.max(1, value - 1));
   const inc = () => onChange(Math.min(9, value + 1));
   return (
-    <div className="flex items-center rounded-xl border border-zinc-200 bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-900">
+    <div className="flex items-center rounded-ph-card border border-ph-border bg-ph-card">
       <StepperButton onClick={dec} disabled={value <= 1} ariaLabel="Decrease passengers">
         −
       </StepperButton>
-      <span aria-live="polite" className="flex-1 text-center text-sm font-bold tabular-nums">
+      <span
+        aria-live="polite"
+        className="flex-1 text-center font-serif text-[19px] leading-none text-ph-ink tabular-nums"
+      >
         {value}
       </span>
       <StepperButton onClick={inc} disabled={value >= 9} ariaLabel="Increase passengers">
@@ -752,14 +731,18 @@ function StepperButton({
       onClick={onClick}
       disabled={disabled}
       aria-label={ariaLabel}
-      className="grid h-9 w-9 flex-none place-items-center rounded-lg text-base font-bold text-zinc-700 hover:bg-white disabled:cursor-not-allowed disabled:opacity-30 dark:text-zinc-200 dark:hover:bg-zinc-800"
+      className="grid h-10 w-10 flex-none place-items-center rounded-full text-[19px] font-medium text-ph-text-muted transition-colors hover:bg-ph-fill-warm hover:text-ph-brick disabled:cursor-not-allowed disabled:opacity-30"
     >
       {children}
     </button>
   );
 }
 
-function SegmentedControl<T extends string | number>({
+/** Local segmented control for Return/One-way. Kept separate from the
+ *  Lacquer SegmentedControl primitive because that one expects a
+ *  {id,label}[] item shape; this wizard uses primitive arrays like
+ *  readonly TripType[]. */
+function WizardSegmented<T extends string | number>({
   value,
   options,
   onChange,
@@ -771,7 +754,7 @@ function SegmentedControl<T extends string | number>({
   format?: (v: T) => string;
 }) {
   return (
-    <div className="grid auto-cols-fr grid-flow-col rounded-xl border border-zinc-200 bg-zinc-50 p-1 dark:border-zinc-700 dark:bg-zinc-900">
+    <div className="grid auto-cols-fr grid-flow-col rounded-full bg-ph-fill p-1">
       {options.map((opt) => {
         const active = opt === value;
         return (
@@ -781,9 +764,10 @@ function SegmentedControl<T extends string | number>({
             onClick={() => onChange(opt)}
             className={
               active
-                ? 'rounded-lg bg-white px-3 py-1.5 text-xs font-bold shadow-sm dark:bg-zinc-950'
-                : 'rounded-lg px-3 py-1.5 text-xs font-medium text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100'
+                ? 'rounded-full bg-ph-card px-3 py-1.5 text-[13px] font-medium text-ph-ink'
+                : 'rounded-full px-3 py-1.5 text-[13px] font-medium text-ph-text-muted hover:text-ph-text'
             }
+            style={active ? { boxShadow: 'var(--shadow-ph-thumb)' } : undefined}
           >
             {format ? format(opt) : String(opt)}
           </button>

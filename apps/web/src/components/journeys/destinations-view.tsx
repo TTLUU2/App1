@@ -16,6 +16,7 @@ import { Check } from 'lucide-react';
 import { formatPoints } from '@/lib/format';
 import { selectTotalPoints, useBalancesStore } from '@/store/balances';
 import { DESTINATION_CATALOGUE, type DestinationOption } from '@/store/journeys';
+import { CityIllustration } from '@/components/city-illustration';
 import { HeroCard, LacquerChip } from '@/components/lacquer';
 
 export function DestinationsView() {
@@ -88,7 +89,7 @@ function ReachableTile({ dest }: { dest: DestinationOption }) {
       href={`/journeys/track?destinationId=${dest.id}`}
       className="block overflow-hidden rounded-ph-card border border-ph-border bg-ph-card transition-colors hover:bg-ph-fill-warm"
     >
-      <DestinationPhoto label={dest.city} height={72} />
+      <CityBanner destinationId={dest.id} />
       <div className="p-3">
         <p className="font-serif text-[19px] leading-tight text-ph-ink">{dest.city}</p>
         <p className="mt-1 text-[12px] text-ph-text-muted tabular-nums">
@@ -112,7 +113,7 @@ function AlmostThereRow({ dest, totalPoints }: { dest: DestinationOption; totalP
       href={`/journeys/track?destinationId=${dest.id}`}
       className="flex items-center gap-3 rounded-ph-card border border-ph-border bg-ph-card p-[15px] transition-colors hover:bg-ph-fill-warm"
     >
-      <DestinationPhoto label={dest.city} height={44} width={44} rounded="rounded-[9px]" />
+      <CityThumb destinationId={dest.id} />
       <div className="min-w-0 flex-1">
         <p className="truncate font-serif text-[17px] leading-tight text-ph-ink">{dest.city}</p>
         <p className="mt-0.5 truncate text-[12px] text-ph-text-muted tabular-nums">
@@ -134,36 +135,43 @@ function AlmostThereRow({ dest, totalPoints }: { dest: DestinationOption; totalP
   );
 }
 
-/** Placeholder photo panel — diagonal stripes + city label until
- *  real destination photography lands in Phase 6. Kept inline here
- *  rather than reusing CardArtFrame because Journeys tiles want a
- *  full-bleed banner shape, not a card-art rectangle. */
-function DestinationPhoto({
-  label,
-  height,
-  width,
-  rounded,
-}: {
-  label: string;
-  height: number;
-  width?: number;
-  rounded?: string;
-}) {
+/** 72px landmark banner atop each reachable destination tile. Cream
+ *  wash (ph-fill-warm → ph-card) with the city silhouette in ph-brick
+ *  — reads as a passport stamp, not a photo. Real photography drops
+ *  in behind the CityIllustration in Phase 6. */
+function CityBanner({ destinationId }: { destinationId: string }) {
   return (
-    <span
-      role="img"
-      aria-label={`${label} photo placeholder`}
-      className={`grid place-items-center overflow-hidden ${rounded ?? ''}`}
+    <div
+      className="relative h-[72px] overflow-hidden"
       style={{
-        height,
-        width: width ?? '100%',
-        backgroundImage:
-          'repeating-linear-gradient(45deg, var(--color-ph-fill) 0 6px, var(--color-ph-fill-warm) 6px 12px)',
+        background: 'linear-gradient(to bottom, var(--color-ph-fill-warm), var(--color-ph-card))',
       }}
     >
-      <span className="font-mono text-[9px] uppercase tracking-[0.14em] text-ph-text-meta">
-        {label}
-      </span>
-    </span>
+      <CityIllustration
+        destinationId={destinationId}
+        preserveAspectRatio="xMidYMax meet"
+        className="absolute inset-x-0 bottom-0 h-14 w-full text-ph-brick"
+      />
+    </div>
+  );
+}
+
+/** 44px square thumbnail used on the "Almost there" horizontal rows.
+ *  Same silhouette, smaller crop, rounded corners to match sibling
+ *  card-art thumbs. */
+function CityThumb({ destinationId }: { destinationId: string }) {
+  return (
+    <div
+      className="relative h-[44px] w-[44px] flex-none overflow-hidden rounded-[9px]"
+      style={{
+        background: 'linear-gradient(to bottom, var(--color-ph-fill-warm), var(--color-ph-card))',
+      }}
+    >
+      <CityIllustration
+        destinationId={destinationId}
+        preserveAspectRatio="xMidYMax meet"
+        className="absolute inset-x-0 bottom-0 h-8 w-full text-ph-brick"
+      />
+    </div>
   );
 }
