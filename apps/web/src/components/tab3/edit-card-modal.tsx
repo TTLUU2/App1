@@ -8,10 +8,14 @@
 // Scope: only the four "tracking" fields the user actually touches over
 // time. Things like card name, last4, expiry are read-only here — change
 // those via Add Card again (and delete the old) if they're wrong.
+//
+// Lacquer overlay: ink-42% scrim, ph-paper sheet with the sheet radius,
+// mono uppercase field eyebrows, ph-card + border-strong inputs with a
+// ph-brick focus ring, red primary CTA + red destructive delete.
 
 import { useEffect, useState } from 'react';
 import * as Dialog from '@radix-ui/react-dialog';
-import { X, CheckCircle2, Pencil, Volume2, Trash2 } from 'lucide-react';
+import { CheckCircle2, Pencil, Trash2, Volume2, X } from 'lucide-react';
 import type { UserCardWithDetails } from '@ph/shared';
 import { useUserCardsStore } from '@/store/user-cards';
 import {
@@ -39,8 +43,6 @@ export function EditCardModal({ uc, onClose }: EditCardModalProps) {
   const deleteCard = useUserCardsStore((s) => s.deleteCard);
   const [confirmingDelete, setConfirmingDelete] = useState(false);
 
-  // Seed from current card. Use today as fallback if a field is unset so
-  // the inputs always have a sensible value.
   const [draft, setDraft] = useState<Editable>(() => ({
     activationDate: uc.activationDate ?? uc.applicationDate ?? todayIsoDate(),
     annualFeeNextDueDate: uc.annualFeeNextDueDate ?? todayIsoDate(),
@@ -62,11 +64,6 @@ export function EditCardModal({ uc, onClose }: EditCardModalProps) {
     return parts.join(' ');
   }
 
-  // Mount greeting — defer with a tiny timer so React 19 StrictMode's dev
-  // double-mount doesn't race two speak() calls against each other (the
-  // second call's cancelSpeech-on-entry was killing the first one's
-  // in-flight audio). Cleanup cancels the TIMER, not the audio, so the
-  // user always hears exactly one greeting.
   useEffect(() => {
     const t = setTimeout(() => void speak(buildSummary()), 100);
     return () => clearTimeout(t);
@@ -98,18 +95,30 @@ export function EditCardModal({ uc, onClose }: EditCardModalProps) {
   return (
     <Dialog.Root open onOpenChange={(open) => !open && onClose()}>
       <Dialog.Portal>
-        <Dialog.Overlay className="fixed inset-0 z-40 bg-black/50 backdrop-blur-sm" />
-        <Dialog.Content className="fixed inset-x-0 bottom-0 z-50 mx-auto max-h-[90dvh] w-full max-w-md overflow-y-auto rounded-t-3xl bg-white p-4 shadow-2xl outline-none dark:bg-zinc-900">
-          <div className="mb-2 flex items-start justify-between gap-2">
-            <Dialog.Title className="inline-flex items-center gap-2 text-base font-semibold">
-              <Pencil className="h-4 w-4 text-[var(--color-ph-red)]" aria-hidden />
+        <Dialog.Overlay
+          className="fixed inset-0 z-40 backdrop-blur-sm"
+          style={{ backgroundColor: 'rgba(46,10,8,0.42)' }}
+        />
+        <Dialog.Content
+          className="fixed inset-x-0 bottom-0 z-50 mx-auto max-h-[90dvh] w-full max-w-md overflow-y-auto rounded-t-ph-sheet bg-ph-paper text-ph-text outline-none"
+          style={{ padding: '20px 24px 26px' }}
+        >
+          <div
+            aria-hidden
+            className="mx-auto mb-3 h-1 w-[38px] rounded-full"
+            style={{ backgroundColor: '#DCD2C1' }}
+          />
+
+          <div className="mb-4 flex items-start justify-between gap-2">
+            <Dialog.Title className="inline-flex items-center gap-2 font-serif text-[19px] leading-tight text-ph-ink">
+              <Pencil className="h-4 w-4 text-ph-brick" aria-hidden />
               Edit {uc.card.name}
             </Dialog.Title>
             <Dialog.Close asChild>
               <button
                 type="button"
                 aria-label="Close"
-                className="grid h-8 w-8 place-items-center rounded-full text-zinc-500 hover:bg-zinc-100 dark:hover:bg-zinc-800"
+                className="grid h-8 w-8 place-items-center rounded-full text-ph-text-muted hover:bg-ph-fill-warm hover:text-ph-text"
               >
                 <X className="h-4 w-4" aria-hidden />
               </button>
@@ -121,14 +130,14 @@ export function EditCardModal({ uc, onClose }: EditCardModalProps) {
               e.preventDefault();
               void save();
             }}
-            className="space-y-3"
+            className="space-y-4"
           >
             <Field label="Approval date">
               <input
                 type="date"
                 value={draft.activationDate}
                 onChange={(e) => setDraft((d) => ({ ...d, activationDate: e.target.value }))}
-                className="w-full rounded border border-zinc-300 bg-white px-2 py-1.5 text-sm dark:border-zinc-700 dark:bg-zinc-950"
+                className="w-full rounded-ph-inner border border-ph-border-strong bg-ph-card px-3 py-2.5 text-[14px] text-ph-ink focus:outline-none focus-visible:ring-2 focus-visible:ring-ph-brick"
               />
             </Field>
 
@@ -137,7 +146,7 @@ export function EditCardModal({ uc, onClose }: EditCardModalProps) {
                 type="date"
                 value={draft.annualFeeNextDueDate}
                 onChange={(e) => setDraft((d) => ({ ...d, annualFeeNextDueDate: e.target.value }))}
-                className="w-full rounded border border-zinc-300 bg-white px-2 py-1.5 text-sm dark:border-zinc-700 dark:bg-zinc-950"
+                className="w-full rounded-ph-inner border border-ph-border-strong bg-ph-card px-3 py-2.5 text-[14px] text-ph-ink focus:outline-none focus-visible:ring-2 focus-visible:ring-ph-brick"
               />
             </Field>
 
@@ -151,7 +160,7 @@ export function EditCardModal({ uc, onClose }: EditCardModalProps) {
                   setDraft((d) => ({ ...d, bonusTarget: Number(e.target.value) || 0 }))
                 }
                 placeholder="e.g. 4500"
-                className="w-full rounded border border-zinc-300 bg-white px-2 py-1.5 text-sm tabular-nums dark:border-zinc-700 dark:bg-zinc-950"
+                className="w-full rounded-ph-inner border border-ph-border-strong bg-ph-card px-3 py-2.5 text-[14px] tabular-nums text-ph-ink placeholder:text-ph-text-meta focus:outline-none focus-visible:ring-2 focus-visible:ring-ph-brick"
               />
             </Field>
 
@@ -165,7 +174,7 @@ export function EditCardModal({ uc, onClose }: EditCardModalProps) {
                 onChange={(e) =>
                   setDraft((d) => ({ ...d, bonusSpendWindowEndDate: e.target.value }))
                 }
-                className="w-full rounded border border-zinc-300 bg-white px-2 py-1.5 text-sm dark:border-zinc-700 dark:bg-zinc-950"
+                className="w-full rounded-ph-inner border border-ph-border-strong bg-ph-card px-3 py-2.5 text-[14px] text-ph-ink focus:outline-none focus-visible:ring-2 focus-visible:ring-ph-brick"
               />
             </Field>
 
@@ -173,9 +182,9 @@ export function EditCardModal({ uc, onClose }: EditCardModalProps) {
               <button
                 type="button"
                 onClick={() => void speak(buildSummary())}
-                className="flex items-center gap-1.5 rounded-full border border-zinc-300 px-3 py-1 text-[11px] font-medium text-zinc-600 hover:border-[var(--color-ph-red)] hover:text-[var(--color-ph-red)] dark:border-zinc-700 dark:text-zinc-400"
+                className="inline-flex items-center gap-1.5 rounded-full border border-ph-border-strong bg-ph-card px-3 py-1.5 text-[12px] font-medium text-ph-text-muted transition-colors hover:text-ph-brick"
               >
-                <Volume2 className="h-3 w-3" aria-hidden />
+                <Volume2 className="h-3.5 w-3.5" aria-hidden />
                 Hear summary
               </button>
             </div>
@@ -193,7 +202,7 @@ export function EditCardModal({ uc, onClose }: EditCardModalProps) {
             />
 
             {error && (
-              <p role="alert" className="text-xs text-rose-700 dark:text-rose-300">
+              <p role="alert" className="text-[12px] text-ph-red">
                 {error}
               </p>
             )}
@@ -201,7 +210,7 @@ export function EditCardModal({ uc, onClose }: EditCardModalProps) {
             <button
               type="submit"
               disabled={saving}
-              className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-[var(--color-ph-red)] px-4 py-3 text-sm font-medium text-white disabled:opacity-50"
+              className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-ph-red px-4 py-3 text-sm font-medium text-white transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
             >
               <CheckCircle2 className="h-4 w-4" aria-hidden />
               {saving ? 'Saving…' : 'Save changes'}
@@ -216,14 +225,14 @@ export function EditCardModal({ uc, onClose }: EditCardModalProps) {
               <button
                 type="button"
                 onClick={() => setConfirmingDelete(true)}
-                className="mx-auto mt-1 flex items-center gap-1 text-[11px] font-medium text-rose-700 hover:underline dark:text-rose-300"
+                className="mx-auto mt-1 flex items-center gap-1 text-[12px] font-medium text-ph-red hover:underline"
               >
-                <Trash2 className="h-3 w-3" aria-hidden />
+                <Trash2 className="h-3.5 w-3.5" aria-hidden />
                 Delete this card from history
               </button>
             ) : (
-              <div className="mt-2 rounded-xl border border-rose-200 bg-rose-50 p-3 text-xs dark:border-rose-900 dark:bg-rose-950/40">
-                <p className="text-rose-800 dark:text-rose-200">
+              <div className="mt-2 rounded-ph-inner border border-ph-negative-chip bg-ph-negative-chip p-3 text-[12px] text-ph-ink">
+                <p>
                   Delete <span className="font-semibold">{uc.card.name}</span> from your history?
                   This removes it entirely — eligibility for new bonuses won&apos;t factor it in.
                 </p>
@@ -234,14 +243,14 @@ export function EditCardModal({ uc, onClose }: EditCardModalProps) {
                       await deleteCard(uc.id);
                       onClose();
                     }}
-                    className="flex-1 rounded-full bg-rose-600 px-3 py-2 text-xs font-medium text-white"
+                    className="flex-1 rounded-full bg-ph-red px-3 py-2 text-[12px] font-medium text-white transition-opacity hover:opacity-90"
                   >
                     Yes, delete
                   </button>
                   <button
                     type="button"
                     onClick={() => setConfirmingDelete(false)}
-                    className="flex-1 rounded-full border border-zinc-300 px-3 py-2 text-xs font-medium text-zinc-700 dark:border-zinc-700 dark:text-zinc-300"
+                    className="flex-1 rounded-full border border-ph-border-strong bg-ph-card px-3 py-2 text-[12px] font-medium text-ph-text transition-colors hover:bg-ph-fill-warm"
                   >
                     Keep it
                   </button>
@@ -266,11 +275,13 @@ function Field({
 }) {
   return (
     <div>
-      <div className="mb-1 flex items-baseline justify-between">
-        <label className="text-[11px] font-medium uppercase tracking-wide text-zinc-500">
+      <div className="mb-1.5 flex items-baseline justify-between">
+        <label className="font-mono text-[10px] uppercase tracking-[0.14em] text-ph-text-meta">
           {label}
         </label>
-        {hint && <span className="text-[10px] text-zinc-500">{hint}</span>}
+        {hint && (
+          <span className="font-mono text-[10px] tabular-nums text-ph-text-meta">{hint}</span>
+        )}
       </div>
       {children}
     </div>

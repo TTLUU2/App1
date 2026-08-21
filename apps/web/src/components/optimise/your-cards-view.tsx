@@ -33,6 +33,7 @@ import { getBenefitsForCard } from '@ph/shared';
 import { selectUserCardsWithDetails, useUserCardsStore } from '@/store/user-cards';
 import { useUserBenefitsStore } from '@/store/user-benefits';
 import { CardArtFrame, LacquerChip } from '@/components/lacquer';
+import { EditCardModal } from '@/components/tab3/edit-card-modal';
 import { formatCurrency, formatPoints } from '@/lib/format';
 
 // ── main ─────────────────────────────────────────────────────────────
@@ -132,6 +133,7 @@ interface CardTileProps {
 
 function CardTile({ uc, defaultOpen }: CardTileProps) {
   const [open, setOpen] = useState(defaultOpen);
+  const [editing, setEditing] = useState(false);
   const status = computeStatus(uc);
   const summary = status.bonusEarned
     ? 'Bonus earned · nothing to do'
@@ -179,9 +181,10 @@ function CardTile({ uc, defaultOpen }: CardTileProps) {
           <AttributeGrid uc={uc} />
           <SignUpBonusPanel uc={uc} status={status} />
           <BenefitsSection uc={uc} />
-          <ActionRow uc={uc} />
+          <ActionRow uc={uc} onEdit={() => setEditing(true)} />
         </div>
       )}
+      {editing && <EditCardModal uc={uc} onClose={() => setEditing(false)} />}
     </article>
   );
 }
@@ -267,14 +270,13 @@ function SignUpBonusPanel({ uc, status }: { uc: UserCardWithDetails; status: Car
               style={{ width: `${clamped * 100}%` }}
             />
           </div>
-          <p className="mt-2 text-[12px] leading-snug text-ph-amber-text">
-            You need{' '}
+          <p className="mt-2 truncate text-[12px] text-ph-amber-text">
+            Need{' '}
             <strong className="font-semibold tabular-nums">
-              {formatCurrency(status.dailyRequired)} a day
-            </strong>
-            . Last 30 days averaged{' '}
+              {formatCurrency(status.dailyRequired)}/day
+            </strong>{' '}
+            · Last 30d avg{' '}
             <span className="font-semibold tabular-nums">{formatCurrency(status.dailyActual)}</span>
-            .
           </p>
         </div>
       ) : null}
@@ -389,34 +391,31 @@ function BenefitsSection({ uc }: { uc: UserCardWithDetails }) {
   );
 }
 
-// ── compact action row (three equal-width small pills) ─────────────
+// ── compact action row — two equal pills. Log-spend is dropped
+// intentionally: the Copilot voice hero at the top of Your Cards and
+// the centre FAB both open the log-spend surface, so a per-card pill
+// duplicated one of two more prominent affordances.
 
-function ActionRow({ uc }: { uc: UserCardWithDetails }) {
+function ActionRow({ uc, onEdit }: { uc: UserCardWithDetails; onEdit: () => void }) {
   const updateCard = useUserCardsStore((s) => s.updateCard);
   function cancel() {
     const today = new Date().toISOString().slice(0, 10);
     void updateCard(uc.id, { cancellationDate: today });
   }
   return (
-    <div className="flex items-center gap-1.5 border-t border-ph-border p-3">
-      <Link
-        href={`/spend?cardId=${encodeURIComponent(uc.id)}`}
-        className="inline-flex flex-1 items-center justify-center gap-1 rounded-full bg-ph-red px-3 py-1.5 text-[12px] font-medium text-white transition-opacity hover:opacity-90"
-      >
-        <Receipt className="h-3.5 w-3.5" aria-hidden />
-        Log spend
-      </Link>
-      <Link
-        href={`/cards/${uc.card.id}`}
-        className="inline-flex flex-1 items-center justify-center gap-1 rounded-full border border-ph-border-strong bg-ph-card px-3 py-1.5 text-[12px] font-medium text-ph-text transition-colors hover:bg-ph-fill-warm"
+    <div className="flex items-center gap-2 border-t border-ph-border p-3">
+      <button
+        type="button"
+        onClick={onEdit}
+        className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-full border border-ph-border-strong bg-ph-card px-3 py-2 text-[13px] font-medium text-ph-text transition-colors hover:bg-ph-fill-warm"
       >
         <Pencil className="h-3.5 w-3.5" aria-hidden />
-        Edit
-      </Link>
+        Edit details
+      </button>
       <button
         type="button"
         onClick={cancel}
-        className="inline-flex flex-1 items-center justify-center gap-1 rounded-full border border-ph-red bg-ph-card px-3 py-1.5 text-[12px] font-medium text-ph-red transition-colors hover:bg-ph-red/5"
+        className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-full border border-ph-red bg-ph-card px-3 py-2 text-[13px] font-medium text-ph-red transition-colors hover:bg-ph-red/5"
       >
         <Ban className="h-3.5 w-3.5" aria-hidden />
         Cancel
