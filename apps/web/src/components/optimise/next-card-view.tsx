@@ -83,8 +83,19 @@ function netValueAud(bonusPoints: number | null, annualFee: number | null): numb
 // ── main ─────────────────────────────────────────────────────────────
 
 export function NextCardView() {
+  // Subscribe to primitive slices only — Zustand v5 uses Object.is on the
+  // selector's return value, so a selector that runs the whole engine
+  // and returns a fresh array on every call causes an infinite render
+  // loop (each render sees a new reference and triggers another). Pull
+  // stable slices, then memoise the engine call over them.
   const preferences = useUserPreferencesStore((s) => s.preferences);
-  const recs = useUserCardsStore((s) => selectRecommendations(s, preferences));
+  const userCards = useUserCardsStore((s) => s.userCards);
+  const loaded = useUserCardsStore((s) => s.loaded);
+  const recs = useMemo(() => {
+    void userCards;
+    void loaded;
+    return selectRecommendations(useUserCardsStore.getState(), preferences);
+  }, [userCards, loaded, preferences]);
 
   const [program, setProgram] = useState<ProgramFilter>('all');
   const [sortBy, setSortBy] = useState<SortKey>('best');
