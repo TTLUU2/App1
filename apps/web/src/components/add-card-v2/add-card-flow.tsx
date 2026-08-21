@@ -227,7 +227,7 @@ export function AddCardFlow({ onSaved, onClose }: AddCardFlowProps = {}) {
       {error && (
         <div
           role="alert"
-          className="mt-3 flex items-start gap-2 rounded-lg border border-rose-200 bg-rose-50 p-3 text-xs text-rose-800 dark:border-rose-900 dark:bg-rose-950/40 dark:text-rose-200"
+          className="mt-3 flex items-start gap-2 rounded-lg border border-ph-negative-chip bg-ph-negative-chip p-3 text-xs text-ph-ink dark:border-rose-900 dark:bg-rose-950/40 dark:text-rose-200"
         >
           <AlertTriangle className="mt-0.5 h-4 w-4 flex-none" aria-hidden />
           {error}

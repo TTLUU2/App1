@@ -168,11 +168,11 @@ export function BenefitsFlow() {
       {phase === 'submitting' && <p className="mt-4 text-xs text-ph-text-meta">Parsing…</p>}
 
       {phase === 'confirm' && parseResult?.userCardId && parseResult.benefitId && (
-        <div className="mt-4 rounded-2xl border border-emerald-200 bg-emerald-50 p-4 text-sm dark:border-emerald-900 dark:bg-emerald-950/40">
+        <div className="mt-4 rounded-2xl border border-ph-pine-chip bg-ph-pine-chip p-4 text-sm dark:border-emerald-900 dark:bg-emerald-950/40">
           <p className="font-semibold">
             {benefitLabel(parseResult.userCardId, parseResult.benefitId, heldCards)}
           </p>
-          <p className="mt-1 text-xs text-emerald-900 dark:text-emerald-200">
+          <p className="mt-1 text-xs text-ph-pine-text dark:text-emerald-200">
             Mark as used for the current period?
           </p>
           <div className="mt-3 flex gap-2">
@@ -195,12 +195,12 @@ export function BenefitsFlow() {
       )}
 
       {phase === 'disambiguate' && (
-        <div className="mt-4 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm dark:border-amber-900 dark:bg-amber-950/40">
-          <p className="font-medium text-amber-900 dark:text-amber-100">
+        <div className="mt-4 rounded-2xl border border-ph-amber-chip bg-ph-amber-chip p-4 text-sm dark:border-amber-900 dark:bg-amber-950/40">
+          <p className="font-medium text-ph-amber-text dark:text-amber-100">
             Which benefit did you mean?
           </p>
           {parseResult?.utterance && (
-            <p className="mt-0.5 text-xs text-amber-800 dark:text-amber-200">
+            <p className="mt-0.5 text-xs text-ph-amber-text dark:text-amber-200">
               From: &ldquo;{parseResult.utterance}&rdquo;
             </p>
           )}
@@ -210,7 +210,7 @@ export function BenefitsFlow() {
                 <button
                   type="button"
                   onClick={() => apply(b.userCardId, b.benefitId)}
-                  className="flex w-full items-center justify-between rounded-lg bg-ph-card px-3 py-2 text-xs hover:bg-amber-100 dark:bg-zinc-900 dark:hover:bg-zinc-800"
+                  className="flex w-full items-center justify-between rounded-lg bg-ph-card px-3 py-2 text-xs hover:bg-ph-fill-warm dark:bg-zinc-900 dark:hover:bg-zinc-800"
                 >
                   <span className="font-medium">{b.benefitName}</span>
                   <span className="text-ph-text-meta">{b.cardName}</span>
@@ -224,7 +224,7 @@ export function BenefitsFlow() {
       {phase === 'error' && error && (
         <div
           role="alert"
-          className="mt-4 flex items-start gap-2 rounded-lg border border-rose-200 bg-rose-50 p-3 text-xs text-rose-800 dark:border-rose-900 dark:bg-rose-950/40 dark:text-rose-200"
+          className="mt-4 flex items-start gap-2 rounded-lg border border-ph-negative-chip bg-ph-negative-chip p-3 text-xs text-ph-ink dark:border-rose-900 dark:bg-rose-950/40 dark:text-rose-200"
         >
           <AlertTriangle className="mt-0.5 h-4 w-4 flex-none" aria-hidden />
           <div>
@@ -244,20 +244,20 @@ export function BenefitsFlow() {
       )}
 
       {lastApplied && (
-        <div className="mt-4 flex items-start gap-3 rounded-2xl border border-emerald-200 bg-emerald-50 p-4 dark:border-emerald-900 dark:bg-emerald-950/40">
+        <div className="mt-4 flex items-start gap-3 rounded-2xl border border-ph-pine-chip bg-ph-pine-chip p-4 dark:border-emerald-900 dark:bg-emerald-950/40">
           <CheckCircle2
-            className="mt-0.5 h-5 w-5 flex-none text-emerald-700 dark:text-emerald-300"
+            className="mt-0.5 h-5 w-5 flex-none text-ph-pine dark:text-emerald-300"
             aria-hidden
           />
           <div className="min-w-0 flex-1">
-            <p className="text-sm font-medium text-emerald-900 dark:text-emerald-100">
+            <p className="text-sm font-medium text-ph-pine-text dark:text-emerald-100">
               Marked used: {lastApplied.label}
             </p>
             <div className="mt-2 flex gap-3 text-xs">
               <button
                 type="button"
                 onClick={undoLast}
-                className="inline-flex items-center gap-1 font-medium text-emerald-800 underline-offset-2 hover:underline dark:text-emerald-200"
+                className="inline-flex items-center gap-1 font-medium text-ph-pine underline-offset-2 hover:underline dark:text-emerald-200"
               >
                 <Undo2 className="h-3 w-3" aria-hidden />
                 Undo
@@ -265,14 +265,14 @@ export function BenefitsFlow() {
               <button
                 type="button"
                 onClick={() => router.push('/optimisation')}
-                className="font-medium text-emerald-800 underline-offset-2 hover:underline dark:text-emerald-200"
+                className="font-medium text-ph-pine underline-offset-2 hover:underline dark:text-emerald-200"
               >
                 See on Tab 3
               </button>
               <button
                 type="button"
                 onClick={() => setLastApplied(null)}
-                className="ml-auto text-emerald-700/70 dark:text-emerald-300/70"
+                className="ml-auto text-ph-pine/70 dark:text-emerald-300/70"
               >
                 Dismiss
               </button>

@@ -151,8 +151,8 @@ export function AskFlow() {
             <div
               className={
                 t.inScope
-                  ? 'mr-auto max-w-[85%] rounded-2xl rounded-tl-sm bg-emerald-50 px-3 py-2 text-sm text-emerald-900 dark:bg-emerald-950/40 dark:text-emerald-100'
-                  : 'mr-auto max-w-[85%] rounded-2xl rounded-tl-sm bg-amber-50 px-3 py-2 text-sm text-amber-900 dark:bg-amber-950/40 dark:text-amber-100'
+                  ? 'mr-auto max-w-[85%] rounded-2xl rounded-tl-sm bg-ph-pine-chip px-3 py-2 text-sm text-ph-pine-text dark:bg-emerald-950/40 dark:text-emerald-100'
+                  : 'mr-auto max-w-[85%] rounded-2xl rounded-tl-sm bg-ph-amber-chip px-3 py-2 text-sm text-ph-amber-text dark:bg-amber-950/40 dark:text-amber-100'
               }
             >
               {t.answer}
@@ -166,7 +166,7 @@ export function AskFlow() {
       {error && (
         <div
           role="alert"
-          className="mt-3 flex items-start gap-2 rounded-lg border border-rose-200 bg-rose-50 p-3 text-xs text-rose-800 dark:border-rose-900 dark:bg-rose-950/40 dark:text-rose-200"
+          className="mt-3 flex items-start gap-2 rounded-lg border border-ph-negative-chip bg-ph-negative-chip p-3 text-xs text-ph-ink dark:border-rose-900 dark:bg-rose-950/40 dark:text-rose-200"
         >
           <AlertTriangle className="mt-0.5 h-4 w-4 flex-none" aria-hidden />
           <span>{error}</span>

@@ -102,34 +102,34 @@ export function SpendGovCheck({
   const adjusted = amount - govAmount;
 
   return (
-    <section className="rounded-2xl border border-amber-200 bg-amber-50 p-4 dark:border-amber-900 dark:bg-amber-950/40">
+    <section className="rounded-2xl border border-ph-amber-chip bg-ph-amber-chip p-4 dark:border-amber-900 dark:bg-amber-950/40">
       <header className="flex items-start gap-2">
         <Landmark
-          className="mt-0.5 h-4 w-4 flex-none text-amber-700 dark:text-amber-300"
+          className="mt-0.5 h-4 w-4 flex-none text-ph-amber-text dark:text-amber-300"
           aria-hidden
         />
         <div className="min-w-0 flex-1">
-          <p className="text-sm font-semibold text-amber-900 dark:text-amber-100">
+          <p className="text-sm font-semibold text-ph-amber-text dark:text-amber-100">
             Add {formatCurrency(amount)} to {cardName}
           </p>
           {phase === 'asking' && (
-            <p className="mt-1 text-xs text-amber-900/85 dark:text-amber-200/85">
+            <p className="mt-1 text-xs text-ph-amber-text/85 dark:text-amber-200/85">
               Was any of this a direct government payment (ATO, council rates, car rego, Australia
               Post)? Banks usually don&apos;t count those toward sign-up min-spend.
             </p>
           )}
           {phase === 'amount_only' && (
-            <p className="mt-1 text-xs text-amber-900/85 dark:text-amber-200/85">
+            <p className="mt-1 text-xs text-ph-amber-text/85 dark:text-amber-200/85">
               How much of the {formatCurrency(amount)} was government?
             </p>
           )}
           {phase === 'parsing' && (
-            <p className="mt-1 text-xs text-amber-900/85 dark:text-amber-200/85">
+            <p className="mt-1 text-xs text-ph-amber-text/85 dark:text-amber-200/85">
               Working out the amount…
             </p>
           )}
           {phase === 'confirming' && (
-            <p className="mt-1 text-xs text-emerald-900 dark:text-emerald-200">
+            <p className="mt-1 text-xs text-ph-pine-text dark:text-emerald-200">
               {formatCurrency(amount)} − {formatCurrency(govAmount)} gov ={' '}
               <span className="font-semibold">{formatCurrency(adjusted)}</span> counted toward
               min-spend.
@@ -161,7 +161,7 @@ export function SpendGovCheck({
       {error && (
         <p
           role="alert"
-          className="mt-2 flex items-start gap-1 text-[11px] text-rose-700 dark:text-rose-300"
+          className="mt-2 flex items-start gap-1 text-[11px] text-ph-ink dark:text-rose-300"
         >
           <AlertTriangle className="mt-0.5 h-3 w-3 flex-none" aria-hidden />
           {error}
@@ -184,7 +184,7 @@ export function SpendGovCheck({
               type="button"
               onClick={() => setPhase('amount_only')}
               disabled={submitting}
-              className="rounded-full border border-amber-300 px-3 py-2 text-sm font-medium text-amber-900 dark:border-amber-800 dark:text-amber-100"
+              className="rounded-full border border-amber-300 px-3 py-2 text-sm font-medium text-ph-amber-text dark:border-amber-800 dark:text-amber-100"
             >
               Yes, some was gov
             </button>
@@ -194,7 +194,7 @@ export function SpendGovCheck({
           <button
             type="button"
             onClick={() => setPhase('asking')}
-            className="rounded-full border border-amber-300 px-3 py-2 text-xs font-medium text-amber-900 dark:border-amber-800 dark:text-amber-100"
+            className="rounded-full border border-amber-300 px-3 py-2 text-xs font-medium text-ph-amber-text dark:border-amber-800 dark:text-amber-100"
           >
             ← Back
           </button>
@@ -214,7 +214,7 @@ export function SpendGovCheck({
               type="button"
               onClick={() => setPhase('amount_only')}
               disabled={submitting}
-              className="inline-flex items-center gap-1 rounded-full border border-amber-300 px-3 py-2 text-sm font-medium text-amber-900 dark:border-amber-800 dark:text-amber-100"
+              className="inline-flex items-center gap-1 rounded-full border border-amber-300 px-3 py-2 text-sm font-medium text-ph-amber-text dark:border-amber-800 dark:text-amber-100"
             >
               <Send className="h-3.5 w-3.5" aria-hidden />
               Edit
@@ -225,7 +225,7 @@ export function SpendGovCheck({
           type="button"
           onClick={onCancel}
           disabled={submitting}
-          className="ml-auto text-[11px] text-amber-800/80 underline-offset-2 hover:underline dark:text-amber-200/80"
+          className="ml-auto text-[11px] text-ph-amber-text/80 underline-offset-2 hover:underline dark:text-amber-200/80"
         >
           Cancel
         </button>
