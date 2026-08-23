@@ -31,9 +31,10 @@
 //      (negative chip on the row).
 //   #8 Status = colour + icon + text, always.
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import {
+  ArrowDownWideNarrow,
   Building2,
   Check,
   ChevronDown,
@@ -113,6 +114,15 @@ const SORT_LABELS: Record<SortKey, string> = {
   best: 'Best',
   points: 'Points',
   fee: 'Fee',
+};
+
+// Tiny mono hint next to each option so the menu tells you what the
+// axis actually is, not just its one-word label — otherwise "Fee" reads
+// ambiguous (asc / desc? which direction?).
+const SORT_HINTS: Record<SortKey, string> = {
+  best: 'Priority',
+  points: 'High → low',
+  fee: 'Low → high',
 };
 
 // ── main ─────────────────────────────────────────────────────────────
@@ -604,27 +614,7 @@ function ControlStrip({
       </div>
 
       <div className="flex items-center justify-between gap-3">
-        <label className="inline-flex items-center gap-1 font-mono text-[10px] uppercase tracking-[0.14em] text-ph-text-muted">
-          Sort:
-          <span className="relative">
-            <select
-              value={sortBy}
-              onChange={(e) => onSortBy(e.target.value as SortKey)}
-              aria-label="Sort ranked cards"
-              className="appearance-none rounded-full border border-ph-border-strong bg-ph-card py-1 pl-2 pr-6 font-mono text-[10px] uppercase tracking-[0.14em] text-ph-ink focus:outline-none focus-visible:ring-2 focus-visible:ring-ph-brick"
-            >
-              {(Object.keys(SORT_LABELS) as SortKey[]).map((k) => (
-                <option key={k} value={k}>
-                  {SORT_LABELS[k]}
-                </option>
-              ))}
-            </select>
-            <ChevronDown
-              className="pointer-events-none absolute right-1.5 top-1/2 h-3 w-3 -translate-y-1/2 text-ph-text-meta"
-              aria-hidden
-            />
-          </span>
-        </label>
+        <SortMenu sortBy={sortBy} onSortBy={onSortBy} />
 
         <div
           role="radiogroup"
@@ -663,6 +653,101 @@ function ControlStrip({
           </button>
         </div>
       </div>
+    </div>
+  );
+}
+
+// ── sort menu ────────────────────────────────────────────────────────
+//
+// Custom popover in place of the native <select> — the native control
+// renders as an iOS picker wheel on device and as a raw OS dropdown in
+// Chrome / Safari desktop, neither of which matches Lacquer. This one
+// mirrors the Preferences banner treatment: pill trigger, paper-card
+// menu, checkmark on the active row, tap-outside to close.
+
+function SortMenu({ sortBy, onSortBy }: { sortBy: SortKey; onSortBy: (s: SortKey) => void }) {
+  const [open, setOpen] = useState(false);
+  const rootRef = useRef<HTMLDivElement | null>(null);
+  const activeLabel = SORT_LABELS[sortBy];
+
+  // Close on outside click or Escape. Both listeners only attach while
+  // the menu is open — cheaper than gating inside the handler.
+  useEffect(() => {
+    if (!open) return;
+    function onDocClick(e: MouseEvent) {
+      if (rootRef.current && !rootRef.current.contains(e.target as Node)) setOpen(false);
+    }
+    function onKey(e: KeyboardEvent) {
+      if (e.key === 'Escape') setOpen(false);
+    }
+    document.addEventListener('mousedown', onDocClick);
+    document.addEventListener('keydown', onKey);
+    return () => {
+      document.removeEventListener('mousedown', onDocClick);
+      document.removeEventListener('keydown', onKey);
+    };
+  }, [open]);
+
+  return (
+    <div ref={rootRef} className="relative">
+      <button
+        type="button"
+        aria-haspopup="menu"
+        aria-expanded={open}
+        onClick={() => setOpen((v) => !v)}
+        className="inline-flex items-center gap-1.5 rounded-full border border-ph-border-strong bg-ph-card py-1.5 pl-2.5 pr-2 font-mono text-[10px] uppercase tracking-[0.14em] text-ph-ink transition-colors hover:bg-ph-fill-warm focus:outline-none focus-visible:ring-2 focus-visible:ring-ph-brick"
+      >
+        <ArrowDownWideNarrow className="h-3 w-3 text-ph-text-meta" aria-hidden />
+        <span className="text-ph-text-meta">Sort</span>
+        <span className="text-ph-ink">{activeLabel}</span>
+        <ChevronDown
+          className={
+            open
+              ? 'h-3 w-3 rotate-180 text-ph-text-meta transition-transform'
+              : 'h-3 w-3 text-ph-text-meta transition-transform'
+          }
+          aria-hidden
+        />
+      </button>
+
+      {open && (
+        <div
+          role="menu"
+          aria-label="Sort ranked cards"
+          className="absolute left-0 top-full z-20 mt-1.5 min-w-[168px] overflow-hidden rounded-ph-card border border-ph-border bg-ph-card"
+          style={{ boxShadow: 'var(--shadow-ph-thumb)' }}
+        >
+          {(Object.keys(SORT_LABELS) as SortKey[]).map((k, i) => {
+            const isActive = k === sortBy;
+            return (
+              <button
+                key={k}
+                type="button"
+                role="menuitemradio"
+                aria-checked={isActive}
+                onClick={() => {
+                  onSortBy(k);
+                  setOpen(false);
+                }}
+                className={
+                  (isActive
+                    ? 'flex w-full items-center gap-2 bg-ph-fill-warm px-3 py-2.5 text-left text-[13px] font-medium text-ph-ink '
+                    : 'flex w-full items-center gap-2 px-3 py-2.5 text-left text-[13px] text-ph-text hover:bg-ph-fill-warm ') +
+                  (i > 0 ? 'border-t border-ph-border' : '')
+                }
+              >
+                <span className="grid h-4 w-4 flex-none place-items-center">
+                  {isActive && <Check className="h-3.5 w-3.5 text-ph-brick" aria-hidden />}
+                </span>
+                <span className="flex-1">{SORT_LABELS[k]}</span>
+                <span className="font-mono text-[10px] uppercase tracking-[0.14em] text-ph-text-meta">
+                  {SORT_HINTS[k]}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 }
@@ -746,7 +831,7 @@ function RankedCarousel({
     <div className="-mx-6 overflow-x-auto pb-2">
       <ul className="flex snap-x snap-mandatory gap-3 px-6">
         {recs.map((r, i) => (
-          <li key={r.card.id} className="w-[260px] flex-none snap-start">
+          <li key={r.card.id} className="w-[224px] flex-none snap-start">
             <CarouselCard r={r} rank={i + 1} showTopTag={hasPreferences && i < 3} />
           </li>
         ))}
@@ -755,6 +840,17 @@ function RankedCarousel({
   );
 }
 
+// Carousel tile — portrait card, ~224px wide. Layout choices:
+//  · Art centred in a warm cream banner (bg-ph-fill-warm) so the space
+//    around it reads as intentional chrome, not dead white.
+//  · Rank pill sits over the art top-right — mono, ink-on-paper — so
+//    the visual hierarchy leads with the art, not with a text row.
+//  · Text block is a tight column with truncation on issuer name and
+//    2-line clamp on card name (rare, but Amex Platinum Business etc.
+//    can wrap).
+//  · Status chip + Top 3 chip are stacked as separate rows with real
+//    breathing room. Top 3 becomes a proper amber-lacquer chip so it
+//    matches the LacquerChip surface treatment beside it.
 function CarouselCard({
   r,
   rank,
@@ -771,21 +867,43 @@ function CarouselCard({
       href={`/cards/${card.id}`}
       className="flex h-full flex-col overflow-hidden rounded-ph-card border border-ph-border bg-ph-card transition-colors hover:bg-ph-fill-warm"
     >
-      <div className="border-b border-ph-border p-3">
-        <CardArtFrame alt={card.name} src={card.cardArtUrl ?? undefined} size="md" />
+      {/* Art hero: cream banner, art centred, rank pill top-right. */}
+      <div className="relative flex items-center justify-center border-b border-ph-border bg-ph-fill-warm px-3 py-4">
+        <CardArtFrame alt={card.name} src={card.cardArtUrl ?? undefined} size="lg" />
+        <span className="absolute right-2 top-2 inline-flex items-center rounded-full bg-ph-card px-2 py-0.5 font-mono text-[10px] font-medium uppercase tracking-[0.14em] text-ph-brick">
+          #{rank}
+        </span>
       </div>
-      <div className="flex flex-1 flex-col gap-1 p-3">
-        <p className="font-mono text-[10px] uppercase tracking-[0.14em] text-ph-text-meta">
-          #{rank} · {card.issuer.name}
+
+      {/* Text column — full-width, no right-hand dead zone. */}
+      <div className="flex flex-1 flex-col p-3">
+        <p className="truncate font-mono text-[10px] uppercase tracking-[0.14em] text-ph-text-meta">
+          {card.issuer.name}
         </p>
-        <p className="font-serif text-[17px] leading-tight text-ph-ink">{card.name}</p>
-        <p className="mt-1 font-serif text-[21px] leading-none text-ph-brick tabular-nums">
-          {formatPoints(card.bonusPoints ?? 0)}
+        <p
+          className="mt-1 font-serif text-[16px] leading-tight text-ph-ink"
+          style={{
+            display: '-webkit-box',
+            WebkitLineClamp: 2,
+            WebkitBoxOrient: 'vertical',
+            overflow: 'hidden',
+          }}
+        >
+          {card.name}
         </p>
-        <p className="text-[11px] text-ph-text-muted tabular-nums">
-          pts · {formatCurrency(card.annualFee)}/yr
+
+        <div className="mt-2 flex items-baseline gap-1.5">
+          <span className="font-serif text-[21px] leading-none text-ph-brick tabular-nums">
+            {formatPoints(card.bonusPoints ?? 0)}
+          </span>
+          <span className="text-[11px] text-ph-text-muted tabular-nums">pts</span>
+        </div>
+        <p className="mt-0.5 text-[11px] text-ph-text-muted tabular-nums">
+          {formatCurrency(card.annualFee)}/yr
         </p>
-        <div className="mt-auto pt-2">
+
+        {/* Chips stack — each on its own row with real gap. */}
+        <div className="mt-auto flex flex-col items-start gap-1.5 pt-3">
           {status === 'eligible' ? (
             <LacquerChip variant="pine" Icon={Check} size="sm">
               Eligible
@@ -800,10 +918,9 @@ function CarouselCard({
             </LacquerChip>
           )}
           {showTopTag && (
-            <p className="mt-2 inline-flex items-center gap-1 text-[10px] font-medium text-ph-brick">
-              <Sparkles className="h-3 w-3" aria-hidden />
+            <LacquerChip variant="amber" Icon={Sparkles} size="sm">
               Top 3 pick
-            </p>
+            </LacquerChip>
           )}
         </div>
       </div>
