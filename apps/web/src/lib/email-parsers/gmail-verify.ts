@@ -64,23 +64,32 @@ export function parseGmailVerification(email: ParsedInboundEmail): ParserOutcome
 }
 
 /**
- * POSTs the confirmation URL Google embedded in the mail to complete
- * the forwarding setup automatically. Returns true when the request
- * succeeds; false otherwise (caller logs to email_events.detail).
+ * Server-side auto-verify is currently DISABLED.
  *
- * Note: Google's confirmation URL is a plain GET — no auth, the URL's
- * opaque token IS the auth. That's why we ignore the code once we
- * have the URL; visiting the URL confirms.
+ * Historical intent: hit Google's confirm URL from our server so the
+ * user experience is "paste address, done" — no click required. Real-
+ * world testing (2026-08-24) showed the token behaves as single-use
+ * AND requires a signed-in Gmail browser session to actually verify.
+ * A plain server-side fetch either (a) gets a 200 "sign in to continue"
+ * page while leaving the URL usable, OR (b) follows a redirect that
+ * Google treats as consuming the token — leaving the user's own click
+ * with a 400. Either way, the server hit is at best useless and at
+ * worst breaks the manual path.
+ *
+ * Behaviour now: the parser still extracts the URL and logs it into
+ * `email_events.detail.confirmUrl`. The forwarding-noreply email
+ * received here still arrives at the user's Gmail (Google sends it
+ * to both the recipient AND the setup account), so the user clicks
+ * the link themselves — normal manual flow.
+ *
+ * When we resurrect server-side confirm, options are:
+ *   1. Save the browser cookies out-of-band (impractical).
+ *   2. Ship a browser extension that clicks on the user's behalf.
+ *   3. Wait until Google publishes a real API for this.
+ * Meanwhile: return false; parser reports confirmed=false; user
+ * clicks the URL themselves.
  */
-export async function confirmGmailForwardingUrl(url: string): Promise<boolean> {
-  try {
-    const res = await fetch(url, {
-      method: 'GET',
-      // No cookies, no referer — this endpoint auths on the URL token.
-      redirect: 'follow',
-    });
-    return res.ok;
-  } catch {
-    return false;
-  }
+export async function confirmGmailForwardingUrl(_url: string): Promise<boolean> {
+  void _url;
+  return false;
 }
