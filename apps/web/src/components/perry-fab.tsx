@@ -93,10 +93,16 @@ export function PerryFAB() {
               border to sit against any page surface; ph-text-muted
               body so it doesn't compete with Perry. Rounded-bl-sm
               gives the tail its Perry-facing bite. */}
+          {/* HANDOFF § Motion — speech card: fade + 8px rise, 200ms. Was
+              opacity+scale/300ms; switched to opacity + translateY for a
+              lift-off feel that matches Perry facing up-right into the
+              corner. Reduced motion opts out via motion-reduce:*. */}
           <div
             aria-hidden={!bubbleVisible}
-            className={`absolute -top-1 left-[46px] origin-bottom-left whitespace-nowrap rounded-2xl rounded-bl-sm border border-ph-border bg-ph-card px-2.5 py-1.5 text-[11px] font-medium leading-snug text-ph-text-muted transition-all duration-300 ${
-              bubbleVisible ? 'scale-100 opacity-100' : 'pointer-events-none scale-95 opacity-0'
+            className={`absolute -top-1 left-[46px] origin-bottom-left whitespace-nowrap rounded-2xl rounded-bl-sm border border-ph-border bg-ph-card px-2.5 py-1.5 text-[11px] font-medium leading-snug text-ph-text-muted transition-[opacity,transform] duration-200 ease-out motion-reduce:transition-none ${
+              bubbleVisible
+                ? 'translate-y-0 opacity-100'
+                : 'pointer-events-none translate-y-2 opacity-0'
             }`}
             style={{ boxShadow: 'var(--shadow-ph-thumb)' }}
           >

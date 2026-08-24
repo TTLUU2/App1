@@ -285,10 +285,27 @@ function SignUpBonusPanel({ uc, status }: { uc: UserCardWithDetails; status: Car
             </strong>{' '}
             to spend for bonus
           </p>
-          <div className="mt-2 h-[7px] w-full overflow-hidden rounded-full bg-white/40" aria-hidden>
+          <div
+            className="mt-2 h-[7px] w-full overflow-hidden rounded-full bg-white/40"
+            role="progressbar"
+            aria-valuenow={Math.round(clamped * 100)}
+            aria-valuemin={0}
+            aria-valuemax={100}
+            aria-label="Min spend progress"
+          >
+            {/* HANDOFF § Motion: progress bars animate from 0 to their value
+                on mount, 400ms ease-out. CSS keyframe `ph-progress-fill`
+                (in globals.css) runs `from { width: 0 }` — the element's
+                final width comes from the inline style, so the animation
+                lands wherever the data puts it. Pure CSS keeps React out
+                of the animation loop and avoids react-hooks/set-state-in
+                -effect. Reduced motion skips the animation. */}
             <div
-              className="h-full rounded-full bg-ph-amber-figure transition-[width] duration-500 ease-out"
-              style={{ width: `${clamped * 100}%` }}
+              className="h-full rounded-full bg-ph-amber-figure motion-reduce:animate-none"
+              style={{
+                width: `${clamped * 100}%`,
+                animation: 'ph-progress-fill 400ms ease-out',
+              }}
             />
           </div>
           <p className="mt-2 truncate text-[12px] text-ph-amber-text">

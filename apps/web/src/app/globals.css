@@ -149,6 +149,21 @@
     opacity: 0;
   }
 }
+
+/* Progress bar fill — used by Your Cards sign-up bonus tile and any
+ * future progress bars. Animates from 0 to the element's final width
+ * on mount so the bar reads as active tracking, not a static screenshot.
+ * The `to { width: ... }` block is intentionally omitted — the keyframe
+ * inherits the element's set width for the final frame, which lets a
+ * single keyframe serve every progress bar regardless of its target %.
+ * HANDOFF § Motion: 400ms ease-out. Reduced motion skips via the media
+ * block below. */
+@keyframes ph-progress-fill {
+  from {
+    width: 0;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   [data-radix-dialog-content],
   [data-radix-dialog-overlay] {
