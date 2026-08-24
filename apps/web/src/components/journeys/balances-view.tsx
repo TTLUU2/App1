@@ -7,13 +7,17 @@
 // status, plus one collapsed row for the auto-sync forwarding
 // address. Manual + zero balance rows offer an inline `Add` pill.
 //
-// v1 pulls balances from useBalancesStore and mocks the sync-status
-// pill: two of the seed programs pretend to be on auto-sync (last
-// seen 2 months ago) and the others read as MANUAL. Real sync
-// telemetry lands with the email-sync backend v1 currently parked at
-// commit 69a9985.
+// The auto-sync row calls /api/link-email on mount to mint (or
+// return) the device's persistent forwarding slug — same slug across
+// reloads, one per device. Three visible states so the row still
+// renders sensibly if the backend blips: loading → ready (real slug
+// with Copy button) → unavailable ("coming soon" pill).
+//
+// Per-program auto-sync telemetry (last-seen dates, which programs
+// are actively sync'd) still mocks — that's a follow-up wiring to
+// read from the balance_updates table.
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Copy, Check, Plus } from 'lucide-react';
 import { formatPoints } from '@/lib/format';
 import {
@@ -22,14 +26,13 @@ import {
   useBalancesStore,
   type ProgramBalance,
 } from '@/store/balances';
+import { getOrCreateDeviceId } from '@/lib/device-id';
 import { HeroCard } from '@/components/lacquer';
 
 const FORWARD_DOMAIN = 'pointhacks.app';
-const FORWARD_SLUG = 'aurora-fox-7301';
-const FORWARD_ADDRESS = `${FORWARD_SLUG}@${FORWARD_DOMAIN}`;
 
-// Programs currently on auto-sync (mocked until the backend at
-// commit 69a9985 goes live). Everything else reads as MANUAL.
+// Programs currently on auto-sync (mocked until we start reading last-
+// seen from balance_updates). Everything else reads as MANUAL.
 const AUTO_SYNCED = new Set(['qantas-ff', 'velocity']);
 
 export function BalancesView() {
@@ -139,12 +142,53 @@ function ProgramLogo({ program }: { program: ProgramBalance }) {
   );
 }
 
+// Three-state row keyed off the /api/link-email fetch:
+//   loading    — waiting for the slug to come back
+//   ready      — slug in hand, show + Copy button
+//   unavailable — endpoint/network refused, show a graceful pill
+type SlugState = { kind: 'loading' } | { kind: 'ready'; slug: string } | { kind: 'unavailable' };
+
 function AutoSyncCollapsedRow() {
+  const [state, setState] = useState<SlugState>({ kind: 'loading' });
   const [copied, setCopied] = useState(false);
 
-  async function copyAddress() {
+  useEffect(() => {
+    let cancelled = false;
+    async function load() {
+      try {
+        const deviceId = getOrCreateDeviceId();
+        if (!deviceId) {
+          if (!cancelled) setState({ kind: 'unavailable' });
+          return;
+        }
+        const res = await fetch('/api/link-email', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ deviceId }),
+        });
+        if (!res.ok) {
+          if (!cancelled) setState({ kind: 'unavailable' });
+          return;
+        }
+        const json = (await res.json()) as { slug?: string };
+        if (!json.slug) {
+          if (!cancelled) setState({ kind: 'unavailable' });
+          return;
+        }
+        if (!cancelled) setState({ kind: 'ready', slug: json.slug });
+      } catch {
+        if (!cancelled) setState({ kind: 'unavailable' });
+      }
+    }
+    void load();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  async function copyAddress(address: string) {
     try {
-      await navigator.clipboard.writeText(FORWARD_ADDRESS);
+      await navigator.clipboard.writeText(address);
       setCopied(true);
       window.setTimeout(() => setCopied(false), 1_600);
     } catch {
@@ -152,17 +196,40 @@ function AutoSyncCollapsedRow() {
     }
   }
 
+  if (state.kind === 'loading') {
+    return (
+      <div className="flex items-center gap-3 rounded-ph-card border border-ph-tint-border bg-ph-tint p-[13px]">
+        <div className="min-w-0 flex-1">
+          <p className="text-[13px] font-medium text-ph-ink">Auto-sync</p>
+          <p className="mt-0.5 font-mono text-[10px] text-ph-text-muted">Loading address…</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (state.kind === 'unavailable') {
+    return (
+      <div className="flex items-center gap-3 rounded-ph-card border border-ph-tint-border bg-ph-tint p-[13px]">
+        <div className="min-w-0 flex-1">
+          <p className="text-[13px] font-medium text-ph-ink">Auto-sync coming soon</p>
+          <p className="mt-0.5 text-[11px] leading-snug text-ph-text-muted">
+            Forwarding will let Qantas &amp; Velocity emails top up your balances automatically.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  const address = `${state.slug}@${FORWARD_DOMAIN}`;
   return (
     <div className="flex items-center gap-3 rounded-ph-card border border-ph-tint-border bg-ph-tint p-[13px]">
       <div className="min-w-0 flex-1">
         <p className="text-[13px] font-medium text-ph-ink">Auto-sync is on</p>
-        <p className="mt-0.5 truncate font-mono text-[10px] text-ph-text-muted">
-          {FORWARD_ADDRESS}
-        </p>
+        <p className="mt-0.5 truncate font-mono text-[10px] text-ph-text-muted">{address}</p>
       </div>
       <button
         type="button"
-        onClick={copyAddress}
+        onClick={() => void copyAddress(address)}
         aria-label="Copy forwarding address"
         className="inline-flex items-center gap-1 rounded-full bg-white px-3 py-1.5 text-xs font-medium text-ph-brick ring-1 ring-ph-tint-border transition-colors hover:bg-ph-fill-warm"
       >
