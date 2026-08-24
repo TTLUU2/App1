@@ -11,7 +11,7 @@
 // digits with zero code change.
 //
 // The `slug` returned here is the local part; the client composes
-// `${slug}@phcopilot.app` for display and copy-to-clipboard.
+// `${slug}@pointhacks.app` for display and copy-to-clipboard.
 
 import { NextResponse, type NextRequest } from 'next/server';
 import { and, eq, isNull } from 'drizzle-orm';

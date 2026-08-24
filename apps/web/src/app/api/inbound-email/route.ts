@@ -1,7 +1,7 @@
 // POST /api/inbound-email — Postmark inbound webhook receiver.
 //
 // Postmark posts a JSON payload for every mail landing at
-// `{slug}@phcopilot.app`. This route:
+// `{slug}@pointhacks.app`. This route:
 //
 //   1. Verifies Basic Auth credentials (Postmark sends the creds
 //      configured on the inbound server; env-gated).
@@ -54,7 +54,7 @@ const PostmarkInboundSchema = z.object({
   To: z.string().optional(),
 });
 
-const FORWARD_DOMAIN = 'phcopilot.app';
+const FORWARD_DOMAIN = 'pointhacks.app';
 
 function verifyBasicAuth(req: NextRequest): boolean {
   const user = process.env.POSTMARK_INBOUND_USER;
@@ -81,7 +81,7 @@ function verifyBasicAuth(req: NextRequest): boolean {
   );
 }
 
-/** Pull the local part out of `{slug}@phcopilot.app`. Returns null on
+/** Pull the local part out of `{slug}@pointhacks.app`. Returns null on
  *  any other domain — Postmark shouldn't route foreign mail to us,
  *  but we defend anyway in case the inbound server gets misconfigured. */
 function extractSlug(address: string): string | null {

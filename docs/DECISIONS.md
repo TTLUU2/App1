@@ -504,7 +504,7 @@ destructive actions is already covered by the FAB voice flows
 Gmail" button, `watch()` push notifications when balance emails arrive).
 Bypasses forwarding setup entirely; user experience is one-click.
 
-**We chose:** Per-user forwarding address (`slug@phcopilot.app`) + Postmark
+**We chose:** Per-user forwarding address (`slug@pointhacks.app`) + Postmark
 inbound webhook + server-side auto-verify of Google's confirmation email.
 Users set a Gmail filter once per program that forwards balance emails to
 their unique address; our webhook parses and updates balances.

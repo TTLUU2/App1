@@ -24,7 +24,7 @@ import {
 } from '@/store/balances';
 import { HeroCard } from '@/components/lacquer';
 
-const FORWARD_DOMAIN = 'phcopilot.app';
+const FORWARD_DOMAIN = 'pointhacks.app';
 const FORWARD_SLUG = 'aurora-fox-7301';
 const FORWARD_ADDRESS = `${FORWARD_SLUG}@${FORWARD_DOMAIN}`;
 

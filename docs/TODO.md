@@ -40,8 +40,8 @@ Matching + Deals stay as-is throughout — separate refresh later.
 - **Email sync — forwarding backend v1** (commit `69a9985`). Schema
   - `/api/link-email` + `/api/inbound-email` + parser framework +
     Qantas/Velocity stubs already in the tree. Blocked on:
-  1. Postmark account + inbound stream + MX record on `phcopilot.app`
-     (or `mail.phcopilot.app` — one-line domain choice).
+  1. Postmark account + inbound stream + MX record on `pointhacks.app`
+     (or `mail.pointhacks.app` — one-line domain choice).
   2. `POSTMARK_INBOUND_USER` + `POSTMARK_INBOUND_PASS` env vars set
      on Vercel (pointhacks scope).
   3. `pnpm --filter @ph/web db:push` to hit Neon with the three new
@@ -60,7 +60,7 @@ a companion `docs/DECISIONS.md` entry with the full trade-off analysis.
 
 - **Auto-sync balances via email forwarding** _(Decision #31)_. Users
   forward Qantas/Velocity/Amex MR balance emails to a per-user
-  `slug@phcopilot.app` address; Postmark webhook parses and updates.
+  `slug@pointhacks.app` address; Postmark webhook parses and updates.
   Server auto-verifies Google's forwarding-confirmation email so users
   never manually click "confirm". Ship this before Gmail API.
 - **Gmail API "Fast connect" as post-launch v2** _(Decision #31)_. Adds

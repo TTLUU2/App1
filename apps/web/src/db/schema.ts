@@ -99,7 +99,7 @@ export const alertProjections = pgTable(
 
 /**
  * Per-device forwarding slug used by the balances auto-sync flow
- * (see DECISIONS.md #31). Each device gets one `{slug}@phcopilot.app`
+ * (see DECISIONS.md #31). Each device gets one `{slug}@pointhacks.app`
  * address; users set up mail-provider filters to forward balance
  * emails from Qantas / Velocity / etc. to it. Postmark inbound webhook
  * dispatches to /api/inbound-email, which looks up the deviceId here.
@@ -146,7 +146,7 @@ export const emailEvents = pgTable(
     id: uuid('id').defaultRandom().primaryKey(),
     /** Postmark's MessageID — used as the idempotency key. */
     messageId: text('message_id').notNull(),
-    /** The slug portion of the To address (before @phcopilot.app). */
+    /** The slug portion of the To address (before @pointhacks.app). */
     toSlug: text('to_slug').notNull(),
     /** Resolved device from linked_email_forwards.slug lookup; null
      *  when the slug isn't recognised. */
