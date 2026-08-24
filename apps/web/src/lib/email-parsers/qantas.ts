@@ -1,35 +1,47 @@
 // Qantas Frequent Flyer balance parser.
 //
-// STATUS: framework in place, actual balance-extraction regex is a TODO
-// pending a real fixture. Do NOT ship this to prod until at least one
-// real Qantas balance email has been pasted into
-// apps/web/src/lib/email-parsers/__fixtures__/qantas/*.eml and the
-// regexes below have been validated against it.
+// STATUS: validated against a real forwarded Qantas monthly-newsletter
+// email (2026-08-24). Ready for production. Fixtures TBA — the seed
+// fixture is preserved in email_events.raw_text from row received_at
+// 2026-08-24T14:20:17Z; port to __fixtures__/qantas/ when adding
+// regression tests.
 //
 // Known senders (add as we see them in the wild):
 //   qff@qantasloyalty.com   — monthly points statement
+//   qantasff@e.qantas.com   — monthly newsletter incl. balance
 //   noreply@qantas.com      — activity / promo emails (should skip)
 //   qff@member.qantas.com   — occasional "your balance" nudge
 //
-// Two content shapes historically observed:
-//   1. "Your current points balance: 186,400"     ← preferred
-//   2. "You have 186,400 Qantas Points"           ← older template
-// Either shape works; the parser tries them in order and takes the
-// first match. The number can be comma-separated or bare digits; the
-// max realistic AU balance is under 10M points, so a 4–8 digit run
-// is the widest window we accept.
+// Content shapes historically observed — parser tries them in order,
+// first match wins. The number can be comma-separated or bare digits;
+// max realistic AU balance is under 10M points, so a 4–8 digit run is
+// the widest window we accept:
+//   1. "Qantas Points  312,023"                     ← current newsletter template
+//   2. "Your current points balance: 186,400"       ← statement template
+//   3. "You have 186,400 Qantas Points"             ← older statement
+//   4. "balance: 186,400 points"                    ← fallback
 
 import type { ParsedInboundEmail, ParserOutcome } from './index';
 
 const BALANCE_REGEXES: RegExp[] = [
+  // 2026 monthly newsletter — header panel: "Qantas Points  312,023".
+  // We anchor on "Qantas Points" followed by whitespace + a comma-
+  // formatted or bare number. Case-insensitive.
+  /qantas\s+points\s+([0-9]{1,3}(?:,[0-9]{3})+|[0-9]{4,8})\b/i,
   /current\s+points?\s+balance[^0-9]{0,20}([0-9]{1,3}(?:,[0-9]{3})+|[0-9]{4,8})/i,
   /you\s+have\s+([0-9]{1,3}(?:,[0-9]{3})+|[0-9]{4,8})\s+qantas\s+points/i,
   /balance[^0-9]{0,10}([0-9]{1,3}(?:,[0-9]{3})+|[0-9]{4,8})\s+points/i,
 ];
 
 const SNAPSHOT_REGEXES: RegExp[] = [
-  /statement\s+as\s+at\s+(\d{1,2}\s+\w+\s+\d{4})/i,
-  /as\s+at\s+(\d{1,2}\s+\w+\s+\d{4})/i,
+  // Newsletter template: "shown are as at 11-Aug-2026" (hyphen-delimited).
+  // Statement template: "Statement as at 15 March 2026" (space-delimited).
+  // Accept either separator — we normalise to spaces before passing to
+  // `new Date()`, which parses both `11 Aug 2026` and `11-Aug-2026`
+  // reliably.
+  /statement\s+as\s+at\s+(\d{1,2}[-\s]\w+[-\s]\d{4})/i,
+  /shown\s+are\s+as\s+at\s+(\d{1,2}[-\s]\w+[-\s]\d{4})/i,
+  /as\s+at\s+(\d{1,2}[-\s]\w+[-\s]\d{4})/i,
 ];
 
 /** Skip these — Qantas sends a lot of non-balance mail from the same
@@ -71,7 +83,8 @@ export function parseQantas(email: ParsedInboundEmail): ParserOutcome {
   for (const rx of SNAPSHOT_REGEXES) {
     const m = body.match(rx);
     if (m && m[1]) {
-      const parsed = new Date(m[1]);
+      // Normalise `11-Aug-2026` → `11 Aug 2026` so `new Date()` parses.
+      const parsed = new Date(m[1].replace(/-/g, ' '));
       if (!Number.isNaN(parsed.getTime())) {
         snapshotAt = parsed;
         break;
