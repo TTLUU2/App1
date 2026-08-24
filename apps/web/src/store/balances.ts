@@ -64,11 +64,29 @@ const SEED: ProgramBalance[] = [
 
 const STORAGE_KEY = 'ph-balances-v1';
 
+// Server → local program-id mapping. The email parser emits the shorter
+// canonical ids ('qantas', 'velocity', 'amex_mr', 'krisflyer'); the
+// local Zustand store uses UI-facing slugs. Keep this in one place so
+// there's a single truth for the mapping — new programs land here first
+// when the parser learns to recognise them.
+const SERVER_TO_LOCAL_ID: Record<string, string> = {
+  qantas: 'qantas-ff',
+  velocity: 'velocity',
+  amex_mr: 'amex-mr',
+  krisflyer: 'kris-flyer',
+};
+
 interface BalancesState {
   programs: ProgramBalance[];
   loaded: boolean;
   hydrate: () => void;
   updateBalance: (id: string, balance: number) => void;
+  /** Pull the newest server-known balance per program (from the email-
+   *  sync backend at /api/balances/latest) and merge into the local
+   *  store. Server value replaces local whenever the server row is
+   *  newer than the local `updatedAt`. Silent on network failure —
+   *  the local values stay, and we retry next time the screen mounts. */
+  syncFromServer: (deviceId: string) => Promise<void>;
   addProgram: (program: ProgramBalance) => void;
   removeProgram: (id: string) => void;
   reset: () => void;
@@ -109,6 +127,45 @@ export const useBalancesStore = create<BalancesState>((set, get) => ({
     const next = get().programs.map((p) => (p.id === id ? { ...p, balance, updatedAt: today } : p));
     set({ programs: next });
     save(next);
+  },
+
+  async syncFromServer(deviceId) {
+    try {
+      const res = await fetch(`/api/balances/latest?deviceId=${encodeURIComponent(deviceId)}`);
+      if (!res.ok) return;
+      const json = (await res.json()) as {
+        balances?: Array<{ programId: string; balance: number; receivedAt: string }>;
+      };
+      const serverBalances = json.balances ?? [];
+      if (serverBalances.length === 0) return;
+
+      const now = get().programs;
+      let mutated = false;
+      const next = now.map((p) => {
+        // Find a server row whose canonical program id maps to this
+        // local id. We don't rewrite the local id ('qantas-ff' stays
+        // 'qantas-ff') — only the balance + updatedAt come from the
+        // server.
+        const serverRow = serverBalances.find((s) => SERVER_TO_LOCAL_ID[s.programId] === p.id);
+        if (!serverRow) return p;
+        const serverDate = serverRow.receivedAt.slice(0, 10);
+        // Server wins when it's newer than the local record OR the
+        // local record has never been updated (updatedAt === null).
+        // A local edit made TODAY after a server sync will still win
+        // because `updateBalance` stamps `updatedAt` to today, which
+        // is >= serverDate for today's server rows.
+        if (p.updatedAt && p.updatedAt > serverDate) return p;
+        if (p.balance === serverRow.balance && p.updatedAt === serverDate) return p;
+        mutated = true;
+        return { ...p, balance: serverRow.balance, updatedAt: serverDate };
+      });
+      if (mutated) {
+        set({ programs: next });
+        save(next);
+      }
+    } catch {
+      /* network / parse — silent, retry next mount */
+    }
   },
 
   addProgram(program) {

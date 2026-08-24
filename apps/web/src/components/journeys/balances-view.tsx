@@ -41,6 +41,17 @@ export function BalancesView() {
   const valueAud = useBalancesStore(selectTotalValueAud);
   const fundedCount = programs.filter((p) => p.balance > 0).length;
 
+  // On mount, ask the server for the newest balances the email-sync
+  // backend has captured and merge them into the local store. Silent
+  // no-op when the endpoint returns 0 rows (fresh device) or when the
+  // network is down. Runs once per mount — no interval polling.
+  const syncFromServer = useBalancesStore((s) => s.syncFromServer);
+  useEffect(() => {
+    const deviceId = getOrCreateDeviceId();
+    if (!deviceId) return;
+    void syncFromServer(deviceId);
+  }, [syncFromServer]);
+
   return (
     <section className="mt-4 space-y-5">
       <HeroCard aria-labelledby="balances-heading" style={{ padding: 20, gap: 18 }}>
