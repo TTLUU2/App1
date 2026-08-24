@@ -24,8 +24,15 @@
 import type { ParsedInboundEmail, ParserOutcome } from './index';
 
 const CODE_REGEX = /confirmation\s+code[^0-9]{0,30}([0-9]{6,12})/i;
-const CODE_FALLBACK = /\b([0-9]{9})\b/; // Google's codes are 9 digits
-const URL_REGEX = /https:\/\/mail-settings\.google\.com\/[^\s"'<>]+/i;
+const CODE_FALLBACK = /\b([0-9]{9})\b/; // Older Google templates use 9 digits.
+// Google's current confirmation URL host is `mail.google.com/mail/vf-...`
+// (older docs quoted `mail-settings.google.com` — that variant is dead but
+// harmless to keep in the alternation for defensive resilience). We anchor
+// on the `/vf-` path so we don't false-positive on marketing links to
+// mail.google.com. Trailing `[^\s"'<>]+` grabs the whole opaque token,
+// including URL-encoded brackets (%5B / %5D) that Google embeds.
+const URL_REGEX =
+  /https:\/\/(?:mail-settings\.google\.com\/mail|mail\.google\.com\/mail)\/vf-[^\s"'<>]+/i;
 
 export function parseGmailVerification(email: ParsedInboundEmail): ParserOutcome | null {
   // Subject guard so we don't false-positive on any 9-digit run in
@@ -37,14 +44,21 @@ export function parseGmailVerification(email: ParsedInboundEmail): ParserOutcome
   if (!isVerification) return null;
 
   const body = email.text;
+  // Google's current forwarding template ships URL only — no numeric
+  // code. Either signal is sufficient to auto-verify (hitting the URL
+  // is what actually completes the setup; the code is a legacy
+  // alternative). We short-circuit as long as ONE of them is present.
   const codeMatch = body.match(CODE_REGEX) ?? body.match(CODE_FALLBACK);
-  if (!codeMatch || !codeMatch[1]) return null;
-
   const urlMatch = body.match(URL_REGEX);
+
+  if (!codeMatch?.[1] && !urlMatch) return null;
 
   return {
     kind: 'gmail_verification',
-    code: codeMatch[1],
+    // Code stays as an empty string when Google omits it — the caller
+    // only needs it for logging / manual paste fallback; the URL is
+    // the actual verification action.
+    code: codeMatch?.[1] ?? '',
     confirmUrl: urlMatch?.[0],
   };
 }
