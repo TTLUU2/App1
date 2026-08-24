@@ -164,6 +164,21 @@
   }
 }
 
+/* Celebration takeover mount — PerryMomentOverlay fades in and scales
+ * up slightly on mount for a "moment arrives" feel. No exit animation
+ * (the parent unmounts on dismiss). Reduced motion opts out via the
+ * motion-reduce:[animation:none] class on the overlay root. */
+@keyframes ph-celebration-in {
+  from {
+    opacity: 0;
+    transform: scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   [data-radix-dialog-content],
   [data-radix-dialog-overlay] {

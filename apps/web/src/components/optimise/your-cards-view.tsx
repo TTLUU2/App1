@@ -9,7 +9,7 @@
 // Data: selectUserCardsWithDetails (same Zustand v5 slice-then-memo
 // pattern as NextCardView). Benefits from getBenefitsForCard().
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import {
   AlertTriangle,
@@ -32,7 +32,9 @@ import type { BenefitCategory, UserCardWithDetails } from '@ph/shared';
 import { getBenefitsForCard } from '@ph/shared';
 import { selectUserCardsWithDetails, useUserCardsStore } from '@/store/user-cards';
 import { useUserBenefitsStore } from '@/store/user-benefits';
-import { CardArtFrame, LacquerChip } from '@/components/lacquer';
+import { useCelebrationsStore } from '@/store/celebrations';
+import { useJourneysStore } from '@/store/journeys';
+import { CardArtFrame, LacquerChip, PerryMomentOverlay } from '@/components/lacquer';
 import { CancelCardConfirm } from '@/components/cancel-card-confirm';
 import { EditCardModal } from '@/components/tab3/edit-card-modal';
 import { formatCurrency, formatPoints } from '@/lib/format';
@@ -51,8 +53,38 @@ export function YourCardsView() {
   const active = held.filter((h) => !h.cancellationDate);
   const cancelled = held.filter((h) => h.cancellationDate);
 
+  // Celebration surface: fully render-derived so we avoid setState-in
+  // -effect. Subscribing to the persisted Set means dismissing (which
+  // marks the id) re-renders and the pending overlay becomes null.
+  // A held card is celebration-worthy when its bonus has cleared AND
+  // the celebrations store hasn't recorded it yet.
+  const celebrations = useCelebrationsStore();
+  const hydrateCelebrations = celebrations.hydrate;
+  useEffect(() => {
+    hydrateCelebrations();
+  }, [hydrateCelebrations]);
+  const tracked = useJourneysStore((s) => s.tracked);
+  const pendingBonus = active.find((uc) => {
+    const s = computeStatus(uc);
+    return s.bonusEarned && !celebrations.bonusCleared.has(uc.id);
+  });
+  const pendingCity = pendingBonus
+    ? // Prefer a tracked-journey city over a generic "Bonus cleared."
+      // The user already told us where they're aiming; naming it here
+      // lands the moment ("That's Tokyo, booked.") without asking again.
+      (tracked[0]?.destinationCity ?? null)
+    : null;
+
   return (
     <section className="mt-4 space-y-3">
+      {pendingBonus && (
+        <PerryMomentOverlay
+          tone="brick"
+          headline="Bonus cleared."
+          subhead={pendingCity ? `That's ${pendingCity}, booked.` : undefined}
+          onDismiss={() => celebrations.markBonusCleared(pendingBonus.id)}
+        />
+      )}
       <CopilotVoiceCard />
 
       {active.length === 0 ? (
@@ -486,7 +518,7 @@ function EmptyState() {
     <div className="rounded-ph-card border border-ph-border bg-ph-card p-6 text-center">
       <p className="font-serif text-[19px] leading-tight text-ph-ink">No cards on file yet</p>
       <p className="mt-1 text-[13px] text-ph-text-muted">
-        Add a card you already hold and Perry will tell you what you&apos;re leaving on the table.
+        Add a card you already hold and I&apos;ll tell you what you&apos;re leaving on the table.
       </p>
     </div>
   );

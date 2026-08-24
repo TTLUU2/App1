@@ -19,3 +19,4 @@ export {
   type SegmentedControlItem,
 } from './segmented-control';
 export { BottomSheet, type BottomSheetProps } from './bottom-sheet';
+export { PerryMomentOverlay, type PerryMomentOverlayProps } from './perry-moment-overlay';

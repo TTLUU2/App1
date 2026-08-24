@@ -11,13 +11,15 @@
 // screen. Photos are placeholder — the CardArtFrame-style striped
 // panel until Phase 6 assets land.
 
+import { useEffect } from 'react';
 import Link from 'next/link';
 import { Check } from 'lucide-react';
 import { formatPoints } from '@/lib/format';
 import { selectTotalPoints, useBalancesStore } from '@/store/balances';
-import { DESTINATION_CATALOGUE, type DestinationOption } from '@/store/journeys';
+import { DESTINATION_CATALOGUE, type DestinationOption, useJourneysStore } from '@/store/journeys';
+import { useCelebrationsStore } from '@/store/celebrations';
 import { CityIllustration } from '@/components/city-illustration';
-import { HeroCard, LacquerChip } from '@/components/lacquer';
+import { HeroCard, LacquerChip, PerryMomentOverlay } from '@/components/lacquer';
 
 export function DestinationsView() {
   const totalPoints = useBalancesStore(selectTotalPoints);
@@ -26,6 +28,31 @@ export function DestinationsView() {
     (d) => totalPoints < d.pointsBusinessReturn,
   ).slice(0, 5);
 
+  // Destination unlocked celebration: fires only on TRACKED journey
+  // targets (never on every catalogue tier that becomes reachable —
+  // that would fire dozens of overlays back-to-back for a user with a
+  // healthy balance on first open). Render-derived, no setState-in
+  // -effect — dismissing marks the id, which re-renders and clears
+  // pendingJourney.
+  const tracked = useJourneysStore((s) => s.tracked);
+  const journeysLoaded = useJourneysStore((s) => s.loaded);
+  const hydrateJourneys = useJourneysStore((s) => s.hydrate);
+  const celebrations = useCelebrationsStore();
+  const hydrateCelebrations = celebrations.hydrate;
+  useEffect(() => {
+    hydrateJourneys();
+    hydrateCelebrations();
+  }, [hydrateJourneys, hydrateCelebrations]);
+
+  // Guard on `journeysLoaded` so we don't try to celebrate on an empty
+  // pre-hydration tracked list — that would silently mark nothing and
+  // then miss the real trigger a tick later once localStorage lands.
+  const pendingJourney = journeysLoaded
+    ? tracked.find(
+        (j) => totalPoints >= j.targetPoints && !celebrations.destinationUnlocked.has(j.id),
+      )
+    : undefined;
+
   const businessCount = reachable.length;
   const economyCount = DESTINATION_CATALOGUE.filter(
     (d) => totalPoints >= d.pointsByCabin.economy,
@@ -33,6 +60,14 @@ export function DestinationsView() {
 
   return (
     <section className="mt-4 space-y-5">
+      {pendingJourney && (
+        <PerryMomentOverlay
+          tone="pine"
+          headline={`${pendingJourney.destinationCity} unlocked.`}
+          subhead="Your points reached the target."
+          onDismiss={() => celebrations.markDestinationUnlocked(pendingJourney.id)}
+        />
+      )}
       <HeroCard aria-labelledby="destinations-heading" style={{ padding: 20, gap: 18 }}>
         <div className="min-w-0 flex-1">
           <p className="font-mono text-[10px] uppercase tracking-[0.14em] text-ph-on-brick-meta">
