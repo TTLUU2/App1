@@ -11,6 +11,7 @@ import type {
   EligibilityResult,
   Issuer,
   Recommendation,
+  UserPreferences,
 } from './types';
 
 export function calculateEligibility(
@@ -367,7 +368,7 @@ export function generateRecommendations(
   allCards: CardWithIssuer[],
   userCards: UserCardWithDetails[],
   allIssuers: Issuer[],
-  preferences?: import('./types').UserPreferences,
+  preferences?: UserPreferences,
 ): Recommendation[] {
   const recommendations: Recommendation[] = [];
 
