@@ -18,7 +18,7 @@
 // read from the balance_updates table.
 
 import { useEffect, useState } from 'react';
-import { Copy, Check, Plus } from 'lucide-react';
+import { ChevronDown, Copy, Check, Plus } from 'lucide-react';
 import { formatPoints } from '@/lib/format';
 import {
   selectTotalPoints,
@@ -150,10 +150,6 @@ function ProgramRow({
   const isSynced = program.source === 'sync';
   const canSync = SYNC_ELIGIBLE_PROGRAMS.has(program.id);
   const relative = formatRelative(program.updatedAt);
-  // Sub-line copy varies with state:
-  //   never-touched  → "No balance yet · input or sync" (or "· input" when not sync-eligible)
-  //   auto-synced    → "⚡ Auto-sync · 2w ago"
-  //   manual entry   → "Manual · Updated 2w ago"
   const subline = isNever
     ? canSync
       ? 'No balance yet · input or sync'
@@ -161,74 +157,148 @@ function ProgramRow({
     : isSynced
       ? `⚡ Auto-sync · ${relative}`
       : `Manual · Updated ${relative}`;
+
+  // Accordion: rows collapse by default. Only rows with more data than
+  // the single-line summary can carry (tier / status credits / member
+  // id / real snapshot date) are expandable — never-touched rows and
+  // plain manual-entry rows without extras stay a static line.
+  const hasExtras =
+    !!program.tier || typeof program.statusCredits === 'number' || !!program.memberId || isSynced;
+  const [open, setOpen] = useState(false);
+
   return (
-    <div className="flex items-center gap-3 rounded-ph-card border border-ph-border bg-ph-card p-[15px]">
-      <ProgramLogo program={program} />
-      <div className="min-w-0 flex-1">
-        <p
-          className={
-            isNever
-              ? 'truncate font-serif text-[17px] leading-tight text-ph-text-disabled'
-              : 'truncate font-serif text-[17px] leading-tight text-ph-ink'
-          }
-        >
-          {program.name}
-        </p>
-        <p
-          className={
-            isSynced
-              ? 'mt-0.5 truncate font-mono text-[10px] uppercase tracking-[0.14em] text-ph-pine'
-              : 'mt-0.5 truncate font-mono text-[10px] uppercase tracking-[0.14em] text-ph-text-meta'
-          }
-        >
-          {subline}
-        </p>
-        {/* Tier + Status Credits deliberately NOT rendered inline —
-            with many airline balances to list, every row needs to stay
-            single-line. Card-detail drawer (future) surfaces them. */}
-      </div>
-      {isNever ? (
-        // Never-touched — Input always available; Sync only for
-        // programs whose parser is live (Qantas + Velocity today).
-        // Amex / KrisFlyer / Qatar are input-only until their parsers
-        // land.
-        <div className="flex flex-col gap-1.5">
-          <button
-            type="button"
-            onClick={() => onInput(program.id, 0)}
-            className="inline-flex items-center justify-center gap-1 rounded-full bg-ph-red px-3 py-1 text-[11px] font-medium text-white transition-opacity hover:opacity-90"
-          >
-            <Plus className="h-3 w-3" aria-hidden />
-            Input
-          </button>
-          {canSync && (
-            <button
-              type="button"
-              onClick={() => onSync(program.id)}
-              className="inline-flex items-center justify-center gap-1 rounded-full border border-ph-border-strong bg-ph-card px-3 py-1 text-[11px] font-medium text-ph-text-muted transition-colors hover:bg-ph-fill-warm"
-            >
-              <span aria-hidden>⚡</span>
-              Sync
-            </button>
-          )}
-        </div>
-      ) : (
-        // Populated — tap the number to edit inline. Manual UX unchanged
-        // for the number-tap; sync'd rows are read-only (edit would
-        // drift from the server value on the next mount).
+    <div className="rounded-ph-card border border-ph-border bg-ph-card">
+      {/* Header row — same visual layout as before. The row body is a
+          button when the accordion has extras to show, so the whole
+          left side is the tap target. Chevron flips on open. */}
+      <div className="flex items-center gap-3 p-[15px]">
+        <ProgramLogo program={program} />
         <button
           type="button"
-          onClick={() => onInput(program.id, program.balance)}
-          disabled={isSynced}
-          className={
-            isSynced
-              ? 'flex-none cursor-default font-serif text-[19px] leading-none text-ph-ink tabular-nums'
-              : 'flex-none font-serif text-[19px] leading-none text-ph-ink tabular-nums hover:text-ph-brick'
-          }
-          aria-label={isSynced ? undefined : `Edit ${program.name} balance`}
+          disabled={!hasExtras}
+          onClick={() => setOpen((v) => !v)}
+          aria-expanded={hasExtras ? open : undefined}
+          className="min-w-0 flex-1 text-left"
         >
-          {formatPoints(program.balance)}
+          <p
+            className={
+              isNever
+                ? 'truncate font-serif text-[17px] leading-tight text-ph-text-disabled'
+                : 'truncate font-serif text-[17px] leading-tight text-ph-ink'
+            }
+          >
+            {program.name}
+          </p>
+          <p
+            className={
+              isSynced
+                ? 'mt-0.5 truncate font-mono text-[10px] uppercase tracking-[0.14em] text-ph-pine'
+                : 'mt-0.5 truncate font-mono text-[10px] uppercase tracking-[0.14em] text-ph-text-meta'
+            }
+          >
+            {subline}
+          </p>
         </button>
+        {isNever ? (
+          <div className="flex flex-col gap-1.5">
+            <button
+              type="button"
+              onClick={() => onInput(program.id, 0)}
+              className="inline-flex items-center justify-center gap-1 rounded-full bg-ph-red px-3 py-1 text-[11px] font-medium text-white transition-opacity hover:opacity-90"
+            >
+              <Plus className="h-3 w-3" aria-hidden />
+              Input
+            </button>
+            {canSync && (
+              <button
+                type="button"
+                onClick={() => onSync(program.id)}
+                className="inline-flex items-center justify-center gap-1 rounded-full border border-ph-border-strong bg-ph-card px-3 py-1 text-[11px] font-medium text-ph-text-muted transition-colors hover:bg-ph-fill-warm"
+              >
+                <span aria-hidden>⚡</span>
+                Sync
+              </button>
+            )}
+          </div>
+        ) : (
+          <div className="flex flex-none items-center gap-2">
+            <button
+              type="button"
+              onClick={() => onInput(program.id, program.balance)}
+              disabled={isSynced}
+              className={
+                isSynced
+                  ? 'cursor-default font-serif text-[19px] leading-none text-ph-ink tabular-nums'
+                  : 'font-serif text-[19px] leading-none text-ph-ink tabular-nums hover:text-ph-brick'
+              }
+              aria-label={isSynced ? undefined : `Edit ${program.name} balance`}
+            >
+              {formatPoints(program.balance)}
+            </button>
+            {hasExtras && (
+              <button
+                type="button"
+                onClick={() => setOpen((v) => !v)}
+                aria-label={open ? 'Collapse details' : 'Expand details'}
+                aria-expanded={open}
+                className="grid h-6 w-6 place-items-center rounded-full text-ph-text-meta hover:bg-ph-fill-warm hover:text-ph-text"
+              >
+                <ChevronDown
+                  className={
+                    open
+                      ? 'h-3.5 w-3.5 rotate-180 transition-transform'
+                      : 'h-3.5 w-3.5 transition-transform'
+                  }
+                  aria-hidden
+                />
+              </button>
+            )}
+          </div>
+        )}
+      </div>
+
+      {/* Accordion body — closed by default. Only fields the parser
+          extracted (or the store carries) appear; missing fields are
+          skipped so a manual-entry row doesn't show empty slots. */}
+      {open && hasExtras && (
+        <div className="border-t border-ph-border px-[15px] py-2.5">
+          <dl className="grid grid-cols-2 gap-x-4 gap-y-1.5 text-[12px]">
+            {program.tier && (
+              <>
+                <dt className="font-mono text-[10px] uppercase tracking-[0.14em] text-ph-text-meta">
+                  Tier
+                </dt>
+                <dd className="text-right text-ph-text">{program.tier.replace(/_/g, ' ')}</dd>
+              </>
+            )}
+            {typeof program.statusCredits === 'number' && (
+              <>
+                <dt className="font-mono text-[10px] uppercase tracking-[0.14em] text-ph-text-meta">
+                  Status credits
+                </dt>
+                <dd className="text-right text-ph-text tabular-nums">{program.statusCredits}</dd>
+              </>
+            )}
+            {program.memberId && (
+              <>
+                <dt className="font-mono text-[10px] uppercase tracking-[0.14em] text-ph-text-meta">
+                  Member no.
+                </dt>
+                <dd className="text-right font-mono text-[11px] text-ph-text tabular-nums">
+                  {program.memberId}
+                </dd>
+              </>
+            )}
+            {program.updatedAt && (
+              <>
+                <dt className="font-mono text-[10px] uppercase tracking-[0.14em] text-ph-text-meta">
+                  {isSynced ? 'Snapshot' : 'Entered'}
+                </dt>
+                <dd className="text-right text-ph-text">{program.updatedAt}</dd>
+              </>
+            )}
+          </dl>
+        </div>
       )}
     </div>
   );

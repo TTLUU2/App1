@@ -86,8 +86,10 @@ export function parseVelocity(email: ParsedInboundEmail): ParserOutcome {
   // Tier: standalone line "Red" / "Silver" / "Gold" / "Platinum" in
   // the newsletter header (the row line is "Mr Tran Tin Luu Red" so
   // we anchor on the tier vocab to avoid false-positives on names).
-  const tierMatch = body.match(/\b(RED|SILVER|GOLD|PLATINUM)\b/);
-  const tier = tierMatch?.[1];
+  // /i flag because Velocity renders these mixed-case ("Red"); we
+  // uppercase the captured value so the DB / UI compares cleanly.
+  const tierMatch = body.match(/\b(RED|SILVER|GOLD|PLATINUM)\b/i);
+  const tier = tierMatch?.[1]?.toUpperCase();
 
   // Member ID: "Membership no.\n1013377655". Velocity IDs are 10
   // digits historically; accept 8–12 for template drift.
