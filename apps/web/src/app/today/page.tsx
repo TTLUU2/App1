@@ -19,13 +19,19 @@
 // starts pushing real deltas. The alerts feed is real — deadlines /
 // benefits pull from the shared alerts store.
 
-import { Suspense, useMemo } from 'react';
+import { Suspense, useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
-import { Check, Clock, Mic } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import { Check, Clock, Mic, Square } from 'lucide-react';
 import { formatCurrency, formatPoints } from '@/lib/format';
 import { useAlertsStore, type FiredAlert } from '@/store/alerts';
 import { selectTotalPoints, useBalancesStore } from '@/store/balances';
 import { HeroCard, LacquerChip, PerryAvatar } from '@/components/lacquer';
+import {
+  getSpeechRecognitionCtor,
+  type SpeechRecognitionInstance,
+  type SpeechRecognitionResultEvent,
+} from '@/lib/speech';
 
 const USER_NAME = 'Tin';
 const SCORE = 78;
@@ -313,24 +319,147 @@ function EmptyDoToday() {
   );
 }
 
+// Idle → listening → submitting → navigating. Kept as a discrete
+// enum because 'listening' + 'submitting' need visibly different UI
+// (mic pulses vs. stop icon), and the render output branches on the
+// state anyway.
+type CopilotBarState = 'idle' | 'listening' | 'submitting';
+
 function CopilotBar() {
+  const router = useRouter();
+  const [state, setState] = useState<CopilotBarState>('idle');
+  const [transcript, setTranscript] = useState('');
+  const [error, setError] = useState<string | null>(null);
+  const recognitionRef = useRef<SpeechRecognitionInstance | null>(null);
+  const canVoice = useMemo(() => getSpeechRecognitionCtor() !== null, []);
+
+  // Cleanup on unmount — the user might navigate away mid-listening
+  // via the tab bar; kill the recogniser so it doesn't keep the mic
+  // hot in the background.
+  useEffect(
+    () => () => {
+      recognitionRef.current?.abort();
+      recognitionRef.current = null;
+    },
+    [],
+  );
+
+  function seedAndNavigate(question: string) {
+    // Stash the question for /ask to auto-submit on mount. autoSubmit
+    // flag distinguishes the mic-driven seed (question only, answer
+    // to be fetched) from the legacy seed that carries a pre-computed
+    // answer.
+    try {
+      sessionStorage.setItem('ph:ask-seed', JSON.stringify({ question, autoSubmit: true }));
+    } catch {
+      /* private mode — fall back to URL param */
+    }
+    router.push(`/ask?q=${encodeURIComponent(question)}`);
+  }
+
+  function startListening() {
+    setError(null);
+    setTranscript('');
+    const Ctor = getSpeechRecognitionCtor();
+    if (!Ctor) {
+      setError('Voice input not supported here.');
+      return;
+    }
+    try {
+      const r = new Ctor();
+      r.lang = 'en-AU';
+      r.interimResults = true;
+      r.continuous = false;
+      r.maxAlternatives = 1;
+      let finalText = '';
+      r.onresult = (event: SpeechRecognitionResultEvent) => {
+        let interim = '';
+        for (let i = event.resultIndex; i < event.results.length; i++) {
+          const result = event.results[i];
+          if (!result) continue;
+          const alt = result[0];
+          if (!alt) continue;
+          if (result.isFinal) finalText += alt.transcript;
+          else interim += alt.transcript;
+        }
+        setTranscript((finalText + interim).trim());
+      };
+      r.onerror = (event) => {
+        const code = event.error ?? 'unknown';
+        if (code === 'no-speech') {
+          setState('idle');
+          return;
+        }
+        setError(code === 'not-allowed' ? 'Microphone permission denied.' : `Voice error: ${code}`);
+        setState('idle');
+      };
+      r.onend = () => {
+        const finished = finalText.trim();
+        if (finished.length > 0) {
+          setState('submitting');
+          seedAndNavigate(finished);
+          return;
+        }
+        setState('idle');
+      };
+      recognitionRef.current = r;
+      r.start();
+      setState('listening');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : String(err));
+      setState('idle');
+    }
+  }
+
+  function stopListening() {
+    recognitionRef.current?.stop();
+  }
+
+  const placeholder = 'Ask Perry anything…';
   return (
     <div className="flex items-center gap-3 rounded-full border border-ph-border-strong bg-ph-card px-4 py-2.5">
       <PerryAvatar size={26} />
-      <button
-        type="button"
-        aria-label="Ask Perry"
-        className="flex-1 text-left text-[13px] text-ph-text-muted"
-      >
-        Ask Perry anything…
-      </button>
-      <button
-        type="button"
-        aria-label="Speak to Perry"
-        className="grid h-8 w-8 place-items-center rounded-full bg-ph-brick text-ph-on-brick"
-      >
-        <Mic className="h-4 w-4" aria-hidden />
-      </button>
+      {/* Left area: routes to /ask when idle (text-first entry) OR
+          shows the live transcript when listening. The transcript
+          replaces the placeholder rather than layering on top so
+          nothing shifts as the row grows. */}
+      {state === 'listening' ? (
+        <p className="min-w-0 flex-1 truncate text-[13px] text-ph-ink">
+          {transcript || 'Listening…'}
+        </p>
+      ) : (
+        <Link
+          href="/ask"
+          aria-label="Ask Perry"
+          className="min-w-0 flex-1 truncate text-left text-[13px] text-ph-text-muted hover:text-ph-text"
+        >
+          {error ?? placeholder}
+        </Link>
+      )}
+      {/* Right button: mic when idle, stop when listening, hidden
+          when the platform doesn't support voice at all (Firefox etc.
+          — user still has the text tap-target). */}
+      {canVoice &&
+        (state === 'listening' ? (
+          <button
+            type="button"
+            onClick={stopListening}
+            aria-label="Stop listening"
+            className="grid h-8 w-8 place-items-center rounded-full bg-ph-red text-white transition-transform animate-pulse"
+          >
+            <Square className="h-3.5 w-3.5" aria-hidden />
+          </button>
+        ) : (
+          <button
+            type="button"
+            onClick={startListening}
+            disabled={state === 'submitting'}
+            aria-label="Speak to Perry"
+            className="grid h-8 w-8 place-items-center rounded-full bg-ph-brick text-ph-on-brick transition-opacity disabled:opacity-50"
+          >
+            <Mic className="h-4 w-4" aria-hidden />
+          </button>
+        ))}
     </div>
   );
 }

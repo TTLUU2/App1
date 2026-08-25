@@ -50,33 +50,65 @@ export function AskFlow() {
   const [error, setError] = useState<string | null>(null);
   const [speakOutput, setSpeakOutput] = useState<boolean>(isSpeechSynthesisAvailable());
 
-  // Check for a 'ph:ask-seed' handoff from the Tab 3 home Copilot — when
-  // the user taps "Continue in chat" on an inline answer, the Q+A gets
-  // stashed in sessionStorage; we pick it up here as the first turn so the
-  // conversation appears to continue rather than starting over.
+  // Two seed paths pick up handoffs from the /today Copilot bar:
   //
-  // NO auto-greeting on this page. Per user feedback, the spoken greeting
-  // should only fire when landing on Tab 3 (Optimisation) — that's the
-  // home Copilot surface. /ask is reached via the tab-bar '+' fan, and
-  // surprise audio when you change tabs is jarring. Voice is reactive
-  // here: speak only in response to user actions.
+  //   1. Legacy `{question, answer}` — the pre-Lacquer home Copilot
+  //      had an inline mini-chat that computed the answer on Home;
+  //      "Continue in chat" stashed both so the conversation appeared
+  //      to continue rather than starting over.
+  //   2. `{question, autoSubmit: true}` — new /today CopilotBar
+  //      captures voice on Home, hands off the question only, /ask
+  //      calls ask() on mount to fetch the answer.
+  //
+  //   3. Fallback: ?q=… URL param — private-mode Safari can't write
+  //      to sessionStorage, so the CopilotBar also passes the
+  //      question in the URL. Only used when sessionStorage is empty.
+  //
+  // NO auto-greeting on this page. Per user feedback, the spoken
+  // greeting should only fire when landing on Tab 3 (Optimisation)
+  // — surprise audio when you change tabs is jarring.
   const seededRef = useRef(false);
   useEffect(() => {
     if (seededRef.current) return;
     seededRef.current = true;
+    let seedQuestion: string | null = null;
+    let seedAutoSubmit = false;
     try {
       const raw = sessionStorage.getItem('ph:ask-seed');
       if (raw) {
-        const seed = JSON.parse(raw) as { question?: string; answer?: string };
+        const seed = JSON.parse(raw) as {
+          question?: string;
+          answer?: string;
+          autoSubmit?: boolean;
+        };
         if (seed.question && seed.answer) {
           // eslint-disable-next-line react-hooks/set-state-in-effect -- one-time init from sessionStorage (external system) guarded by seededRef; no cascade.
           setTurns([{ question: seed.question, answer: seed.answer, inScope: true }]);
+        } else if (seed.question && seed.autoSubmit) {
+          seedQuestion = seed.question;
+          seedAutoSubmit = true;
         }
         sessionStorage.removeItem('ph:ask-seed');
       }
     } catch {
       /* malformed seed — ignore */
     }
+    // URL fallback for private-mode Safari or a direct link.
+    if (!seedQuestion) {
+      try {
+        const q = new URLSearchParams(window.location.search).get('q');
+        if (q) {
+          seedQuestion = q;
+          seedAutoSubmit = true;
+        }
+      } catch {
+        /* unavailable */
+      }
+    }
+    if (seedQuestion && seedAutoSubmit) {
+      void ask(seedQuestion);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- ask reads store snapshots; mount-only fire.
   }, []);
 
   async function ask(question: string) {
