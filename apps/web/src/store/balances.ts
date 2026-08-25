@@ -129,7 +129,24 @@ function load(): ProgramBalance[] {
     const raw = window.localStorage.getItem(STORAGE_KEY);
     if (!raw) return SEED;
     const parsed = JSON.parse(raw) as ProgramBalance[];
-    return Array.isArray(parsed) && parsed.length > 0 ? parsed : SEED;
+    if (!Array.isArray(parsed) || parsed.length === 0) return SEED;
+    // Seed migration — anytime a new program is added to SEED (Qatar,
+    // future airlines), existing users' localStorage is missing it.
+    // Merge SEED IDs into the stored list, preserving the stored
+    // values for programs that already exist and appending any that
+    // don't (in SEED order, at the end). Custom user-added programs
+    // that don't exist in SEED are preserved verbatim.
+    const stored = new Map(parsed.map((p) => [p.id, p]));
+    const merged: ProgramBalance[] = [];
+    // SEED programs in SEED order, preferring stored values.
+    for (const seed of SEED) {
+      merged.push(stored.get(seed.id) ?? seed);
+    }
+    // Anything the user added that isn't in SEED, appended at the end.
+    for (const p of parsed) {
+      if (!SEED.find((s) => s.id === p.id)) merged.push(p);
+    }
+    return merged;
   } catch {
     return SEED;
   }
@@ -190,9 +207,15 @@ export const useBalancesStore = create<BalancesState>((set, get) => ({
         // our server received the mail. Falls back to receivedAt when
         // the parser couldn't extract a date.
         const serverDate = serverRow.snapshotAt.slice(0, 10);
-        // Local edit wins when it's strictly newer than the server
-        // snapshot. Equal dates are a wash — no reason to churn state.
-        if (p.updatedAt && p.updatedAt > serverDate) return p;
+        // Precedence: a USER edit that's strictly newer than the
+        // server snapshot wins (user just typed a fresh number today).
+        // For sync-sourced rows the server IS the authority — always
+        // take the server row so newly-extracted fields (tier /
+        // statusCredits / memberId, added post-original-write) land
+        // even when the balance & date look identical.
+        if (p.source === 'user' && p.updatedAt && p.updatedAt > serverDate) return p;
+        // Exact-match short-circuit avoids churning state when
+        // nothing actually changed on a re-mount.
         if (
           p.balance === serverRow.balance &&
           p.updatedAt === serverDate &&
@@ -201,7 +224,7 @@ export const useBalancesStore = create<BalancesState>((set, get) => ({
           (p.tier ?? null) === serverRow.tier &&
           (p.memberId ?? null) === serverRow.memberId
         ) {
-          return p; // exact match — nothing changed
+          return p;
         }
         mutated = true;
         return {
