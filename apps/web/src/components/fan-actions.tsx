@@ -30,11 +30,13 @@ const ACTIONS: FanAction[] = [
   { id: 'add', label: 'Add card', Icon: CreditCard },
   { id: 'spend', label: 'Spend', Icon: Receipt, href: '/spend' },
   { id: 'benefits', label: 'Benefits', Icon: Sparkles, href: '/benefits' },
-  // ?listen=1 tells /ask to auto-open the mic on mount — matches the
-  // pre-Lacquer 'tap the global speak icon → recording starts
-  // immediately' behaviour rather than dumping the user on an empty
-  // chat screen with a text prompt.
-  { id: 'ask', label: 'Ask', Icon: Mic, href: '/ask?listen=1' },
+  // No href on Ask — TabBar handles the pick by opening an in-place
+  // VoiceCaptureOverlay so recording starts on the current screen
+  // (live transcript + pulse) and only navigates to /ask once the
+  // user finishes speaking. Matches the pre-Lacquer 'tap mic →
+  // recording starts, animation dictates what the user is saying in
+  // real time' behaviour.
+  { id: 'ask', label: 'Ask', Icon: Mic },
 ];
 
 // Wider arc — icon-over-label stack keeps each button ~64px wide so we can

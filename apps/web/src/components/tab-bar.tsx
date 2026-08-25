@@ -7,6 +7,7 @@ import { CreditCard, Gift, Send, TrendingUp, Plus } from 'lucide-react';
 import clsx from 'clsx';
 import { FanActions, type FanActionId } from './fan-actions';
 import { AddCardModal } from './add-card-v2/add-card-modal';
+import { VoiceCaptureOverlay } from './voice-capture-overlay';
 
 /**
  * Persistent four-tab bottom bar plus a centre FAB.
@@ -35,14 +36,20 @@ export function TabBar() {
   const pathname = usePathname();
   const [fanOpen, setFanOpen] = useState(false);
   const [addCardOpen, setAddCardOpen] = useState(false);
+  const [voiceCaptureOpen, setVoiceCaptureOpen] = useState(false);
 
   function handleFanPick(id: FanActionId) {
     setFanOpen(false);
     if (id === 'add') {
       // Tiny delay so the fan-close animation doesn't overlap the modal-open
       setTimeout(() => setAddCardOpen(true), 60);
+    } else if (id === 'ask') {
+      // Same tiny stagger — lets the fan collapse before the voice
+      // pill appears in its place. Overlay handles recording start,
+      // live transcript, and end-of-speech navigation to /ask.
+      setTimeout(() => setVoiceCaptureOpen(true), 60);
     }
-    // 'spend' / 'benefits' / 'ask' route via <Link> inside FanActions, no JS needed
+    // 'spend' / 'benefits' still route via <Link> inside FanActions, no JS needed
   }
 
   // Allow other parts of the app to open the Add Card modal without prop
@@ -130,6 +137,7 @@ export function TabBar() {
       </button>
 
       <AddCardModal open={addCardOpen} onOpenChange={setAddCardOpen} />
+      <VoiceCaptureOverlay open={voiceCaptureOpen} onClose={() => setVoiceCaptureOpen(false)} />
     </>
   );
 }
