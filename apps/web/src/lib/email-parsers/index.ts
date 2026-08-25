@@ -42,6 +42,18 @@ export type ParserOutcome =
        *  send date or a "Statement as at DD Month YYYY" line. Falls
        *  back to receivedAt if the parser can't find it. */
       snapshotAt: Date;
+      /** Optional secondary numeric — Status Credits (Qantas) or the
+       *  program's equivalent progress metric. Undefined when the
+       *  program doesn't have one or the parser didn't find it. */
+      statusCredits?: number;
+      /** Optional tier — BRONZE/SILVER/GOLD/PLATINUM/PLATINUM_ONE for
+       *  Qantas; RED/SILVER/GOLD/PLATINUM for Velocity. Case-preserved
+       *  verbatim from the email. */
+      tier?: string;
+      /** Optional loyalty-programme member number as printed in the
+       *  email. Useful for disambiguating multiple accounts routed
+       *  through the same forwarding filter. */
+      memberId?: string;
     }
   | {
       kind: 'gmail_verification';

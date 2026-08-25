@@ -197,6 +197,25 @@ export const balanceUpdates = pgTable(
     programId: text('program_id').notNull(),
     /** Points balance in whole units (no fractional points at any AU program). */
     balance: text('balance').notNull(),
+    /** Status Credits (Qantas) or Velocity Points earning progress —
+     *  nullable because not every program has this concept and not
+     *  every parser has learned to extract it. Integer, stored as text
+     *  to match the balance column's precision-agnostic storage. */
+    statusCredits: text('status_credits'),
+    /** Loyalty tier as the program renders it: BRONZE / SILVER / GOLD /
+     *  PLATINUM / PLATINUM_ONE for Qantas; RED / SILVER / GOLD /
+     *  PLATINUM for Velocity. Case-preserved from the source email so
+     *  the UI can render it verbatim without a translation table. */
+    tier: text('tier'),
+    /** Frequent-flyer / member number as printed in the email. Lets us
+     *  distinguish a family member's balance forwarded through the same
+     *  filter, and eventually surface a "which account?" prompt. */
+    memberId: text('member_id'),
+    /** Snapshot date extracted from the email body ("Statement as at
+     *  11-Aug-2026"). Falls back to receivedAt server-side when the
+     *  parser can't find a date — this column is the accurate "as-of"
+     *  the app should show, not receivedAt. */
+    snapshotAt: timestamp('snapshot_at', { withTimezone: true }),
     /** Where this came from: 'forward' (Postmark inbound), 'gmail'
      *  (OAuth scrape), 'outlook' (OAuth scrape). Server-only origin
      *  — client-authored updates never write here. */

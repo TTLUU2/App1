@@ -197,6 +197,14 @@ export async function POST(req: NextRequest) {
         deviceId,
         programId: outcome.programId,
         balance: String(outcome.balance),
+        // Nullable extras — pass through when the parser found them,
+        // otherwise the DB column stays null. `undefined` is dropped by
+        // Drizzle's insert-values shape; explicit `null` is also fine.
+        statusCredits:
+          typeof outcome.statusCredits === 'number' ? String(outcome.statusCredits) : null,
+        tier: outcome.tier ?? null,
+        memberId: outcome.memberId ?? null,
+        snapshotAt: outcome.snapshotAt,
         source: 'forward',
         sourceEventId: eventRow?.id,
       });

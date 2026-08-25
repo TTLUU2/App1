@@ -92,5 +92,38 @@ export function parseQantas(email: ParsedInboundEmail): ParserOutcome {
     }
   }
 
-  return { kind: 'balance', programId: 'qantas', balance, snapshotAt };
+  // Secondary fields — best-effort. All three come from the newsletter
+  // header panel that also holds the points figure. Extract each with
+  // its own regex; a miss on any one is fine (the field stays undefined
+  // and the DB column stays null).
+  //
+  // Status Credits example: "Status Credits 0" — same shape as the
+  // Qantas Points header line. Zero is a valid value; we don't want to
+  // reject-parse it, so we accept 0+.
+  const statusMatch = body.match(/status\s+credits\s+([0-9]{1,3}(?:,[0-9]{3})+|[0-9]+)/i);
+  const statusCredits = statusMatch?.[1]
+    ? parseInt(statusMatch[1].replace(/,/g, ''), 10)
+    : undefined;
+
+  // Tier: appears as a standalone line "BRONZE" / "SILVER" / … in the
+  // newsletter header. Anchor on the tier vocab so we don't false-
+  // positive on generic uppercase words elsewhere in the body.
+  const tierMatch = body.match(/\b(BRONZE|SILVER|GOLD|PLATINUM ONE|PLATINUM)\b/);
+  const tier = tierMatch?.[1] ? tierMatch[1].replace(/\s+/g, '_') : undefined;
+
+  // Member ID: "Frequent Flyer Number 1919026219". Qantas member
+  // numbers are 10 digits, but we accept 8–12 to be defensive to
+  // future template drift.
+  const memberMatch = body.match(/frequent\s+flyer\s+number\s+([0-9]{8,12})/i);
+  const memberId = memberMatch?.[1];
+
+  return {
+    kind: 'balance',
+    programId: 'qantas',
+    balance,
+    snapshotAt,
+    ...(Number.isFinite(statusCredits) ? { statusCredits: statusCredits as number } : {}),
+    ...(tier ? { tier } : {}),
+    ...(memberId ? { memberId } : {}),
+  };
 }

@@ -37,22 +37,43 @@ export async function GET(req: NextRequest) {
     .select({
       programId: balanceUpdates.programId,
       balance: balanceUpdates.balance,
+      statusCredits: balanceUpdates.statusCredits,
+      tier: balanceUpdates.tier,
+      memberId: balanceUpdates.memberId,
+      snapshotAt: balanceUpdates.snapshotAt,
       receivedAt: balanceUpdates.receivedAt,
+      source: balanceUpdates.source,
     })
     .from(balanceUpdates)
     .where(eq(balanceUpdates.deviceId, deviceId))
     .orderBy(desc(balanceUpdates.receivedAt));
 
-  const latestByProgram = new Map<
-    string,
-    { programId: string; balance: number; receivedAt: string }
-  >();
+  interface LatestBalance {
+    programId: string;
+    balance: number;
+    statusCredits: number | null;
+    tier: string | null;
+    memberId: string | null;
+    /** When the balance was actually captured per the email body. Falls
+     *  back to receivedAt if the parser didn't extract a date. */
+    snapshotAt: string;
+    /** When our server received the update (independent of snapshotAt). */
+    receivedAt: string;
+    source: string;
+  }
+
+  const latestByProgram = new Map<string, LatestBalance>();
   for (const r of rows) {
     if (!latestByProgram.has(r.programId)) {
       latestByProgram.set(r.programId, {
         programId: r.programId,
         balance: Number(r.balance),
+        statusCredits: r.statusCredits == null ? null : Number(r.statusCredits),
+        tier: r.tier,
+        memberId: r.memberId,
+        snapshotAt: (r.snapshotAt ?? r.receivedAt).toISOString(),
         receivedAt: r.receivedAt.toISOString(),
+        source: r.source,
       });
     }
   }

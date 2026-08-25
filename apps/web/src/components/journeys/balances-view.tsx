@@ -31,9 +31,23 @@ import { HeroCard } from '@/components/lacquer';
 
 const FORWARD_DOMAIN = 'pointhacks.app';
 
-// Programs currently on auto-sync (mocked until we start reading last-
-// seen from balance_updates). Everything else reads as MANUAL.
-const AUTO_SYNCED = new Set(['qantas-ff', 'velocity']);
+/** Relative-date helper — "just now", "2d ago", "3mo ago", "1y ago".
+ *  Used on program rows to render `updatedAt` without importing a
+ *  full formatting lib. En-AU friendly (no "an hour" oddities). */
+function formatRelative(dateIso: string | null): string {
+  if (!dateIso) return 'never';
+  const then = new Date(dateIso + 'T00:00:00');
+  if (Number.isNaN(then.getTime())) return dateIso;
+  const now = new Date();
+  const ms = now.getTime() - then.getTime();
+  const days = Math.round(ms / (1000 * 60 * 60 * 24));
+  if (days <= 0) return 'today';
+  if (days === 1) return 'yesterday';
+  if (days < 7) return `${days}d ago`;
+  if (days < 30) return `${Math.round(days / 7)}w ago`;
+  if (days < 365) return `${Math.round(days / 30)}mo ago`;
+  return `${Math.round(days / 365)}y ago`;
+}
 
 export function BalancesView() {
   const programs = useBalancesStore((s) => s.programs);
@@ -80,7 +94,7 @@ export function BalancesView() {
       <ul className="space-y-2">
         {programs.map((p) => (
           <li key={p.id}>
-            <ProgramRow program={p} autoSync={AUTO_SYNCED.has(p.id)} />
+            <ProgramRow program={p} />
           </li>
         ))}
       </ul>
@@ -90,8 +104,19 @@ export function BalancesView() {
   );
 }
 
-function ProgramRow({ program, autoSync }: { program: ProgramBalance; autoSync: boolean }) {
+function ProgramRow({ program }: { program: ProgramBalance }) {
   const isZero = program.balance === 0;
+  const isSynced = program.source === 'sync';
+  const relative = formatRelative(program.updatedAt);
+  // Sub-line: '⚡ Auto-sync · 2mo ago' when the row came from an email;
+  // '· Updated 2mo ago' for a user's manual entry (same relative-date
+  // widget so both flavours read the same way); 'Manual · Add balance'
+  // for a program that's never been touched.
+  const subline = isSynced
+    ? `⚡ Auto-sync · ${relative}`
+    : program.updatedAt
+      ? `Manual · Updated ${relative}`
+      : 'Manual';
   return (
     <div className="flex items-center gap-3 rounded-ph-card border border-ph-border bg-ph-card p-[15px]">
       <ProgramLogo program={program} />
@@ -107,13 +132,25 @@ function ProgramRow({ program, autoSync }: { program: ProgramBalance; autoSync: 
         </p>
         <p
           className={
-            autoSync
-              ? 'mt-0.5 font-mono text-[10px] uppercase tracking-[0.14em] text-ph-pine'
-              : 'mt-0.5 font-mono text-[10px] uppercase tracking-[0.14em] text-ph-text-meta'
+            isSynced
+              ? 'mt-0.5 truncate font-mono text-[10px] uppercase tracking-[0.14em] text-ph-pine'
+              : 'mt-0.5 truncate font-mono text-[10px] uppercase tracking-[0.14em] text-ph-text-meta'
           }
         >
-          {autoSync ? '⚡ Auto-sync · 2mo ago' : 'Manual'}
+          {subline}
         </p>
+        {/* Tier + Status Credits sub-sub-line — only when the sync
+            payload carried them. Keeps zero-balance / user-entered rows
+            visually simple. */}
+        {(program.tier || typeof program.statusCredits === 'number') && (
+          <p className="mt-0.5 truncate text-[11px] text-ph-text-muted">
+            {program.tier ? program.tier.replace(/_/g, ' ') : null}
+            {program.tier && typeof program.statusCredits === 'number' ? ' · ' : null}
+            {typeof program.statusCredits === 'number'
+              ? `${program.statusCredits} status credits`
+              : null}
+          </p>
+        )}
       </div>
       {isZero ? (
         <button

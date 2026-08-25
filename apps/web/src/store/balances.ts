@@ -17,8 +17,18 @@ export interface ProgramBalance {
   /** Cents-per-point estimate for value calc. AU averages, conservative. */
   cpp: number;
   balance: number;
-  /** ISO yyyy-MM-dd of the last user-confirmed update. null = never. */
+  /** ISO yyyy-MM-dd of the last update — either the user's manual entry
+   *  or the snapshotAt on an email-sync'd balance. null = never. */
   updatedAt: string | null;
+  /** How this row was most recently updated. 'user' = manual entry via
+   *  the UI, 'sync' = an email arrived and the parser wrote it. Drives
+   *  the sync-status pill (⚡ Auto-sync vs Manual). */
+  source?: 'user' | 'sync';
+  /** Optional program-specific extras from the email parser. Only
+   *  populated when source === 'sync' and the email carried them. */
+  statusCredits?: number | null;
+  tier?: string | null;
+  memberId?: string | null;
 }
 
 const CDN = 'https://pointhacks-spa-tools.fly.dev/images/programs-small';
@@ -124,7 +134,9 @@ export const useBalancesStore = create<BalancesState>((set, get) => ({
 
   updateBalance(id, balance) {
     const today = new Date().toISOString().slice(0, 10);
-    const next = get().programs.map((p) => (p.id === id ? { ...p, balance, updatedAt: today } : p));
+    const next = get().programs.map((p) =>
+      p.id === id ? { ...p, balance, updatedAt: today, source: 'user' as const } : p,
+    );
     set({ programs: next });
     save(next);
   },
@@ -134,7 +146,15 @@ export const useBalancesStore = create<BalancesState>((set, get) => ({
       const res = await fetch(`/api/balances/latest?deviceId=${encodeURIComponent(deviceId)}`);
       if (!res.ok) return;
       const json = (await res.json()) as {
-        balances?: Array<{ programId: string; balance: number; receivedAt: string }>;
+        balances?: Array<{
+          programId: string;
+          balance: number;
+          statusCredits: number | null;
+          tier: string | null;
+          memberId: string | null;
+          snapshotAt: string;
+          receivedAt: string;
+        }>;
       };
       const serverBalances = json.balances ?? [];
       if (serverBalances.length === 0) return;
@@ -142,22 +162,36 @@ export const useBalancesStore = create<BalancesState>((set, get) => ({
       const now = get().programs;
       let mutated = false;
       const next = now.map((p) => {
-        // Find a server row whose canonical program id maps to this
-        // local id. We don't rewrite the local id ('qantas-ff' stays
-        // 'qantas-ff') — only the balance + updatedAt come from the
-        // server.
         const serverRow = serverBalances.find((s) => SERVER_TO_LOCAL_ID[s.programId] === p.id);
         if (!serverRow) return p;
-        const serverDate = serverRow.receivedAt.slice(0, 10);
-        // Server wins when it's newer than the local record OR the
-        // local record has never been updated (updatedAt === null).
-        // A local edit made TODAY after a server sync will still win
-        // because `updateBalance` stamps `updatedAt` to today, which
-        // is >= serverDate for today's server rows.
+        // Prefer snapshotAt (email's stated "as at" date) for the
+        // updatedAt column — that's what the user cares about, not when
+        // our server received the mail. Falls back to receivedAt when
+        // the parser couldn't extract a date.
+        const serverDate = serverRow.snapshotAt.slice(0, 10);
+        // Local edit wins when it's strictly newer than the server
+        // snapshot. Equal dates are a wash — no reason to churn state.
         if (p.updatedAt && p.updatedAt > serverDate) return p;
-        if (p.balance === serverRow.balance && p.updatedAt === serverDate) return p;
+        if (
+          p.balance === serverRow.balance &&
+          p.updatedAt === serverDate &&
+          p.source === 'sync' &&
+          (p.statusCredits ?? null) === serverRow.statusCredits &&
+          (p.tier ?? null) === serverRow.tier &&
+          (p.memberId ?? null) === serverRow.memberId
+        ) {
+          return p; // exact match — nothing changed
+        }
         mutated = true;
-        return { ...p, balance: serverRow.balance, updatedAt: serverDate };
+        return {
+          ...p,
+          balance: serverRow.balance,
+          updatedAt: serverDate,
+          source: 'sync' as const,
+          statusCredits: serverRow.statusCredits,
+          tier: serverRow.tier,
+          memberId: serverRow.memberId,
+        };
       });
       if (mutated) {
         set({ programs: next });
