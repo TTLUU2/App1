@@ -37,6 +37,23 @@ Matching + Deals stay as-is throughout — separate refresh later.
 
 ## Next up (parked mid-flight — pick up as soon as Lacquer lands)
 
+- **Onboarding wizard for email-sync setup** (2026-08-25). Guided
+  4-step first-run flow so users get their per-device forwarding
+  address into Gmail / Outlook filters in ~90 seconds:
+  - Step 1 — Welcome card explaining the payoff (auto-fresh balances).
+  - Step 2 — Big Copy button on their unique `slug@pointhacks.app`.
+  - Step 3 — Annotated screenshot of Gmail's Create-filter dialog
+    with the exact From: pattern (`qantas.com OR qantasfrequentflyer.com`)
+    and the forward-to field highlighted. Outlook variant behind a
+    provider toggle at the top of the step.
+  - Step 4 — "Send a test" mailto: button that pre-populates a Gmail
+    compose window. Screen polls `/api/balances/latest` and shows
+    "✓ First balance received!" the moment the row lands, or a
+    "Still waiting…" state with troubleshooting after 60s.
+  - Skippable ("I'll do it later") from any step; re-invocable via
+    Settings → "Set up auto-sync". Blocked on Perry artwork + copy
+    review; no infra dependencies.
+
 - **Email sync — forwarding backend v1** (commit `69a9985`). Schema
   - `/api/link-email` + `/api/inbound-email` + parser framework +
     Qantas/Velocity stubs already in the tree. Blocked on:
