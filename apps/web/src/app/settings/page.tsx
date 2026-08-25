@@ -15,7 +15,7 @@
  * Centre proper reads as the main body.
  */
 
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Bell, ChevronDown, Sliders } from 'lucide-react';
 import {
   useAlertsStore,
@@ -23,6 +23,7 @@ import {
   type CardAlertPrefs,
   type GlobalAlertPrefs,
 } from '@/store/alerts';
+import { selectUserCardsWithDetails, useUserCardsStore } from '@/store/user-cards';
 import { VoiceToggle } from '@/components/voice-toggle';
 import { ThemeToggle } from '@/components/theme-toggle';
 
@@ -45,10 +46,55 @@ const ALERT_KIND_LABELS: Record<AlertKind, { title: string; sub: string }> = {
   },
 };
 
+// Defaults for a card whose per-card alert prefs haven't been touched
+// yet. Matches the SEED_CARDS pattern from the alerts store — deadlines
+// and fee renewals on by default, benefit-expiring on, three-month
+// heads-up off (it's the noisiest and users tend to opt in later).
+const DEFAULT_CARD_ALERT_ENABLED: Record<AlertKind, boolean> = {
+  'min-spend-deadline': true,
+  'annual-fee-renewal': true,
+  'benefit-expiring': true,
+  'three-month-to-bonus': false,
+};
+
 export default function SettingsPage() {
   const global = useAlertsStore((s) => s.global);
   const cards = useAlertsStore((s) => s.cards);
   const setGlobal = useAlertsStore((s) => s.setGlobal);
+
+  // Notification prefs should only ever list cards the user actually
+  // holds. The alerts store's `cards` field used to be seeded with
+  // mock entries (amex-platinum, anz-rewards-black, cba-ultimate, …)
+  // that never synced with Your Cards, so the Alert Centre showed
+  // toggles for cards the user had never added. Derive the display
+  // list from userCards directly — the alerts store still owns the
+  // per-cardId enabled bits, we just filter+union with real holdings.
+  const userCardsRaw = useUserCardsStore((s) => s.userCards);
+  const loadedRaw = useUserCardsStore((s) => s.loaded);
+  const heldCards = useMemo(
+    () =>
+      selectUserCardsWithDetails({
+        userCards: userCardsRaw,
+        loaded: loadedRaw,
+        error: null,
+      } as never).filter((c) => !c.cancellationDate),
+    [userCardsRaw, loadedRaw],
+  );
+  const displayCards = useMemo<CardAlertPrefs[]>(() => {
+    return heldCards.map((uc) => {
+      const existing = cards.find((c) => c.cardId === uc.id);
+      if (existing) {
+        // Pick up any catalogue name change (rare) — user identifies
+        // the card by name, not the internal UUID.
+        return { ...existing, cardName: uc.card.name };
+      }
+      return {
+        cardId: uc.id,
+        cardName: uc.card.name,
+        enabled: { ...DEFAULT_CARD_ALERT_ENABLED },
+      };
+    });
+  }, [heldCards, cards]);
 
   return (
     <main className="min-h-dvh bg-ph-paper text-ph-text">
@@ -106,11 +152,17 @@ export default function SettingsPage() {
           Per card
         </h3>
         <ul className="space-y-2">
-          {cards.map((c) => (
-            <li key={c.cardId}>
-              <CardCard card={c} />
+          {displayCards.length === 0 ? (
+            <li className="rounded-ph-card border border-ph-border bg-ph-card p-4 text-[13px] text-ph-text-muted">
+              You haven&apos;t added any cards yet. Per-card alerts appear here once you do.
             </li>
-          ))}
+          ) : (
+            displayCards.map((c) => (
+              <li key={c.cardId}>
+                <CardCard card={c} />
+              </li>
+            ))
+          )}
         </ul>
 
         <p className="mt-6 flex items-start gap-2 rounded-ph-inner border border-ph-tint-border bg-ph-tint p-3 text-[12px] leading-snug text-ph-text-muted">
@@ -185,7 +237,9 @@ function GlobalSection({
 
 function CardCard({ card }: { card: CardAlertPrefs }) {
   const setCardAlert = useAlertsStore((s) => s.setCardAlert);
-  const [expanded, setExpanded] = useState(card.cardId === 'amex-platinum');
+  // Default collapsed — the previous mock 'amex-platinum' auto-expand
+  // no longer matches any real card id (userCard.id is a UUID).
+  const [expanded, setExpanded] = useState(false);
 
   const enabledCount = Object.values(card.enabled).filter(Boolean).length;
   const totalCount = Object.keys(card.enabled).length;

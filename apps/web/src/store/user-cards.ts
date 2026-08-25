@@ -45,6 +45,7 @@ export interface NewUserCardInput {
   bonusTarget?: number | null;
   bonusSpentToDate?: number | null;
   bonusSpendWindowEndDate?: string | null;
+  bonusPointsOverride?: number | null;
 }
 
 interface UserCardsState {
@@ -96,6 +97,7 @@ export const useUserCardsStore = create<UserCardsState>((set, get) => ({
       bonusTarget: input.bonusTarget ?? null,
       bonusSpentToDate: input.bonusSpentToDate ?? null,
       bonusSpendWindowEndDate: input.bonusSpendWindowEndDate ?? null,
+      bonusPointsOverride: input.bonusPointsOverride ?? null,
     };
     await getDb().userCards.add(record);
     set({ userCards: [...get().userCards, record] });

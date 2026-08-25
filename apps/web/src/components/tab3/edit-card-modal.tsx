@@ -36,12 +36,13 @@ interface Editable {
   annualFeeNextDueDate: string;
   bonusTarget: number;
   bonusSpendWindowEndDate: string;
-  /** Only meaningful for cancelled cards. Empty string when never
-   *  cancelled — the field is hidden in that case. Kept in state so the
-   *  user can correct a wrong cancellation date entered via the quick
-   *  Cancel Card confirm (which stamps today). Feeds into engine's
-   *  cooling-off math for same-family eligibility. */
   cancellationDate: string;
+  /** Historic sign-up bonus the user was actually offered. Zero = defer
+   *  to the catalogue value (card.bonusPoints). Lets users record an
+   *  offer that's since changed in the catalogue (e.g. they got 150k
+   *  when today's catalogue only shows 130k). Persists as
+   *  bonusPointsOverride on the store. */
+  bonusPointsOverride: number;
 }
 
 export function EditCardModal({ uc, onClose }: EditCardModalProps) {
@@ -55,6 +56,7 @@ export function EditCardModal({ uc, onClose }: EditCardModalProps) {
     bonusTarget: uc.bonusTarget ?? 0,
     bonusSpendWindowEndDate: uc.bonusSpendWindowEndDate ?? todayIsoDate(),
     cancellationDate: uc.cancellationDate ?? '',
+    bonusPointsOverride: uc.bonusPointsOverride ?? 0,
   }));
   const isCancelled = !!uc.cancellationDate;
   const [saving, setSaving] = useState(false);
@@ -87,8 +89,9 @@ export function EditCardModal({ uc, onClose }: EditCardModalProps) {
         annualFeeNextDueDate: draft.annualFeeNextDueDate,
         bonusTarget: draft.bonusTarget || null,
         bonusSpendWindowEndDate: draft.bonusSpendWindowEndDate,
-        // Only propagate cancellation date when the card is actually
-        // cancelled — never overwrite a null with the empty string.
+        // Zero means 'clear the override' — save as null so consumers
+        // fall back to the catalogue value.
+        bonusPointsOverride: draft.bonusPointsOverride || null,
         ...(isCancelled && draft.cancellationDate
           ? { cancellationDate: draft.cancellationDate }
           : {}),
@@ -151,6 +154,38 @@ export function EditCardModal({ uc, onClose }: EditCardModalProps) {
                 value={draft.activationDate}
                 onChange={(e) => setDraft((d) => ({ ...d, activationDate: e.target.value }))}
                 className="w-full rounded-ph-inner border border-ph-border-strong bg-ph-card px-3 py-2.5 text-[14px] text-ph-ink focus:outline-none focus-visible:ring-2 focus-visible:ring-ph-brick"
+              />
+            </Field>
+
+            {/* Historic sign-up bonus points — the actual offer at time
+                of application. Falls back to catalogue.bonusPoints when
+                left empty. Hint shows the current catalogue value so
+                the user can see what they're overriding. */}
+            <Field
+              label="Sign-up bonus points"
+              hint={
+                uc.card.bonusPoints
+                  ? `Catalogue: ${uc.card.bonusPoints.toLocaleString()}`
+                  : 'No catalogue value'
+              }
+            >
+              <input
+                type="number"
+                inputMode="numeric"
+                min={0}
+                value={draft.bonusPointsOverride || ''}
+                onChange={(e) =>
+                  setDraft((d) => ({
+                    ...d,
+                    bonusPointsOverride: Number(e.target.value) || 0,
+                  }))
+                }
+                placeholder={
+                  uc.card.bonusPoints
+                    ? `Leave blank for ${uc.card.bonusPoints.toLocaleString()}`
+                    : 'e.g. 150000'
+                }
+                className="w-full rounded-ph-inner border border-ph-border-strong bg-ph-card px-3 py-2.5 text-[14px] tabular-nums text-ph-ink placeholder:text-ph-text-meta focus:outline-none focus-visible:ring-2 focus-visible:ring-ph-brick"
               />
             </Field>
 

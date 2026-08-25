@@ -147,12 +147,16 @@ function CardTile({ uc, defaultOpen }: CardTileProps) {
     await updateCard(uc.id, { cancellationDate: today });
     setConfirmingCancel(false);
   }
+  // Effective sign-up bonus — user's per-card override takes precedence
+  // over the catalogue when set (captures historic offers that have
+  // since changed in the catalogue).
+  const effectiveBonus = uc.bonusPointsOverride ?? uc.card.bonusPoints;
   const summary = status.bonusEarned
     ? 'Bonus earned · nothing to do'
     : status.deadlineIso
       ? `${formatCurrency(status.spendToGo)} to go in ${status.daysRemaining} days`
-      : uc.card.bonusPoints != null
-        ? `${formatPoints(uc.card.bonusPoints)} pts sign-up`
+      : effectiveBonus != null
+        ? `${formatPoints(effectiveBonus)} pts sign-up`
         : `${formatCurrency(uc.card.annualFee)} annual fee`;
 
   return (
@@ -249,7 +253,10 @@ interface CardStatus {
 }
 
 function SignUpBonusPanel({ uc, status }: { uc: UserCardWithDetails; status: CardStatus }) {
-  if (uc.card.bonusPoints == null) return null;
+  // Prefer per-user override — the actual offer at time of application
+  // is what matters for progress, not the current catalogue value.
+  const effectiveBonus = uc.bonusPointsOverride ?? uc.card.bonusPoints;
+  if (effectiveBonus == null) return null;
   const clamped =
     status.spendTarget > 0 ? Math.max(0, Math.min(1, status.spentToDate / status.spendTarget)) : 0;
 
@@ -260,7 +267,7 @@ function SignUpBonusPanel({ uc, status }: { uc: UserCardWithDetails; status: Car
           Sign-up bonus
         </p>
         <p className="font-serif text-[17px] leading-none text-ph-red tabular-nums">
-          {formatPoints(uc.card.bonusPoints)} pts
+          {formatPoints(effectiveBonus)} pts
         </p>
       </div>
 
@@ -498,7 +505,11 @@ function EmptyState() {
 // ── derivations + formatters ────────────────────────────────────────
 
 function computeStatus(uc: UserCardWithDetails): CardStatus {
-  const target = uc.bonusTarget ?? Math.round((uc.card.bonusPoints ?? 0) * 0.05);
+  // Use the user's historic offer (bonusPointsOverride) when set for
+  // the 5% min-spend fallback estimate — otherwise fall back to the
+  // catalogue value. Same precedence as SignUpBonusPanel/CardTile.
+  const effectiveBonus = uc.bonusPointsOverride ?? uc.card.bonusPoints ?? 0;
+  const target = uc.bonusTarget ?? Math.round(effectiveBonus * 0.05);
   const spent = uc.bonusSpentToDate ?? 0;
   const toGo = Math.max(0, target - spent);
   const bonusEarned = uc.bonusReceived === true || (target > 0 && spent >= target);

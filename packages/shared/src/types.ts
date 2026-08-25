@@ -124,6 +124,14 @@ export interface UserCard {
   bonusTarget?: number | null;
   bonusSpentToDate?: number | null;
   bonusSpendWindowEndDate?: string | null;
+
+  /** Optional per-user override for the catalogue's `card.bonusPoints`.
+   *  Sign-up bonuses change over time (e.g. an offer that was 150,000
+   *  when the user applied has since dropped to 130,000 in the current
+   *  catalogue). Recording the actual points the user was offered
+   *  keeps the sign-up-bonus display honest without editing the shared
+   *  catalogue. Null / undefined = defer to card.bonusPoints. */
+  bonusPointsOverride?: number | null;
 }
 
 export interface UserCardWithDetails extends UserCard {
