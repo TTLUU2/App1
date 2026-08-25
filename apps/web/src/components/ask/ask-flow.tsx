@@ -2,9 +2,10 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
-import { ChevronLeft, Mic, Volume2, VolumeX, AlertTriangle } from 'lucide-react';
+import { ChevronLeft, Volume2, VolumeX, AlertTriangle } from 'lucide-react';
 import { getAllBenefits } from '@ph/shared';
 import { VoiceInput } from '@/components/voice-input';
+import { PerryAvatar } from '@/components/lacquer';
 import {
   selectRecommendations,
   selectUserCardsWithDetails,
@@ -56,7 +57,7 @@ export function AskFlow() {
   //
   // NO auto-greeting on this page. Per user feedback, the spoken greeting
   // should only fire when landing on Tab 3 (Optimisation) — that's the
-  // home Copilot surface. /ask is reached via PerryFAB from any tab, and
+  // home Copilot surface. /ask is reached via the tab-bar '+' fan, and
   // surprise audio when you change tabs is jarring. Voice is reactive
   // here: speak only in response to user actions.
   const seededRef = useRef(false);
@@ -68,6 +69,7 @@ export function AskFlow() {
       if (raw) {
         const seed = JSON.parse(raw) as { question?: string; answer?: string };
         if (seed.question && seed.answer) {
+          // eslint-disable-next-line react-hooks/set-state-in-effect -- one-time init from sessionStorage (external system) guarded by seededRef; no cascade.
           setTurns([{ question: seed.question, answer: seed.answer, inScope: true }]);
         }
         sessionStorage.removeItem('ph:ask-seed');
@@ -133,10 +135,13 @@ export function AskFlow() {
           </button>
         )}
       </div>
-      <header className="mt-3 flex items-center gap-2">
-        <span className="grid h-9 w-9 flex-none place-items-center rounded-full bg-ph-fill-warm text-ph-brick">
-          <Mic className="h-4 w-4" aria-hidden />
-        </span>
+      <header className="mt-3 flex items-center gap-2.5">
+        {/* Perry as the header mark — replaces the Mic-in-circle from the
+            initial Lacquer pass. Now that PerryFAB no longer hovers on
+            every screen, this is where Perry is anchored: on the chat
+            surface where he actually 'speaks'. Uses the 46px celebration
+            disc size for a bit of hero weight. */}
+        <PerryAvatar size={46} />
         <h1 className="font-serif text-[24px] leading-none text-ph-ink">Ask Copilot</h1>
       </header>
       <p className="mt-2 text-[13px] leading-snug text-ph-text-muted">
@@ -147,17 +152,26 @@ export function AskFlow() {
       <ul className="mt-4 space-y-3">
         {turns.map((t, i) => (
           <li key={i} className="space-y-1.5">
+            {/* User question — right-aligned, no avatar (their voice is
+                implicit). */}
             <div className="ml-auto max-w-[85%] rounded-2xl rounded-tr-sm bg-ph-fill px-3 py-2 text-sm dark:bg-zinc-800">
               {t.question}
             </div>
-            <div
-              className={
-                t.inScope
-                  ? 'mr-auto max-w-[85%] rounded-2xl rounded-tl-sm bg-ph-pine-chip px-3 py-2 text-sm text-ph-pine-text dark:bg-emerald-950/40 dark:text-emerald-100'
-                  : 'mr-auto max-w-[85%] rounded-2xl rounded-tl-sm bg-ph-amber-chip px-3 py-2 text-sm text-ph-amber-text dark:bg-amber-950/40 dark:text-amber-100'
-              }
-            >
-              {t.answer}
+            {/* Copilot answer — left-aligned, PerryAvatar to the left of
+                the bubble so Perry visibly 'speaks' each reply. items-end
+                anchors the avatar to the bottom of the bubble like a
+                classic chat UI. */}
+            <div className="mr-auto flex max-w-[85%] items-end gap-2">
+              <PerryAvatar size={26} className="mb-0.5 flex-none" />
+              <div
+                className={
+                  t.inScope
+                    ? 'rounded-2xl rounded-tl-sm bg-ph-pine-chip px-3 py-2 text-sm text-ph-pine-text dark:bg-emerald-950/40 dark:text-emerald-100'
+                    : 'rounded-2xl rounded-tl-sm bg-ph-amber-chip px-3 py-2 text-sm text-ph-amber-text dark:bg-amber-950/40 dark:text-amber-100'
+                }
+              >
+                {t.answer}
+              </div>
             </div>
           </li>
         ))}

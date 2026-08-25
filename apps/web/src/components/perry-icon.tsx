@@ -7,7 +7,8 @@
 // project at chatbot PH files/points-genie/frontend/src/components/
 // PerryIcon.tsx — same character so the brand reads continuously across
 // surfaces. Used by:
-//   - PerryFAB (universal Copilot entry, bottom-left of every screen)
+//   - Ask Copilot header + per-answer avatar on /ask (via PerryAvatar
+//     in @/components/lacquer/perry-avatar.tsx, which wraps this icon)
 //   - /ask page header (when the user enters the chat)
 //   - Other places we want to put a friendly face on Copilot responses
 

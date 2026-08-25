@@ -4,7 +4,6 @@ import { TabBar } from '@/components/tab-bar';
 import { StoreHydrator } from '@/components/store-hydrator';
 import { THEME_INIT_SCRIPT } from '@/components/theme-toggle';
 import { LacquerHeaderCluster } from '@/components/lacquer/header-cluster';
-import { PerryFAB } from '@/components/perry-fab';
 import { PushOptInModal } from '@/components/push-opt-in-modal';
 import './globals.css';
 
@@ -79,9 +78,10 @@ export default function RootLayout({
 
         <div className="mx-auto flex min-h-dvh max-w-md flex-col pb-24">{children}</div>
         <TabBar />
-        {/* Perry — universal Copilot entry point. Floats bottom-left on
-            every screen except /ask (hides itself there). */}
-        <PerryFAB />
+        {/* Copilot entry point is the tab-bar '+' fan (Ask/Spend/Benefits/
+            Add-card). Perry no longer hovers ambiently on every screen —
+            he lives on the /ask chat surface where he actually speaks
+            (header avatar + per-reply avatar). Dropped 2026-08-25. */}
         {/* One-time push opt-in modal — fires after the user has at least
             one card in their portfolio. Self-gates via the alerts store. */}
         <PushOptInModal />

@@ -37,6 +37,20 @@ Matching + Deals stay as-is throughout — separate refresh later.
 
 ## Next up (parked mid-flight — pick up as soon as Lacquer lands)
 
+- **Outlook OAuth ("per-device" flavour, no user accounts)** (2026-08-25).
+  Alternative to the forwarding-filter setup for users on Outlook / M365
+  who want zero-friction connect: they tap "Connect Outlook", complete
+  Microsoft's OAuth consent, we store a refresh token keyed to their
+  deviceId (same pattern as the forwarding slug — no login screen, no
+  accounts table). A poller runs every N min: for each device with a
+  linked Outlook, query Graph API for Qantas/Velocity/Amex emails,
+  feed into the existing parser framework, write balance_updates.
+  Roughly 1 week of build; Microsoft app-approval process is usually
+  faster than Google's (days vs weeks). Downside vs Flavour A: no
+  multi-device sync — new phone = re-connect. Add Gmail OAuth on the
+  same rails once Outlook is proven. Both flavours coexist with the
+  forwarding path — users pick whichever they prefer.
+
 - **Onboarding wizard for email-sync setup** (2026-08-25). Guided
   4-step first-run flow so users get their per-device forwarding
   address into Gmail / Outlook filters in ~90 seconds:
