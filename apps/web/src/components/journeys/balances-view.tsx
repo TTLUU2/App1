@@ -23,11 +23,12 @@ import { formatPoints } from '@/lib/format';
 import {
   selectTotalPoints,
   selectTotalValueAud,
+  SYNC_ELIGIBLE_PROGRAMS,
   useBalancesStore,
   type ProgramBalance,
 } from '@/store/balances';
 import { getOrCreateDeviceId } from '@/lib/device-id';
-import { HeroCard } from '@/components/lacquer';
+import { BottomSheet, HeroCard, PerryAvatar } from '@/components/lacquer';
 
 const FORWARD_DOMAIN = 'pointhacks.app';
 
@@ -51,9 +52,15 @@ function formatRelative(dateIso: string | null): string {
 
 export function BalancesView() {
   const programs = useBalancesStore((s) => s.programs);
+  const updateBalance = useBalancesStore((s) => s.updateBalance);
   const total = useBalancesStore(selectTotalPoints);
   const valueAud = useBalancesStore(selectTotalValueAud);
   const fundedCount = programs.filter((p) => p.balance > 0).length;
+  // Wizard placeholder — replaced by the proper 4-step onboarding
+  // wizard component (see docs/TODO.md "Onboarding wizard for email-
+  // sync setup"). For now, tapping Sync surfaces a Perry-narrated
+  // instructions sheet inline; the real wizard subsumes this later.
+  const [syncSheetProgramId, setSyncSheetProgramId] = useState<string | null>(null);
 
   // On mount, ask the server for the newest balances the email-sync
   // backend has captured and merge them into the local store. Silent
@@ -65,6 +72,29 @@ export function BalancesView() {
     if (!deviceId) return;
     void syncFromServer(deviceId);
   }, [syncFromServer]);
+
+  function handleInput(id: string, currentBalance: number) {
+    // Native prompt is the fastest path to a working editor — the
+    // proper Lacquer inline number pad lives in a follow-up. The
+    // manual-input flow was zero-state before this commit; anything is
+    // an improvement.
+    const raw = window.prompt(
+      'Enter balance (points)',
+      currentBalance > 0 ? String(currentBalance) : '',
+    );
+    if (raw === null) return;
+    const cleaned = raw.replace(/[,\s]/g, '');
+    const parsed = Number(cleaned);
+    if (!Number.isFinite(parsed) || parsed < 0) return;
+    updateBalance(id, Math.round(parsed));
+  }
+
+  function handleSync(id: string) {
+    setSyncSheetProgramId(id);
+  }
+  const syncSheetProgram = syncSheetProgramId
+    ? programs.find((p) => p.id === syncSheetProgramId)
+    : null;
 
   return (
     <section className="mt-4 space-y-5">
@@ -94,26 +124,40 @@ export function BalancesView() {
       <ul className="space-y-2">
         {programs.map((p) => (
           <li key={p.id}>
-            <ProgramRow program={p} />
+            <ProgramRow program={p} onInput={handleInput} onSync={handleSync} />
           </li>
         ))}
       </ul>
+      {syncSheetProgram && (
+        <SyncSetupSheet program={syncSheetProgram} onClose={() => setSyncSheetProgramId(null)} />
+      )}
 
       <AutoSyncCollapsedRow />
     </section>
   );
 }
 
-function ProgramRow({ program }: { program: ProgramBalance }) {
+function ProgramRow({
+  program,
+  onInput,
+  onSync,
+}: {
+  program: ProgramBalance;
+  onInput: (id: string, currentBalance: number) => void;
+  onSync: (id: string) => void;
+}) {
   const isNever = program.balance === 0 && program.updatedAt === null;
   const isSynced = program.source === 'sync';
+  const canSync = SYNC_ELIGIBLE_PROGRAMS.has(program.id);
   const relative = formatRelative(program.updatedAt);
   // Sub-line copy varies with state:
-  //   never-touched → "No balance yet — input or sync"
-  //   auto-synced   → "⚡ Auto-sync · 2w ago"
-  //   manual entry  → "Manual · Updated 2w ago"
+  //   never-touched  → "No balance yet · input or sync" (or "· input" when not sync-eligible)
+  //   auto-synced    → "⚡ Auto-sync · 2w ago"
+  //   manual entry   → "Manual · Updated 2w ago"
   const subline = isNever
-    ? 'No balance yet · input or sync'
+    ? canSync
+      ? 'No balance yet · input or sync'
+      : 'No balance yet · tap to input'
     : isSynced
       ? `⚡ Auto-sync · ${relative}`
       : `Manual · Updated ${relative}`;
@@ -139,44 +183,52 @@ function ProgramRow({ program }: { program: ProgramBalance }) {
         >
           {subline}
         </p>
-        {/* Tier + Status Credits sub-sub-line — only when the sync
-            payload carried them. Keeps user-entered / empty rows
-            visually simple. */}
-        {(program.tier || typeof program.statusCredits === 'number') && (
-          <p className="mt-0.5 truncate text-[11px] text-ph-text-muted">
-            {program.tier ? program.tier.replace(/_/g, ' ') : null}
-            {program.tier && typeof program.statusCredits === 'number' ? ' · ' : null}
-            {typeof program.statusCredits === 'number'
-              ? `${program.statusCredits} status credits`
-              : null}
-          </p>
-        )}
+        {/* Tier + Status Credits deliberately NOT rendered inline —
+            with many airline balances to list, every row needs to stay
+            single-line. Card-detail drawer (future) surfaces them. */}
       </div>
       {isNever ? (
-        // Two-affordance stack — manual Input OR Sync. Both open the same
-        // future onboarding wizard for now (Sync scrolls to the auto-sync
-        // card, Input opens an inline number editor). Keeps the row's
-        // right column visually balanced at two chips.
+        // Never-touched — Input always available; Sync only for
+        // programs whose parser is live (Qantas + Velocity today).
+        // Amex / KrisFlyer / Qatar are input-only until their parsers
+        // land.
         <div className="flex flex-col gap-1.5">
           <button
             type="button"
+            onClick={() => onInput(program.id, 0)}
             className="inline-flex items-center justify-center gap-1 rounded-full bg-ph-red px-3 py-1 text-[11px] font-medium text-white transition-opacity hover:opacity-90"
           >
             <Plus className="h-3 w-3" aria-hidden />
             Input
           </button>
-          <button
-            type="button"
-            className="inline-flex items-center justify-center gap-1 rounded-full border border-ph-border-strong bg-ph-card px-3 py-1 text-[11px] font-medium text-ph-text-muted transition-colors hover:bg-ph-fill-warm"
-          >
-            <span aria-hidden>⚡</span>
-            Sync
-          </button>
+          {canSync && (
+            <button
+              type="button"
+              onClick={() => onSync(program.id)}
+              className="inline-flex items-center justify-center gap-1 rounded-full border border-ph-border-strong bg-ph-card px-3 py-1 text-[11px] font-medium text-ph-text-muted transition-colors hover:bg-ph-fill-warm"
+            >
+              <span aria-hidden>⚡</span>
+              Sync
+            </button>
+          )}
         </div>
       ) : (
-        <p className="flex-none font-serif text-[19px] leading-none text-ph-ink tabular-nums">
+        // Populated — tap the number to edit inline. Manual UX unchanged
+        // for the number-tap; sync'd rows are read-only (edit would
+        // drift from the server value on the next mount).
+        <button
+          type="button"
+          onClick={() => onInput(program.id, program.balance)}
+          disabled={isSynced}
+          className={
+            isSynced
+              ? 'flex-none cursor-default font-serif text-[19px] leading-none text-ph-ink tabular-nums'
+              : 'flex-none font-serif text-[19px] leading-none text-ph-ink tabular-nums hover:text-ph-brick'
+          }
+          aria-label={isSynced ? undefined : `Edit ${program.name} balance`}
+        >
           {formatPoints(program.balance)}
-        </p>
+        </button>
       )}
     </div>
   );
@@ -307,5 +359,136 @@ function AutoSyncCollapsedRow() {
         )}
       </button>
     </div>
+  );
+}
+
+// Placeholder wizard — three-step instructions inside a bottom sheet.
+// Replaced by the proper 4-step onboarding wizard (see docs/TODO.md
+// "Onboarding wizard for email-sync setup"). Kept intentionally
+// simple so the Sync button on Qantas/Velocity rows lands somewhere
+// real even before the full wizard ships.
+function SyncSetupSheet({ program, onClose }: { program: ProgramBalance; onClose: () => void }) {
+  const [slug, setSlug] = useState<string | null>(null);
+  const [copied, setCopied] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    async function load() {
+      try {
+        const deviceId = getOrCreateDeviceId();
+        if (!deviceId) return;
+        const res = await fetch('/api/link-email', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ deviceId }),
+        });
+        if (!res.ok) return;
+        const json = (await res.json()) as { slug?: string };
+        if (!cancelled && json.slug) setSlug(json.slug);
+      } catch {
+        /* silent — sheet still renders instructions with a note */
+      }
+    }
+    void load();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const address = slug ? `${slug}@${FORWARD_DOMAIN}` : null;
+  async function copyAddress() {
+    if (!address) return;
+    try {
+      await navigator.clipboard.writeText(address);
+      setCopied(true);
+      window.setTimeout(() => setCopied(false), 1_600);
+    } catch {
+      /* clipboard blocked */
+    }
+  }
+
+  const senderHint =
+    program.id === 'qantas-ff'
+      ? 'qantas.com OR qantasfrequentflyer.com'
+      : 'velocityfrequentflyer.com OR virginaustralia.com';
+
+  return (
+    <BottomSheet
+      open={true}
+      onOpenChange={(v) => !v && onClose()}
+      title={`Set up ${program.shortName} auto-sync`}
+    >
+      <div className="flex items-center gap-2.5">
+        <PerryAvatar size={26} />
+        <p className="font-mono text-[10px] uppercase tracking-[0.14em] text-ph-text-meta">
+          Perry&apos;s 90-second guide
+        </p>
+      </div>
+      <p className="mt-2 text-[13px] leading-snug text-ph-text-muted">
+        Forward {program.name} emails to your unique address — I&apos;ll parse them and keep your
+        balance fresh.
+      </p>
+
+      <ol className="mt-4 space-y-3 text-[13px] leading-snug text-ph-text">
+        <li>
+          <p className="font-mono text-[10px] uppercase tracking-[0.14em] text-ph-text-meta">
+            Step 1
+          </p>
+          <p className="mt-1">Copy your unique address:</p>
+          <div className="mt-2 flex items-center gap-2 rounded-ph-inner border border-ph-border bg-ph-fill-warm p-2.5">
+            <p className="min-w-0 flex-1 truncate font-mono text-[11px] text-ph-ink">
+              {address ?? 'Loading…'}
+            </p>
+            <button
+              type="button"
+              onClick={() => void copyAddress()}
+              disabled={!address}
+              className="inline-flex items-center gap-1 rounded-full bg-ph-brick px-3 py-1 text-[11px] font-medium text-ph-on-brick transition-opacity hover:opacity-90 disabled:opacity-40"
+            >
+              {copied ? (
+                <Check className="h-3 w-3" aria-hidden />
+              ) : (
+                <Copy className="h-3 w-3" aria-hidden />
+              )}
+              {copied ? 'Copied' : 'Copy'}
+            </button>
+          </div>
+        </li>
+        <li>
+          <p className="font-mono text-[10px] uppercase tracking-[0.14em] text-ph-text-meta">
+            Step 2
+          </p>
+          <p className="mt-1">
+            In Gmail: <strong>Settings → Filters and Blocked Addresses → Create new filter</strong>.
+          </p>
+          <p className="mt-1 text-ph-text-muted">
+            <strong>From:</strong> <span className="font-mono text-[11px]">{senderHint}</span>
+            <br />
+            Leave the To / Subject fields blank. Click <strong>Create filter</strong>.
+          </p>
+        </li>
+        <li>
+          <p className="font-mono text-[10px] uppercase tracking-[0.14em] text-ph-text-meta">
+            Step 3
+          </p>
+          <p className="mt-1">
+            Tick <strong>Forward it to</strong> and select the address you copied. Click{' '}
+            <strong>Create filter</strong>.
+          </p>
+          <p className="mt-1 text-ph-text-muted">
+            Next time {program.shortName} emails you a balance, it&apos;ll flow through
+            automatically.
+          </p>
+        </li>
+      </ol>
+
+      <button
+        type="button"
+        onClick={onClose}
+        className="mt-6 inline-flex w-full items-center justify-center rounded-full bg-ph-red px-4 py-3 text-sm font-medium text-white transition-opacity hover:opacity-90"
+      >
+        Got it
+      </button>
+    </BottomSheet>
   );
 }

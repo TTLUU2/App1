@@ -76,7 +76,22 @@ const SEED: ProgramBalance[] = [
     balance: 0,
     updatedAt: null,
   },
+  {
+    id: 'qatar-avios',
+    name: 'Qatar Privilege Club',
+    shortName: 'Qatar Avios',
+    logoUrl: null,
+    cpp: 1.7,
+    balance: 0,
+    updatedAt: null,
+  },
 ];
+
+/** Programs that support email auto-sync today. Amex / KrisFlyer /
+ *  Qatar don't fit the forwarding model (no per-user statement email
+ *  we can parse yet), so their rows show Input-only. Add a program id
+ *  here when its parser lands. */
+export const SYNC_ELIGIBLE_PROGRAMS = new Set(['qantas-ff', 'velocity']);
 
 const STORAGE_KEY = 'ph-balances-v1';
 

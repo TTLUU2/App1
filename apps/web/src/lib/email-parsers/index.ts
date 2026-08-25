@@ -107,9 +107,10 @@ export function parseInboundEmail(email: ParsedInboundEmail): ParserOutcome {
     return parseQantas(unwrapped);
   }
   if (
+    from.endsWith('.velocityfrequentflyer.com') ||
     from.endsWith('@velocityfrequentflyer.com') ||
-    from.endsWith('@virginaustralia.com') ||
-    from.endsWith('@members.velocityfrequentflyer.com')
+    from.endsWith('.virginaustralia.com') ||
+    from.endsWith('@virginaustralia.com')
   ) {
     return parseVelocity(unwrapped);
   }
