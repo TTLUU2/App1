@@ -9,14 +9,8 @@
 // Data: selectUserCardsWithDetails (same Zustand v5 slice-then-memo
 // pattern as NextCardView). Benefits from getBenefitsForCard().
 
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
-import {
-  getSpeechRecognitionCtor,
-  type SpeechRecognitionInstance,
-  type SpeechRecognitionResultEvent,
-} from '@/lib/speech';
 import {
   AlertTriangle,
   Ban,
@@ -42,6 +36,7 @@ import { useCelebrationsStore } from '@/store/celebrations';
 import { useJourneysStore } from '@/store/journeys';
 import { CardArtFrame, LacquerChip, PerryMomentOverlay } from '@/components/lacquer';
 import { CancelCardConfirm } from '@/components/cancel-card-confirm';
+import { CardUpdateCard } from '@/components/tab3/card-update-card';
 import { EditCardModal } from '@/components/tab3/edit-card-modal';
 import { formatCurrency, formatPoints } from '@/lib/format';
 
@@ -91,7 +86,12 @@ export function YourCardsView() {
           onDismiss={() => celebrations.markBonusCleared(pendingBonus.id)}
         />
       )}
-      <CopilotVoiceCard />
+      {/* Restores the pre-Lacquer intent-routing pipeline (parse
+          utterance → spend / benefit / add_card / cancel_card /
+          set_nickname / question / unknown, each routing to the right
+          action). The old dedicated CopilotVoiceCard just navigated
+          to /ask, which discarded that whole flow. */}
+      <CardUpdateCard />
 
       {active.length === 0 ? (
         <EmptyState />
@@ -123,175 +123,6 @@ export function YourCardsView() {
             ))}
           </ul>
         </details>
-      )}
-    </section>
-  );
-}
-
-// ── Copilot voice hero ──────────────────────────────────────────────
-
-// State machine for the big mic. 'idle' shows the static red circle,
-// 'listening' pulses it + swaps the descriptor line for a live
-// transcript, 'submitting' keeps the pulse until navigation completes.
-type CopilotVoiceState = 'idle' | 'listening' | 'submitting';
-
-function CopilotVoiceCard() {
-  const router = useRouter();
-  const [state, setState] = useState<CopilotVoiceState>('idle');
-  const [transcript, setTranscript] = useState('');
-  const [error, setError] = useState<string | null>(null);
-  const recognitionRef = useRef<SpeechRecognitionInstance | null>(null);
-  const canVoice = useMemo(() => getSpeechRecognitionCtor() !== null, []);
-
-  // Kill any in-flight recognition on unmount — user may swipe away
-  // to another tab mid-listen.
-  useEffect(
-    () => () => {
-      try {
-        recognitionRef.current?.abort();
-      } catch {
-        /* ignore */
-      }
-      recognitionRef.current = null;
-    },
-    [],
-  );
-
-  function startListening() {
-    setError(null);
-    setTranscript('');
-    const Ctor = getSpeechRecognitionCtor();
-    if (!Ctor) {
-      // Fallback: voice unsupported → navigate to /ask so the user can
-      // still type. Non-punitive fail-open path.
-      router.push('/ask');
-      return;
-    }
-    try {
-      const r = new Ctor();
-      r.lang = 'en-AU';
-      r.interimResults = true;
-      r.continuous = false;
-      r.maxAlternatives = 1;
-      let finalText = '';
-      r.onresult = (event: SpeechRecognitionResultEvent) => {
-        let interim = '';
-        for (let i = event.resultIndex; i < event.results.length; i++) {
-          const result = event.results[i];
-          if (!result) continue;
-          const alt = result[0];
-          if (!alt) continue;
-          if (result.isFinal) finalText += alt.transcript;
-          else interim += alt.transcript;
-        }
-        setTranscript((finalText + interim).trim());
-      };
-      r.onerror = (event) => {
-        const code = event.error ?? 'unknown';
-        if (code === 'no-speech') {
-          setState('idle');
-          return;
-        }
-        setError(code === 'not-allowed' ? 'Microphone permission denied.' : `Voice error: ${code}`);
-        setState('idle');
-      };
-      r.onend = () => {
-        const finished = finalText.trim();
-        if (finished.length === 0) {
-          setState('idle');
-          return;
-        }
-        setState('submitting');
-        try {
-          sessionStorage.setItem(
-            'ph:ask-seed',
-            JSON.stringify({ question: finished, autoSubmit: true }),
-          );
-        } catch {
-          /* private-mode Safari — URL param carries the question too */
-        }
-        router.push(`/ask?q=${encodeURIComponent(finished)}`);
-      };
-      recognitionRef.current = r;
-      r.start();
-      setState('listening');
-    } catch (err) {
-      setError(err instanceof Error ? err.message : String(err));
-      setState('idle');
-    }
-  }
-
-  function stopListening() {
-    try {
-      recognitionRef.current?.stop();
-    } catch {
-      /* onend fires anyway; else clean up */
-      setState('idle');
-    }
-  }
-
-  const isListening = state === 'listening';
-  const micLabel = isListening ? 'Stop listening' : 'Speak to Copilot';
-  return (
-    <section
-      aria-label="Copilot voice input"
-      className="rounded-ph-card border border-ph-border bg-ph-card p-5"
-    >
-      <div className="flex items-baseline justify-between">
-        <p className="font-serif text-[19px] leading-none text-ph-ink">Copilot</p>
-        <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-ph-text-meta">
-          {isListening ? 'Listening' : 'Voice'}
-        </p>
-      </div>
-      <div className="mt-4 flex justify-center">
-        <button
-          type="button"
-          onClick={isListening ? stopListening : startListening}
-          disabled={state === 'submitting'}
-          aria-label={micLabel}
-          aria-pressed={isListening}
-          className={
-            (isListening
-              ? 'bg-ph-red text-white motion-reduce:animate-none animate-pulse'
-              : 'bg-ph-red text-white hover:scale-105 active:scale-95') +
-            ' grid h-[92px] w-[92px] place-items-center rounded-full transition-transform disabled:opacity-60'
-          }
-          style={{ boxShadow: 'var(--shadow-ph-fab)' }}
-        >
-          <Mic className="h-9 w-9" aria-hidden />
-        </button>
-      </div>
-      {/* Descriptor line: swaps for the live transcript while listening
-          so the user visually sees words appear as they speak. Falls
-          back to the placeholder + error when the recogniser reports
-          an issue (permission denied, network etc.). */}
-      {isListening ? (
-        <p className="mt-4 text-center font-serif text-[16px] leading-snug text-ph-ink min-h-[40px]">
-          {transcript || 'Listening…'}
-        </p>
-      ) : error ? (
-        <p className="mt-4 text-center text-[13px] leading-snug text-ph-red">{error}</p>
-      ) : (
-        <p className="mt-4 text-center text-[13px] leading-snug text-ph-text-muted">
-          Log spend, add or cancel a card, mark a benefit, name a card, or ask anything
-        </p>
-      )}
-      {!isListening && (
-        <div className="mt-2 flex items-center justify-center gap-1 text-[12px] text-ph-text-meta">
-          <span aria-hidden>▶</span>
-          <Link href="/ask" className="underline-offset-2 hover:underline">
-            or type
-          </Link>
-        </div>
-      )}
-      {/* Hide the mic button entirely on platforms that can't do
-          SpeechRecognition (Firefox etc.) — user should fall back to
-          typing on /ask directly. The 'or type' link above still
-          works even when canVoice is true, so no other UI changes. */}
-      {!canVoice && (
-        <p className="mt-2 text-center text-[11px] text-ph-text-meta">
-          Voice not supported here — tap &ldquo;or type&rdquo; to chat.
-        </p>
       )}
     </section>
   );
