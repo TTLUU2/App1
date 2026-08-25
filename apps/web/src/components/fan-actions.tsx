@@ -30,13 +30,14 @@ const ACTIONS: FanAction[] = [
   { id: 'add', label: 'Add card', Icon: CreditCard },
   { id: 'spend', label: 'Spend', Icon: Receipt, href: '/spend' },
   { id: 'benefits', label: 'Benefits', Icon: Sparkles, href: '/benefits' },
-  // No href on Ask — TabBar handles the pick by opening an in-place
-  // VoiceCaptureOverlay so recording starts on the current screen
-  // (live transcript + pulse) and only navigates to /ask once the
-  // user finishes speaking. Matches the pre-Lacquer 'tap mic →
-  // recording starts, animation dictates what the user is saying in
-  // real time' behaviour.
-  { id: 'ask', label: 'Ask', Icon: Mic },
+  // Ask routes straight to /ask — the FAB fan is for surface entry,
+  // not the voice-in-place trigger. The 'listening starts in place'
+  // pattern lives on the big red mic on Optimise · Your Cards
+  // (CopilotVoiceCard via CardUpdateCard), which is where the intent
+  // routing + live transcript belongs. Earlier interpretation had
+  // this button starting recording on any screen; reverted so the
+  // FAB Ask behaves as it did pre-refresh (open the chat surface).
+  { id: 'ask', label: 'Ask', Icon: Mic, href: '/ask' },
 ];
 
 // Wider arc — icon-over-label stack keeps each button ~64px wide so we can

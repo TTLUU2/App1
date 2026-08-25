@@ -37,6 +37,25 @@ Matching + Deals stay as-is throughout — separate refresh later.
 
 ## Next up (parked mid-flight — pick up as soon as Lacquer lands)
 
+- **Lounge information in Ask Copilot** (2026-08-26). Extend the
+  Copilot's grounded knowledge so users can ask questions like
+  "Which of my cards get me into the Qantas Business Lounge?", "Do
+  I have Priority Pass access?", "How many free lounge visits
+  before the card charges me?". Needs:
+  - A `lounges` catalogue: name, network (Amex Centurion / Priority
+    Pass / Qantas Club / Virgin Australia / Star Alliance),
+    airports/terminals, guest allowance, hours.
+  - Per-card lounge access on the shared catalogue: which lounges
+    the card grants entry to, visit caps, guest rules, activation
+    prerequisites (e.g. Amex Plat card enrolment via app).
+  - Wire into buildAskContext() so /api/ask has the user's lounges
+    when answering. Same shape as buildAskContext's other slices
+    (heldCards, recommendations, benefits, redemptions).
+  - Optional: expose lounges in the CardTile detail drawer on
+    Optimise · Your Cards so users can eyeball access without asking.
+    Low-priority: mark-as-read on alerts is already covered by Home,
+    Alerts, and the hamburger — no separate surface needed.
+
 - **Outlook OAuth ("per-device" flavour, no user accounts)** (2026-08-25).
   Alternative to the forwarding-filter setup for users on Outlook / M365
   who want zero-friction connect: they tap "Connect Outlook", complete
