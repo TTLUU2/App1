@@ -189,7 +189,19 @@ export async function POST(req: NextRequest) {
           ...baseEvent,
           status: 'parsed',
           programId: outcome.programId,
-          detail: { balance: outcome.balance, snapshotAt: outcome.snapshotAt.toISOString() },
+          // Duplicate the full parse output into detail for the audit
+          // trail — support / debugging shouldn't have to join back to
+          // balance_updates to see what a specific email produced.
+          // Nulls elided so the JSON stays lean.
+          detail: {
+            balance: outcome.balance,
+            snapshotAt: outcome.snapshotAt.toISOString(),
+            ...(typeof outcome.statusCredits === 'number'
+              ? { statusCredits: outcome.statusCredits }
+              : {}),
+            ...(outcome.tier ? { tier: outcome.tier } : {}),
+            ...(outcome.memberId ? { memberId: outcome.memberId } : {}),
+          },
         })
         .returning({ id: emailEvents.id });
 

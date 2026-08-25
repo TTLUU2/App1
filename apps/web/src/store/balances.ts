@@ -33,6 +33,12 @@ export interface ProgramBalance {
 
 const CDN = 'https://pointhacks-spa-tools.fly.dev/images/programs-small';
 
+// First-boot programs — the four AU frequent-flyer schemes the app
+// natively knows about. Every row starts at 0 balance / updatedAt=null
+// so the UI can honestly show "no balance yet — input or sync". The
+// old design shipped fake demo numbers (186,400 Qantas / 94,800
+// Velocity / …) which lasted about 30 seconds before users noticed
+// they weren't real. Empty-with-affordance beats mocked-with-lie.
 const SEED: ProgramBalance[] = [
   {
     id: 'qantas-ff',
@@ -40,8 +46,8 @@ const SEED: ProgramBalance[] = [
     shortName: 'Qantas FF',
     logoUrl: `${CDN}/qantas.png`,
     cpp: 1.9,
-    balance: 186_400,
-    updatedAt: '2026-06-18',
+    balance: 0,
+    updatedAt: null,
   },
   {
     id: 'velocity',
@@ -49,8 +55,8 @@ const SEED: ProgramBalance[] = [
     shortName: 'Velocity',
     logoUrl: `${CDN}/velocity.png`,
     cpp: 1.6,
-    balance: 94_800,
-    updatedAt: '2026-06-18',
+    balance: 0,
+    updatedAt: null,
   },
   {
     id: 'amex-mr',
@@ -58,8 +64,8 @@ const SEED: ProgramBalance[] = [
     shortName: 'Amex MR',
     logoUrl: `${CDN}/amex-mr.png`,
     cpp: 1.5,
-    balance: 157_000,
-    updatedAt: '2026-06-18',
+    balance: 0,
+    updatedAt: null,
   },
   {
     id: 'kris-flyer',

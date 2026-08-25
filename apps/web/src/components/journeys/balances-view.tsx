@@ -105,25 +105,25 @@ export function BalancesView() {
 }
 
 function ProgramRow({ program }: { program: ProgramBalance }) {
-  const isZero = program.balance === 0;
+  const isNever = program.balance === 0 && program.updatedAt === null;
   const isSynced = program.source === 'sync';
   const relative = formatRelative(program.updatedAt);
-  // Sub-line: '⚡ Auto-sync · 2mo ago' when the row came from an email;
-  // '· Updated 2mo ago' for a user's manual entry (same relative-date
-  // widget so both flavours read the same way); 'Manual · Add balance'
-  // for a program that's never been touched.
-  const subline = isSynced
-    ? `⚡ Auto-sync · ${relative}`
-    : program.updatedAt
-      ? `Manual · Updated ${relative}`
-      : 'Manual';
+  // Sub-line copy varies with state:
+  //   never-touched → "No balance yet — input or sync"
+  //   auto-synced   → "⚡ Auto-sync · 2w ago"
+  //   manual entry  → "Manual · Updated 2w ago"
+  const subline = isNever
+    ? 'No balance yet · input or sync'
+    : isSynced
+      ? `⚡ Auto-sync · ${relative}`
+      : `Manual · Updated ${relative}`;
   return (
     <div className="flex items-center gap-3 rounded-ph-card border border-ph-border bg-ph-card p-[15px]">
       <ProgramLogo program={program} />
       <div className="min-w-0 flex-1">
         <p
           className={
-            isZero
+            isNever
               ? 'truncate font-serif text-[17px] leading-tight text-ph-text-disabled'
               : 'truncate font-serif text-[17px] leading-tight text-ph-ink'
           }
@@ -140,7 +140,7 @@ function ProgramRow({ program }: { program: ProgramBalance }) {
           {subline}
         </p>
         {/* Tier + Status Credits sub-sub-line — only when the sync
-            payload carried them. Keeps zero-balance / user-entered rows
+            payload carried them. Keeps user-entered / empty rows
             visually simple. */}
         {(program.tier || typeof program.statusCredits === 'number') && (
           <p className="mt-0.5 truncate text-[11px] text-ph-text-muted">
@@ -152,14 +152,27 @@ function ProgramRow({ program }: { program: ProgramBalance }) {
           </p>
         )}
       </div>
-      {isZero ? (
-        <button
-          type="button"
-          className="inline-flex items-center gap-1 rounded-full bg-ph-red px-3 py-1.5 text-xs font-medium text-white transition-opacity hover:opacity-90"
-        >
-          <Plus className="h-3.5 w-3.5" aria-hidden />
-          Add
-        </button>
+      {isNever ? (
+        // Two-affordance stack — manual Input OR Sync. Both open the same
+        // future onboarding wizard for now (Sync scrolls to the auto-sync
+        // card, Input opens an inline number editor). Keeps the row's
+        // right column visually balanced at two chips.
+        <div className="flex flex-col gap-1.5">
+          <button
+            type="button"
+            className="inline-flex items-center justify-center gap-1 rounded-full bg-ph-red px-3 py-1 text-[11px] font-medium text-white transition-opacity hover:opacity-90"
+          >
+            <Plus className="h-3 w-3" aria-hidden />
+            Input
+          </button>
+          <button
+            type="button"
+            className="inline-flex items-center justify-center gap-1 rounded-full border border-ph-border-strong bg-ph-card px-3 py-1 text-[11px] font-medium text-ph-text-muted transition-colors hover:bg-ph-fill-warm"
+          >
+            <span aria-hidden>⚡</span>
+            Sync
+          </button>
+        </div>
       ) : (
         <p className="flex-none font-serif text-[19px] leading-none text-ph-ink tabular-nums">
           {formatPoints(program.balance)}
