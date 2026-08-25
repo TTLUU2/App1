@@ -18,7 +18,7 @@
 // read from the balance_updates table.
 
 import { useEffect, useMemo, useState } from 'react';
-import { ChevronDown, Copy, Check, Plus } from 'lucide-react';
+import { ChevronDown, Copy, Check, Plus, Send } from 'lucide-react';
 import { formatPoints } from '@/lib/format';
 import {
   selectTotalPoints,
@@ -439,15 +439,34 @@ function AutoSyncCollapsedRow() {
   );
 }
 
-// Placeholder wizard — three-step instructions inside a bottom sheet.
-// Replaced by the proper 4-step onboarding wizard (see docs/TODO.md
-// "Onboarding wizard for email-sync setup"). Kept intentionally
-// simple so the Sync button on Qantas/Velocity rows lands somewhere
-// real even before the full wizard ships.
+// Program-id map used by the wizard's Test step to detect when the
+// forwarded balance for THIS program actually lands on the server.
+// Kept next to the wizard because it's specific to that surface —
+// the store also has SERVER_TO_LOCAL_ID but internal to that file.
+const LOCAL_TO_SERVER_PROGRAM_ID: Record<string, string> = {
+  'qantas-ff': 'qantas',
+  velocity: 'velocity',
+};
+
+type WizardStep = 'welcome' | 'address' | 'instructions' | 'test';
+type Provider = 'gmail' | 'outlook';
+type TestStatus = 'idle' | 'polling' | 'received' | 'timeout';
+
+// 4-step onboarding wizard for the email-sync setup. Replaces the
+// earlier 3-step SyncSetupSheet stub — same slug fetch + copy flow
+// preserved verbatim, wrapped in a progress-indicator multi-step
+// shell with a provider toggle (Gmail / Outlook) and a Test send +
+// poll for arrival. Docs/TODO.md "Onboarding wizard for email-sync
+// setup" for the design contract.
 function SyncSetupSheet({ program, onClose }: { program: ProgramBalance; onClose: () => void }) {
+  const [step, setStep] = useState<WizardStep>('welcome');
+  const [provider, setProvider] = useState<Provider>('gmail');
   const [slug, setSlug] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
+  const [testStatus, setTestStatus] = useState<TestStatus>('idle');
 
+  // Fetch the device's slug on mount (same behaviour as the earlier
+  // stub — slug is what the whole wizard hangs off of).
   useEffect(() => {
     let cancelled = false;
     async function load() {
@@ -463,7 +482,7 @@ function SyncSetupSheet({ program, onClose }: { program: ProgramBalance; onClose
         const json = (await res.json()) as { slug?: string };
         if (!cancelled && json.slug) setSlug(json.slug);
       } catch {
-        /* silent — sheet still renders instructions with a note */
+        /* silent — wizard still renders instructions */
       }
     }
     void load();
@@ -471,6 +490,49 @@ function SyncSetupSheet({ program, onClose }: { program: ProgramBalance; onClose
       cancelled = true;
     };
   }, []);
+
+  // Poll /api/balances/latest for a fresh row for THIS program when
+  // the user is on the Test step and has triggered the test send.
+  // Stops on first match OR after 60s.
+  useEffect(() => {
+    if (step !== 'test' || testStatus !== 'polling') return;
+    const deviceId = getOrCreateDeviceId();
+    if (!deviceId) return;
+    const startedAt = Date.now();
+    const TIMEOUT_MS = 60_000;
+    const INTERVAL_MS = 3_000;
+    const wantedServerId = LOCAL_TO_SERVER_PROGRAM_ID[program.id];
+    let cancelled = false;
+    const tick = async () => {
+      if (cancelled) return;
+      if (Date.now() - startedAt > TIMEOUT_MS) {
+        setTestStatus('timeout');
+        return;
+      }
+      try {
+        const res = await fetch(`/api/balances/latest?deviceId=${encodeURIComponent(deviceId)}`);
+        if (res.ok) {
+          const json = (await res.json()) as {
+            balances?: Array<{ programId: string; receivedAt: string }>;
+          };
+          const found = json.balances?.find((b) => b.programId === wantedServerId);
+          // Only accept rows received AFTER we hit Send — avoids a
+          // pre-existing balance short-circuiting the test.
+          if (found && new Date(found.receivedAt).getTime() >= startedAt) {
+            setTestStatus('received');
+            return;
+          }
+        }
+      } catch {
+        /* transient — keep polling */
+      }
+      window.setTimeout(tick, INTERVAL_MS);
+    };
+    void tick();
+    return () => {
+      cancelled = true;
+    };
+  }, [step, testStatus, program.id]);
 
   const address = slug ? `${slug}@${FORWARD_DOMAIN}` : null;
   async function copyAddress() {
@@ -489,83 +551,283 @@ function SyncSetupSheet({ program, onClose }: { program: ProgramBalance; onClose
       ? 'qantas.com OR qantasfrequentflyer.com'
       : 'velocityfrequentflyer.com OR virginaustralia.com';
 
+  const testMailto = address
+    ? `mailto:${encodeURIComponent(address)}?subject=${encodeURIComponent(
+        `${program.shortName} sync test`,
+      )}&body=${encodeURIComponent(
+        `This is a sync test from Point Hacks Copilot. Reply from ${program.name} to prove the pipeline. Balance: 100 points.`,
+      )}`
+    : '#';
+
+  const stepOrder: WizardStep[] = ['welcome', 'address', 'instructions', 'test'];
+  const stepIndex = stepOrder.indexOf(step);
+  const isLast = step === 'test';
+
+  function next() {
+    if (isLast) {
+      onClose();
+      return;
+    }
+    const nextStep = stepOrder[stepIndex + 1];
+    if (nextStep) setStep(nextStep);
+  }
+  function back() {
+    const prevStep = stepOrder[stepIndex - 1];
+    if (prevStep) setStep(prevStep);
+  }
+
   return (
     <BottomSheet
       open={true}
       onOpenChange={(v) => !v && onClose()}
       title={`Set up ${program.shortName} auto-sync`}
     >
-      <div className="flex items-center gap-2.5">
-        <PerryAvatar size={26} />
-        <p className="font-mono text-[10px] uppercase tracking-[0.14em] text-ph-text-meta">
-          Perry&apos;s 90-second guide
-        </p>
+      {/* Progress dots — 4-step wizard. Filled up to and including the
+          current step; unfilled beyond it. Serves as an at-a-glance
+          "how far in" indicator without eating vertical real estate. */}
+      <div
+        className="mb-4 flex items-center gap-1.5"
+        aria-label={`Step ${stepIndex + 1} of ${stepOrder.length}`}
+      >
+        {stepOrder.map((_, i) => (
+          <span
+            key={i}
+            className={
+              i <= stepIndex
+                ? 'h-1 flex-1 rounded-full bg-ph-brick transition-colors'
+                : 'h-1 flex-1 rounded-full bg-ph-border transition-colors'
+            }
+          />
+        ))}
       </div>
-      <p className="mt-2 text-[13px] leading-snug text-ph-text-muted">
-        Forward {program.name} emails to your unique address — I&apos;ll parse them and keep your
-        balance fresh.
-      </p>
 
-      <ol className="mt-4 space-y-3 text-[13px] leading-snug text-ph-text">
-        <li>
-          <p className="font-mono text-[10px] uppercase tracking-[0.14em] text-ph-text-meta">
-            Step 1
+      {step === 'welcome' && (
+        <div>
+          <div className="flex items-center gap-2.5">
+            <PerryAvatar size={26} />
+            <p className="font-mono text-[10px] uppercase tracking-[0.14em] text-ph-text-meta">
+              Step 1 of 4 · Auto-sync {program.shortName}
+            </p>
+          </div>
+          <h3 className="mt-3 font-serif text-[22px] leading-tight text-ph-ink">
+            Keep your balance fresh — automatically.
+          </h3>
+          <p className="mt-2 text-[13px] leading-snug text-ph-text-muted">
+            Forward {program.name} balance emails to a unique address I&apos;ll give you. I parse
+            them and update your total. Takes ~90 seconds to set up, then it runs on its own.
           </p>
-          <p className="mt-1">Copy your unique address:</p>
-          <div className="mt-2 flex items-center gap-2 rounded-ph-inner border border-ph-border bg-ph-fill-warm p-2.5">
-            <p className="min-w-0 flex-1 truncate font-mono text-[11px] text-ph-ink">
+          <ul className="mt-4 space-y-2 text-[12px] text-ph-text">
+            <li className="flex items-start gap-2">
+              <Check className="mt-0.5 h-3.5 w-3.5 flex-none text-ph-pine" aria-hidden />
+              Balance updates within seconds of each email arrival.
+            </li>
+            <li className="flex items-start gap-2">
+              <Check className="mt-0.5 h-3.5 w-3.5 flex-none text-ph-pine" aria-hidden />
+              We only read balance emails from {program.shortName} — nothing else.
+            </li>
+            <li className="flex items-start gap-2">
+              <Check className="mt-0.5 h-3.5 w-3.5 flex-none text-ph-pine" aria-hidden />
+              Stop anytime by removing the filter from your inbox.
+            </li>
+          </ul>
+        </div>
+      )}
+
+      {step === 'address' && (
+        <div>
+          <p className="font-mono text-[10px] uppercase tracking-[0.14em] text-ph-text-meta">
+            Step 2 of 4 · Copy your address
+          </p>
+          <h3 className="mt-2 font-serif text-[22px] leading-tight text-ph-ink">
+            Your unique {program.shortName} address
+          </h3>
+          <p className="mt-2 text-[13px] leading-snug text-ph-text-muted">
+            This address only accepts email — it can&apos;t be used to sign in anywhere. Keep it
+            private; if you ever leak it, tap Reset to rotate.
+          </p>
+          <div className="mt-4 flex items-center gap-2 rounded-ph-inner border border-ph-border-strong bg-ph-fill-warm p-3">
+            <p className="min-w-0 flex-1 truncate font-mono text-[12px] text-ph-ink">
               {address ?? 'Loading…'}
             </p>
             <button
               type="button"
               onClick={() => void copyAddress()}
               disabled={!address}
-              className="inline-flex items-center gap-1 rounded-full bg-ph-brick px-3 py-1 text-[11px] font-medium text-ph-on-brick transition-opacity hover:opacity-90 disabled:opacity-40"
+              className="inline-flex items-center gap-1.5 rounded-full bg-ph-brick px-3 py-1.5 text-[12px] font-medium text-ph-on-brick transition-opacity hover:opacity-90 disabled:opacity-40"
             >
               {copied ? (
-                <Check className="h-3 w-3" aria-hidden />
+                <Check className="h-3.5 w-3.5" aria-hidden />
               ) : (
-                <Copy className="h-3 w-3" aria-hidden />
+                <Copy className="h-3.5 w-3.5" aria-hidden />
               )}
               {copied ? 'Copied' : 'Copy'}
             </button>
           </div>
-        </li>
-        <li>
-          <p className="font-mono text-[10px] uppercase tracking-[0.14em] text-ph-text-meta">
-            Step 2
-          </p>
-          <p className="mt-1">
-            In Gmail: <strong>Settings → Filters and Blocked Addresses → Create new filter</strong>.
-          </p>
-          <p className="mt-1 text-ph-text-muted">
-            <strong>From:</strong> <span className="font-mono text-[11px]">{senderHint}</span>
-            <br />
-            Leave the To / Subject fields blank. Click <strong>Create filter</strong>.
-          </p>
-        </li>
-        <li>
-          <p className="font-mono text-[10px] uppercase tracking-[0.14em] text-ph-text-meta">
-            Step 3
-          </p>
-          <p className="mt-1">
-            Tick <strong>Forward it to</strong> and select the address you copied. Click{' '}
-            <strong>Create filter</strong>.
-          </p>
-          <p className="mt-1 text-ph-text-muted">
-            Next time {program.shortName} emails you a balance, it&apos;ll flow through
-            automatically.
-          </p>
-        </li>
-      </ol>
+        </div>
+      )}
 
-      <button
-        type="button"
-        onClick={onClose}
-        className="mt-6 inline-flex w-full items-center justify-center rounded-full bg-ph-red px-4 py-3 text-sm font-medium text-white transition-opacity hover:opacity-90"
-      >
-        Got it
-      </button>
+      {step === 'instructions' && (
+        <div>
+          <p className="font-mono text-[10px] uppercase tracking-[0.14em] text-ph-text-meta">
+            Step 3 of 4 · Create the forward
+          </p>
+          <h3 className="mt-2 font-serif text-[22px] leading-tight text-ph-ink">
+            Pick your mail provider
+          </h3>
+          {/* Provider toggle — Gmail | Outlook. Instruction text below
+              swaps to match. Both flows achieve the same outcome:
+              incoming {program.shortName} email → forward to slug. */}
+          <div className="mt-3 flex items-center gap-1 rounded-full bg-ph-fill p-1 text-[12px] font-medium">
+            <button
+              type="button"
+              onClick={() => setProvider('gmail')}
+              aria-pressed={provider === 'gmail'}
+              className={
+                provider === 'gmail'
+                  ? 'flex-1 rounded-full bg-ph-card px-3 py-1.5 text-ph-ink'
+                  : 'flex-1 rounded-full px-3 py-1.5 text-ph-text-muted'
+              }
+              style={provider === 'gmail' ? { boxShadow: 'var(--shadow-ph-thumb)' } : undefined}
+            >
+              Gmail
+            </button>
+            <button
+              type="button"
+              onClick={() => setProvider('outlook')}
+              aria-pressed={provider === 'outlook'}
+              className={
+                provider === 'outlook'
+                  ? 'flex-1 rounded-full bg-ph-card px-3 py-1.5 text-ph-ink'
+                  : 'flex-1 rounded-full px-3 py-1.5 text-ph-text-muted'
+              }
+              style={provider === 'outlook' ? { boxShadow: 'var(--shadow-ph-thumb)' } : undefined}
+            >
+              Outlook
+            </button>
+          </div>
+
+          {provider === 'gmail' ? (
+            <ol className="mt-4 space-y-2.5 text-[13px] leading-snug text-ph-text">
+              <li>
+                Gmail on desktop:{' '}
+                <strong>
+                  Settings ⚙︎ → See all settings → Filters and Blocked Addresses → Create a new
+                  filter
+                </strong>
+                .
+              </li>
+              <li>
+                In <strong>From</strong>, paste:{' '}
+                <span className="font-mono text-[11px]">{senderHint}</span>. Leave everything else
+                blank.
+              </li>
+              <li>
+                Click <strong>Create filter</strong>. Tick <strong>Forward it to</strong> and select
+                the address you copied on the previous step. Save.
+              </li>
+            </ol>
+          ) : (
+            <ol className="mt-4 space-y-2.5 text-[13px] leading-snug text-ph-text">
+              <li>
+                Outlook web:{' '}
+                <strong>
+                  Settings ⚙︎ → View all Outlook settings → Mail → Rules → Add new rule
+                </strong>
+                .
+              </li>
+              <li>
+                Condition: <strong>From address includes</strong> →{' '}
+                <span className="font-mono text-[11px]">{senderHint}</span>.
+              </li>
+              <li>
+                Action: <strong>Forward to</strong> → paste your address. Save. (Outlook may ask you
+                to confirm the forwarding address once via email — click the confirm link inside.)
+              </li>
+            </ol>
+          )}
+        </div>
+      )}
+
+      {step === 'test' && (
+        <div>
+          <p className="font-mono text-[10px] uppercase tracking-[0.14em] text-ph-text-meta">
+            Step 4 of 4 · Verify
+          </p>
+          <h3 className="mt-2 font-serif text-[22px] leading-tight text-ph-ink">
+            Send a test to confirm
+          </h3>
+          <p className="mt-2 text-[13px] leading-snug text-ph-text-muted">
+            Tap Send test — it opens your mail app pre-filled with a message to your address.
+            I&apos;ll watch for it and let you know the moment it lands.
+          </p>
+
+          {testStatus === 'idle' && (
+            <a
+              href={testMailto}
+              onClick={() => setTestStatus('polling')}
+              className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-full bg-ph-brick px-4 py-3 text-sm font-medium text-ph-on-brick transition-opacity hover:opacity-90"
+            >
+              <Send className="h-4 w-4" aria-hidden />
+              Send test email
+            </a>
+          )}
+          {testStatus === 'polling' && (
+            <div className="mt-4 rounded-ph-inner border border-ph-tint-border bg-ph-tint p-3 text-[13px] text-ph-text">
+              <p className="font-medium text-ph-brick">Watching for arrival…</p>
+              <p className="mt-1 text-ph-text-muted">
+                Send the email from your outbox now. I&apos;ll refresh the moment it hits our
+                inbound feed.
+              </p>
+            </div>
+          )}
+          {testStatus === 'received' && (
+            <div className="mt-4 flex items-center gap-2 rounded-ph-inner border border-ph-pine-chip bg-ph-pine-chip p-3 text-[13px] text-ph-pine-text">
+              <Check className="h-4 w-4 flex-none" aria-hidden />
+              <p>
+                Received! Auto-sync is live. Future {program.shortName} balance emails will flow
+                through automatically.
+              </p>
+            </div>
+          )}
+          {testStatus === 'timeout' && (
+            <div className="mt-4 rounded-ph-inner border border-ph-negative-chip bg-ph-negative-chip p-3 text-[13px] text-ph-red">
+              <p className="font-medium">Didn&apos;t see it in 60s.</p>
+              <p className="mt-1 text-ph-text-muted">
+                Common fixes: check the forward is enabled, verify the From filter matches{' '}
+                <span className="font-mono text-[11px]">{senderHint}</span>, or that the test email
+                actually left your outbox.
+              </p>
+              <button
+                type="button"
+                onClick={() => setTestStatus('idle')}
+                className="mt-2 text-[12px] font-medium underline"
+              >
+                Try again
+              </button>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Bottom nav — Back on steps ≥1, primary Next / Done on the right. */}
+      <div className="mt-6 flex gap-2">
+        {stepIndex > 0 && (
+          <button
+            type="button"
+            onClick={back}
+            className="rounded-full border border-ph-border-strong bg-ph-card px-4 py-3 text-sm font-medium text-ph-text transition-colors hover:bg-ph-fill-warm"
+          >
+            Back
+          </button>
+        )}
+        <button
+          type="button"
+          onClick={next}
+          className="flex-1 rounded-full bg-ph-red px-4 py-3 text-sm font-medium text-white transition-opacity hover:opacity-90"
+        >
+          {isLast ? (testStatus === 'received' ? 'All done' : 'Close') : 'Next'}
+        </button>
+      </div>
     </BottomSheet>
   );
 }
