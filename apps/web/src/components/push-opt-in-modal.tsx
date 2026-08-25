@@ -68,7 +68,7 @@ export function PushOptInModal() {
               Stay ahead of every deadline
             </h2>
             <p className="mt-1 text-xs text-zinc-500">
-              Notifications surface only the alerts you've turned on in Settings.
+              Notifications surface only the alerts you&apos;ve turned on in Settings.
             </p>
           </div>
           <button
@@ -82,9 +82,9 @@ export function PushOptInModal() {
         </div>
 
         <ul className="mt-4 space-y-2">
-          <Bullet>Spend-by reminders before you'd lose a bonus.</Bullet>
-          <Bullet>Annual-fee heads-up before you're charged.</Bullet>
-          <Bullet>Benefit-expiry nudges so $450+ isn't wasted.</Bullet>
+          <Bullet>Spend-by reminders before you&apos;d lose a bonus.</Bullet>
+          <Bullet>Annual-fee heads-up before you&apos;re charged.</Bullet>
+          <Bullet>Benefit-expiry nudges so $450+ isn&apos;t wasted.</Bullet>
         </ul>
 
         <button
