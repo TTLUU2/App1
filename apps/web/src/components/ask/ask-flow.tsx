@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { ChevronLeft, Volume2, VolumeX, AlertTriangle } from 'lucide-react';
 import { getAllBenefits } from '@ph/shared';
 import { VoiceInput } from '@/components/voice-input';
-import { PerryAvatar } from '@/components/lacquer';
+import { PerryIcon } from '@/components/perry-icon';
 import {
   selectRecommendations,
   selectUserCardsWithDetails,
@@ -49,6 +49,19 @@ export function AskFlow() {
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [speakOutput, setSpeakOutput] = useState<boolean>(isSpeechSynthesisAvailable());
+  // ?listen=1 tells us the user tapped the FAB Ask (Mic) button and
+  // expects the mic to open on arrival — matches the pre-Lacquer
+  // 'global speak icon → recording starts' pattern. Read once at
+  // mount so we don't re-toggle on subsequent renders. Falsey when
+  // /ask is visited from any other path (deep link, direct nav, etc.).
+  const autoListen = useMemo(() => {
+    if (typeof window === 'undefined') return false;
+    try {
+      return new URLSearchParams(window.location.search).get('listen') === '1';
+    } catch {
+      return false;
+    }
+  }, []);
 
   // Two seed paths pick up handoffs from the /today Copilot bar:
   //
@@ -168,12 +181,11 @@ export function AskFlow() {
         )}
       </div>
       <header className="mt-3 flex items-center gap-2.5">
-        {/* Perry as the header mark — replaces the Mic-in-circle from the
-            initial Lacquer pass. Now that PerryFAB no longer hovers on
-            every screen, this is where Perry is anchored: on the chat
-            surface where he actually 'speaks'. Uses the 46px celebration
-            disc size for a bit of hero weight. */}
-        <PerryAvatar size={46} />
+        {/* Perry as the header mark — the actual plane mascot from
+            perry-icon.tsx (eyes, wings, wheels) rather than the
+            brick-disc primitive. This is the character users
+            recognise. 56px reads as hero-scale without dominating. */}
+        <PerryIcon size={56} />
         <h1 className="font-serif text-[24px] leading-none text-ph-ink">Ask Copilot</h1>
       </header>
       <p className="mt-2 text-[13px] leading-snug text-ph-text-muted">
@@ -189,12 +201,12 @@ export function AskFlow() {
             <div className="ml-auto max-w-[85%] rounded-2xl rounded-tr-sm bg-ph-fill px-3 py-2 text-sm dark:bg-zinc-800">
               {t.question}
             </div>
-            {/* Copilot answer — left-aligned, PerryAvatar to the left of
+            {/* Copilot answer — left-aligned, PerryIcon to the left of
                 the bubble so Perry visibly 'speaks' each reply. items-end
-                anchors the avatar to the bottom of the bubble like a
+                anchors the mascot to the bottom of the bubble like a
                 classic chat UI. */}
             <div className="mr-auto flex max-w-[85%] items-end gap-2">
-              <PerryAvatar size={26} className="mb-0.5 flex-none" />
+              <PerryIcon size={32} className="mb-0.5 flex-none" />
               <div
                 className={
                   t.inScope
@@ -228,7 +240,8 @@ export function AskFlow() {
           onSubmit={ask}
           disabled={pending}
           hint="Examples: 'When does my Westpac fee hit?', 'Which benefits expire this month?', 'Best card I can apply for right now?'"
-          autoFocus
+          autoFocus={!autoListen}
+          autoStart={autoListen}
         />
       </div>
     </main>

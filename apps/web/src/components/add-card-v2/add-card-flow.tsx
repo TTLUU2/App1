@@ -137,6 +137,21 @@ export function AddCardFlow({ onSaved, onClose }: AddCardFlowProps = {}) {
     if (!collected.cardId) return;
     setPending(true);
     setError(null);
+
+    // Confirmation welcome — kicked off IMMEDIATELY on click so the
+    // audio.play() call is still inside the user-gesture context that
+    // iOS WKWebView requires. Awaiting addCard first (as an earlier
+    // version did) meant the TTS blob was ready only ~100ms later,
+    // outside the gesture, and iOS silently dropped it — user heard
+    // nothing. We keep the promise so we can still wait for it to
+    // finish before navigating (avoids the next page's mount greeting
+    // cancelling this one via lib/tts.cancelSpeech-on-entry).
+    const welcomePromise = matchedCard?.name
+      ? speak(`Welcome to your ${matchedCard.name}.`).catch(() => {
+          /* TTS failure shouldn't block navigation */
+        })
+      : Promise.resolve();
+
     try {
       await addCard({
         cardId: collected.cardId,
@@ -149,17 +164,8 @@ export function AddCardFlow({ onSaved, onClose }: AddCardFlowProps = {}) {
         bonusTarget: collected.bonusTarget,
         bonusSpendWindowEndDate: collected.bonusSpendWindowEndDate,
       });
-      // Confirmation welcome — names the just-saved card so the user has
-      // closure on what they added. Await before navigating so audio
-      // plays out fully (next page's mount greeting otherwise cancels via
-      // lib/tts cancelSpeech-on-entry).
-      if (matchedCard?.name) {
-        try {
-          await speak(`Welcome to your ${matchedCard.name}.`);
-        } catch {
-          /* don't block navigation on TTS failure */
-        }
-      }
+      // Wait for the greeting to play out fully before navigating away.
+      await welcomePromise;
       if (onSaved) {
         onSaved(collected.cardId);
         setPending(false);

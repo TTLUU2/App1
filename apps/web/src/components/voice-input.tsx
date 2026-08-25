@@ -35,6 +35,15 @@ export interface VoiceInputProps {
    * starts. Subsequent taps skip the greeting so it doesn't feel naggy.
    */
   micGreeting?: string;
+  /**
+   * Optional: immediately trigger startListening() on mount without
+   * requiring the user to tap the mic. Used when the caller is
+   * responding to a user gesture on the previous surface (e.g. the
+   * FAB Ask button routes to /ask?listen=1 and expects the mic to
+   * open straight away, matching the pre-Lacquer 'global speak icon
+   * → recording starts' pattern).
+   */
+  autoStart?: boolean;
 }
 
 type Status = 'idle' | 'greeting' | 'listening' | 'recording' | 'transcribing' | 'error';
@@ -69,6 +78,7 @@ export function VoiceInput({
   hint,
   autoFocus,
   micGreeting,
+  autoStart,
 }: VoiceInputProps) {
   const [text, setText] = useState(initialValue);
   const [status, setStatus] = useState<Status>('idle');
@@ -110,6 +120,19 @@ export function VoiceInput({
       // audio anyway via lib/tts.ts cancelSpeech-on-entry.
     };
   }, []);
+
+  // autoStart: fire the mic on first mount when the caller requested it
+  // (used by /ask when the FAB Ask button routed here with ?listen=1).
+  // Guarded so StrictMode's double-mount doesn't kick two recogniser
+  // instances. Runs only when the platform actually supports voice.
+  const autoStartFiredRef = useRef(false);
+  useEffect(() => {
+    if (!autoStart || autoStartFiredRef.current) return;
+    if (!supported || disabled) return;
+    autoStartFiredRef.current = true;
+    void startListening();
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- mount-only fire; startListening is stable within a mount.
+  }, [autoStart, supported, disabled]);
 
   async function startListening() {
     if (micGreeting && !hasGreeted.current) {

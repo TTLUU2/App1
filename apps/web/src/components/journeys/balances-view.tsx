@@ -17,7 +17,7 @@
 // are actively sync'd) still mocks — that's a follow-up wiring to
 // read from the balance_updates table.
 
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { ChevronDown, Copy, Check, Plus } from 'lucide-react';
 import { formatPoints } from '@/lib/format';
 import {
@@ -61,6 +61,11 @@ export function BalancesView() {
   // sync setup"). For now, tapping Sync surfaces a Perry-narrated
   // instructions sheet inline; the real wizard subsumes this later.
   const [syncSheetProgramId, setSyncSheetProgramId] = useState<string | null>(null);
+  // Manual input sheet — window.prompt() is silently blocked on iOS
+  // WKWebView (Capacitor doesn't wire the UIDelegate for it), which
+  // meant the Input button was a no-op on device. This BottomSheet-
+  // based editor works everywhere.
+  const [inputSheet, setInputSheet] = useState<{ id: string; currentBalance: number } | null>(null);
 
   // On mount, ask the server for the newest balances the email-sync
   // backend has captured and merge them into the local store. Silent
@@ -74,20 +79,11 @@ export function BalancesView() {
   }, [syncFromServer]);
 
   function handleInput(id: string, currentBalance: number) {
-    // Native prompt is the fastest path to a working editor — the
-    // proper Lacquer inline number pad lives in a follow-up. The
-    // manual-input flow was zero-state before this commit; anything is
-    // an improvement.
-    const raw = window.prompt(
-      'Enter balance (points)',
-      currentBalance > 0 ? String(currentBalance) : '',
-    );
-    if (raw === null) return;
-    const cleaned = raw.replace(/[,\s]/g, '');
-    const parsed = Number(cleaned);
-    if (!Number.isFinite(parsed) || parsed < 0) return;
-    updateBalance(id, Math.round(parsed));
+    setInputSheet({ id, currentBalance });
   }
+  const inputSheetProgram = inputSheet
+    ? (programs.find((p) => p.id === inputSheet.id) ?? null)
+    : null;
 
   function handleSync(id: string) {
     setSyncSheetProgramId(id);
@@ -130,6 +126,17 @@ export function BalancesView() {
       </ul>
       {syncSheetProgram && (
         <SyncSetupSheet program={syncSheetProgram} onClose={() => setSyncSheetProgramId(null)} />
+      )}
+      {inputSheetProgram && inputSheet && (
+        <InputBalanceSheet
+          program={inputSheetProgram}
+          currentBalance={inputSheet.currentBalance}
+          onSave={(v) => {
+            updateBalance(inputSheet.id, v);
+            setInputSheet(null);
+          }}
+          onClose={() => setInputSheet(null)}
+        />
       )}
 
       <AutoSyncCollapsedRow />
@@ -559,6 +566,89 @@ function SyncSetupSheet({ program, onClose }: { program: ProgramBalance; onClose
       >
         Got it
       </button>
+    </BottomSheet>
+  );
+}
+
+// Inline balance editor — replaces the iOS-broken window.prompt() with
+// a proper BottomSheet + inputMode=numeric text field. Formats the
+// input as the user types (thousands separators) so a big balance
+// stays legible; strips commas before saving.
+function InputBalanceSheet({
+  program,
+  currentBalance,
+  onSave,
+  onClose,
+}: {
+  program: ProgramBalance;
+  currentBalance: number;
+  onSave: (value: number) => void;
+  onClose: () => void;
+}) {
+  const [raw, setRaw] = useState<string>(currentBalance > 0 ? String(currentBalance) : '');
+  const displayValue = useMemo(() => {
+    const cleaned = raw.replace(/[^0-9]/g, '');
+    if (!cleaned) return '';
+    // Reformat with en-AU thousands separators as the user types.
+    return Number(cleaned).toLocaleString('en-AU');
+  }, [raw]);
+  const parsed = Number(raw.replace(/[^0-9]/g, ''));
+  const canSave = Number.isFinite(parsed) && parsed >= 0;
+
+  function submit() {
+    if (!canSave) return;
+    onSave(Math.round(parsed));
+  }
+
+  return (
+    <BottomSheet
+      open={true}
+      onOpenChange={(v) => !v && onClose()}
+      title={`Update ${program.shortName}`}
+    >
+      <p className="mt-1 text-[13px] leading-snug text-ph-text-muted">
+        Enter the current points balance for {program.name}. Comma formatting is added
+        automatically.
+      </p>
+      <form
+        onSubmit={(e) => {
+          e.preventDefault();
+          submit();
+        }}
+        className="mt-4 space-y-3"
+      >
+        <label className="block">
+          <span className="font-mono text-[10px] uppercase tracking-[0.14em] text-ph-text-meta">
+            Balance (points)
+          </span>
+          <input
+            autoFocus
+            type="text"
+            inputMode="numeric"
+            pattern="[0-9,\s]*"
+            value={displayValue}
+            onChange={(e) => setRaw(e.target.value)}
+            placeholder="e.g. 145,230"
+            className="mt-1 w-full rounded-ph-inner border border-ph-border-strong bg-ph-card px-3 py-3 text-[18px] font-serif tabular-nums text-ph-ink focus:outline-none focus-visible:ring-2 focus-visible:ring-ph-brick"
+          />
+        </label>
+        <div className="flex gap-2">
+          <button
+            type="button"
+            onClick={onClose}
+            className="flex-1 rounded-full border border-ph-border-strong bg-ph-card px-4 py-3 text-sm font-medium text-ph-text transition-colors hover:bg-ph-fill-warm"
+          >
+            Cancel
+          </button>
+          <button
+            type="submit"
+            disabled={!canSave}
+            className="flex-1 rounded-full bg-ph-red px-4 py-3 text-sm font-medium text-white transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-40"
+          >
+            Save
+          </button>
+        </div>
+      </form>
     </BottomSheet>
   );
 }
