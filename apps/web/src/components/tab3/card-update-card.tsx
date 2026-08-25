@@ -431,24 +431,58 @@ export function CardUpdateCard() {
         return;
       }
 
-      if (json.kind === 'spend' && json.spendCardId && json.amount != null) {
+      // SPEND — always handle when the parser said spend, even if it
+      // couldn't identify a card or amount. Previously an incomplete
+      // spend (kind='spend' but spendCardId or amount missing) silently
+      // fell through to the generic Copilot fallback below, so the user
+      // heard "here's a chat answer" instead of "I heard 'add 250 to
+      // amex' but couldn't tell which of your cards" — masking exactly
+      // the intent-routing they expected to see.
+      if (json.kind === 'spend') {
+        if (!json.spendCardId || json.amount == null) {
+          const heldNames = heldCards.map((c) => c.card.name).join(', ');
+          const msg =
+            heldCards.length === 0
+              ? "I heard a spend but you don't have any active cards yet. Add one first."
+              : json.amount == null
+                ? "I heard a spend but couldn't catch the amount. Try again with the number."
+                : `I heard a spend but couldn't tell which card. You have: ${heldNames}. Try again with the card name.`;
+          setLastAnswer({ question: utterance, answer: msg, kind: 'action' });
+          void speak(msg);
+          setTranscript('');
+          setPhase('done');
+          return;
+        }
         const uc = heldCards.find((c) => c.id === json.spendCardId);
         if (!uc) {
           setError("Parser picked a card I can't find — try again.");
           setPhase('error');
           return;
         }
-        // Track for follow-up "ends in 1234" / "call it travel" utterances.
         setLastMentionedCardId(uc.id);
-        // Don't write yet — drop into the gov-check step so the user can
-        // exclude any direct gov payments before we commit the amount.
         setPendingSpend({
           userCardId: uc.id,
           amount: json.amount,
           cardName: uc.card.name,
         });
         setPhase('gov_check');
-      } else if (json.kind === 'benefit' && json.benefitUserCardId && json.benefitId) {
+        return;
+      }
+
+      // BENEFIT — same treatment. Explicit incomplete-benefit handling
+      // instead of silent Copilot fallback.
+      if (json.kind === 'benefit') {
+        if (!json.benefitUserCardId || !json.benefitId) {
+          const msg =
+            heldCards.length === 0
+              ? "I heard a benefit but you don't have any active cards yet. Add one first."
+              : "I heard a benefit but couldn't tell which one. Try naming the specific benefit or card.";
+          setLastAnswer({ question: utterance, answer: msg, kind: 'action' });
+          void speak(msg);
+          setTranscript('');
+          setPhase('done');
+          return;
+        }
         const uc = heldCards.find((c) => c.id === json.benefitUserCardId);
         const benefit = getAllBenefits().find((b) => b.id === json.benefitId);
         if (!uc || !benefit) {
@@ -456,7 +490,6 @@ export function CardUpdateCard() {
           setPhase('error');
           return;
         }
-        // Track for follow-up utterances ("ends in 1234" etc).
         setLastMentionedCardId(uc.id);
         const record = await markBenefitUsed({
           userCardId: uc.id,
@@ -471,14 +504,15 @@ export function CardUpdateCard() {
         setUndoExpiresAt(nowMs() + 30_000);
         setTranscript('');
         setPhase('done');
-      } else {
-        // Fallback: parser couldn't confidently classify as spend/benefit/
-        // question (kind='unknown', or partial fields missing). Route to
-        // Copilot so the user gets a conversational answer instead of an
-        // error. Copilot's system prompt handles greetings, off-topic
-        // redirects, and graceful "I'm not sure what you meant" responses.
-        await routeToCopilot();
+        return;
       }
+
+      // Fallback: kind='unknown' only, or any other unhandled case.
+      // Copilot answer is the graceful catch-all for greetings, off-
+      // topic utterances, and questions the parser couldn't confidently
+      // classify. Kind='question' has its own routeToCopilot() call
+      // above; this fallback catches the rare 'unknown'.
+      await routeToCopilot();
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
       setPhase('error');

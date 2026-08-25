@@ -247,8 +247,11 @@ function CardCard({ card }: { card: CardAlertPrefs }) {
 }
 
 /** Lacquer toggle switch. Track flips to ph-red (action colour) when
- *  on; ph-fill when off. Ink border-strong for the ring so the switch
- *  reads on either the card or the paper background. */
+ *  on; ph-fill when off. Uses flex centering + an INSET ring so the
+ *  knob stays perfectly on the pill's vertical midline regardless of
+ *  ring state (the previous absolute-top-0.5 + outset ring drifted
+ *  ~1px above centre because the ring expanded the visual box but
+ *  not the coordinate system the knob positioned against). */
 function Toggle({
   checked,
   onChange,
@@ -266,15 +269,15 @@ function Toggle({
       aria-label={label}
       onClick={() => onChange(!checked)}
       className={
-        checked
-          ? 'relative h-6 w-10 flex-none rounded-full bg-ph-red transition-colors'
-          : 'relative h-6 w-10 flex-none rounded-full bg-ph-fill ring-1 ring-ph-border-strong transition-colors'
+        'relative inline-flex h-6 w-10 flex-none items-center rounded-full p-0.5 transition-colors ' +
+        (checked ? 'bg-ph-red' : 'bg-ph-fill ring-1 ring-inset ring-ph-border-strong')
       }
     >
       <span
-        className={`absolute top-0.5 h-5 w-5 rounded-full bg-white transition-transform ${
-          checked ? 'translate-x-[1.125rem]' : 'translate-x-0.5'
-        }`}
+        className={
+          'block h-5 w-5 rounded-full bg-white transition-transform ' +
+          (checked ? 'translate-x-4' : 'translate-x-0')
+        }
         style={{ boxShadow: 'var(--shadow-ph-thumb)' }}
       />
     </button>
