@@ -36,6 +36,12 @@ interface Editable {
   annualFeeNextDueDate: string;
   bonusTarget: number;
   bonusSpendWindowEndDate: string;
+  /** Only meaningful for cancelled cards. Empty string when never
+   *  cancelled — the field is hidden in that case. Kept in state so the
+   *  user can correct a wrong cancellation date entered via the quick
+   *  Cancel Card confirm (which stamps today). Feeds into engine's
+   *  cooling-off math for same-family eligibility. */
+  cancellationDate: string;
 }
 
 export function EditCardModal({ uc, onClose }: EditCardModalProps) {
@@ -48,7 +54,9 @@ export function EditCardModal({ uc, onClose }: EditCardModalProps) {
     annualFeeNextDueDate: uc.annualFeeNextDueDate ?? todayIsoDate(),
     bonusTarget: uc.bonusTarget ?? 0,
     bonusSpendWindowEndDate: uc.bonusSpendWindowEndDate ?? todayIsoDate(),
+    cancellationDate: uc.cancellationDate ?? '',
   }));
+  const isCancelled = !!uc.cancellationDate;
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -79,6 +87,11 @@ export function EditCardModal({ uc, onClose }: EditCardModalProps) {
         annualFeeNextDueDate: draft.annualFeeNextDueDate,
         bonusTarget: draft.bonusTarget || null,
         bonusSpendWindowEndDate: draft.bonusSpendWindowEndDate,
+        // Only propagate cancellation date when the card is actually
+        // cancelled — never overwrite a null with the empty string.
+        ...(isCancelled && draft.cancellationDate
+          ? { cancellationDate: draft.cancellationDate }
+          : {}),
       });
       try {
         await speak(`${uc.card.name} updated.`);
@@ -177,6 +190,25 @@ export function EditCardModal({ uc, onClose }: EditCardModalProps) {
                 className="w-full rounded-ph-inner border border-ph-border-strong bg-ph-card px-3 py-2.5 text-[14px] text-ph-ink focus:outline-none focus-visible:ring-2 focus-visible:ring-ph-brick"
               />
             </Field>
+
+            {/* Cancellation date — only surfaced when the card is
+                actually cancelled. Two reasons a user needs this:
+                (a) Cancel Card confirm stamps today's date, which is
+                wrong for someone recording a historic cancellation.
+                (b) Cooling-off eligibility math in the engine keys
+                off this exact value — 18 months from cancellation
+                for issuer-wide waits (NAB Qantas, Amex, etc.) — so
+                accuracy here directly affects Next Card ranking. */}
+            {isCancelled && (
+              <Field label="Cancellation date" hint="Drives when you're eligible again">
+                <input
+                  type="date"
+                  value={draft.cancellationDate}
+                  onChange={(e) => setDraft((d) => ({ ...d, cancellationDate: e.target.value }))}
+                  className="w-full rounded-ph-inner border border-ph-border-strong bg-ph-card px-3 py-2.5 text-[14px] text-ph-ink focus:outline-none focus-visible:ring-2 focus-visible:ring-ph-brick"
+                />
+              </Field>
+            )}
 
             <div className="flex justify-center pt-1">
               <button

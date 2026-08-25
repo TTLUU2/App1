@@ -793,6 +793,17 @@ function RankedRow({
           <p className="mt-1 text-[12px] text-ph-text-muted tabular-nums">
             {formatPoints(card.bonusPoints ?? 0)} pts · {formatCurrency(card.annualFee)}/yr
           </p>
+          {/* Engine's reason line — makes eligibility calls diagnosable
+              at a glance. If a card shows "Eligible" but shouldn't,
+              this line reveals the exact rule the engine matched
+              ('No history with NAB Qantas family cards' vs 'You
+              currently hold...' etc.) so the data / rule gap is
+              visible without opening the console. */}
+          {r.eligibility.reason && (
+            <p className="mt-1 line-clamp-2 text-[11px] leading-snug text-ph-text-meta">
+              {r.eligibility.reason}
+            </p>
+          )}
         </div>
         <div className="flex flex-none flex-col items-end gap-1">
           {status === 'eligible' ? (
@@ -901,6 +912,14 @@ function CarouselCard({
         <p className="mt-0.5 text-[11px] text-ph-text-muted tabular-nums">
           {formatCurrency(card.annualFee)}/yr
         </p>
+
+        {/* Engine's reason — same diagnostic surface as RankedRow.
+            2-line clamp so tiles stay uniform height. */}
+        {r.eligibility.reason && (
+          <p className="mt-2 line-clamp-2 text-[11px] leading-snug text-ph-text-meta">
+            {r.eligibility.reason}
+          </p>
+        )}
 
         {/* Chips stack — each on its own row with real gap. */}
         <div className="mt-auto flex flex-col items-start gap-1.5 pt-3">
