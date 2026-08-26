@@ -17,9 +17,16 @@ Point Hacks Copilot — AU credit-card eligibility & points-optimisation assista
 
 ### Deploy safety
 
-**Before any `vercel deploy` (or any `vercel` write command), ALWAYS run `vercel whoami` and verify the active team is `pointhacks` (scope id `pointhacks-1360`).** The project lives under the `pointhacks` team owned by `pointhacks@yotta.ai`. Past sessions have nearly deployed to a personal `ttluu2-9771` account by accident. If `whoami` shows the wrong scope, run `vercel login pointhacks@yotta.ai` and re-check before proceeding.
+**Before any `vercel deploy` (or any `vercel` write command), ALWAYS run `vercel whoami` and verify the active team is `pointhacks` (scope id `pointhacks-1360`).** The project lives under the `pointhacks` team owned by `pointhacks@yotta.ai`. Past sessions have nearly deployed to a personal `ttluu2-9771` account by accident. Note the user `tluu-3783` IS a legitimate member of the `pointhacks` team — that username on `whoami` is fine, don't stall to re-login. If `whoami` shows anything OUTSIDE the pointhacks team, run `vercel login pointhacks@yotta.ai` and re-check before proceeding.
 
 If a user asks for a deploy, confirm the scope in your reply before running the command — don't just deploy.
+
+**Deploy from the REPO ROOT, not from `apps/web`.** The Vercel project (`ph-copilot`) has `Root Directory = apps/web` configured in its dashboard. Vercel appends that to the CWD, so:
+
+- ✅ `cd "/Users/tinluu/Downloads/PH App" && vercel deploy --prod --yes`
+- ❌ `cd "/Users/tinluu/Downloads/PH App/apps/web" && vercel deploy --prod --yes` → errors with `path “…/apps/web/apps/web” does not exist`
+
+Both the repo root and `apps/web/` have a `.vercel/project.json` pointing at the same project (`prj_MFzYPl5vu23ncoNUmIsPpE2LZz11`), so either directory finds the linked project — but only the repo root resolves the Root-Directory suffix correctly. If you see the `apps/web/apps/web` path error, that's the diagnosis: user was standing in `apps/web`; tell them to `cd` up one level, not to the repo root, since `cd apps/web` from `apps/web` doubles the path.
 
 **For visible feature changes (new UI surfaces, mascots, tabs, big behaviour shifts), ASK before deploying to production.** Bug fixes and quality lifts can deploy reactively; new visible features may collide with a planned demo or staged rollout. Don't infer "we built it so we should ship it." The user's plans aren't visible to you.
 
