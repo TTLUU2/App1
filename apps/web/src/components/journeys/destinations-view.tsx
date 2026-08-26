@@ -13,7 +13,7 @@
 
 import { useEffect } from 'react';
 import Link from 'next/link';
-import { Check } from 'lucide-react';
+import { Check, Plus, Search } from 'lucide-react';
 import { formatPoints } from '@/lib/format';
 import { selectTotalPoints, useBalancesStore } from '@/store/balances';
 import { DESTINATION_CATALOGUE, type DestinationOption, useJourneysStore } from '@/store/journeys';
@@ -84,6 +84,31 @@ export function DestinationsView() {
           </p>
         </div>
       </HeroCard>
+
+      {/* Entry point into the Track wizard for any destination — not
+          just the tiles below. Users hit /journeys/track without a
+          destinationId, which drops them at Step 1 (world map). No
+          separate 'search destination' route exists; the world map
+          IS the search. Placement here (between hero and reachable
+          grid) puts it where users' eyes naturally land after reading
+          the total. */}
+      <Link
+        href="/journeys/track"
+        className="flex items-center gap-3 rounded-ph-card border-2 border-dashed border-ph-border-strong bg-ph-card p-4 text-ph-text-muted transition-colors hover:border-ph-brick hover:text-ph-brick"
+      >
+        <span className="grid h-9 w-9 flex-none place-items-center rounded-full bg-ph-fill-warm text-ph-brick">
+          <Plus className="h-4 w-4" aria-hidden />
+        </span>
+        <div className="min-w-0 flex-1">
+          <p className="font-serif text-[17px] leading-tight text-ph-ink">
+            Track a new destination
+          </p>
+          <p className="mt-0.5 text-[12px] text-ph-text-muted">
+            Pick from anywhere on the map — set a target, watch your balance chase it.
+          </p>
+        </div>
+        <Search className="h-4 w-4 flex-none text-ph-text-meta" aria-hidden />
+      </Link>
 
       {reachable.length > 0 ? (
         <div>
