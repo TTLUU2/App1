@@ -234,6 +234,46 @@ export const balanceUpdates = pgTable(
   }),
 );
 
+/**
+ * Per-device linked Outlook account for the OAuth-based sync path
+ * (Auth B). Alternative upstream ingest to the forwarding slug —
+ * feeds the SAME downstream parser + balance_updates pipeline. One
+ * account per device (upsert on device_id) keeps the surface simple;
+ * multi-account is a future story.
+ *
+ * refresh_token_encrypted is a v1:iv:tag:ct string produced by
+ * lib/oauth-crypto.encryptToken. Never store it in plaintext. If
+ * decryption fails at sync time, the correct move is to set
+ * revoked_at and prompt the user to reconnect — the token can't be
+ * recovered from a tamper.
+ */
+export const linkedOutlookAccounts = pgTable(
+  'linked_outlook_accounts',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    deviceId: text('device_id').notNull(),
+    /** Encrypted long-lived refresh token — see lib/oauth-crypto.
+     *  Access tokens are re-minted per sync and never persisted. */
+    refreshTokenEncrypted: text('refresh_token_encrypted').notNull(),
+    /** The email address the user consented with. Displayed in the
+     *  UI ("Connected to alice@outlook.com") so users can tell which
+     *  mailbox is being read. */
+    email: text('email').notNull(),
+    connectedAt: timestamp('connected_at', { withTimezone: true }).notNull().defaultNow(),
+    /** Set when the user disconnects OR the refresh token is proven
+     *  invalid (Graph 401). Row kept for audit; a reconnect updates
+     *  the same device_id row rather than inserting a duplicate. */
+    revokedAt: timestamp('revoked_at', { withTimezone: true }),
+    /** Last successful sync — used by the client's manual Refresh
+     *  button to show 'Last synced X ago' and by the server-side
+     *  rate limiter to avoid hammering Graph on spam clicks. */
+    lastSyncAt: timestamp('last_sync_at', { withTimezone: true }),
+  },
+  (t) => ({
+    deviceIdUniq: uniqueIndex('linked_outlook_accounts_device_uniq').on(t.deviceId),
+  }),
+);
+
 // Inferred TS types — use these in API routes and helpers.
 export type PushSubscription = typeof pushSubscriptions.$inferSelect;
 export type NewPushSubscription = typeof pushSubscriptions.$inferInsert;
@@ -245,3 +285,5 @@ export type EmailEvent = typeof emailEvents.$inferSelect;
 export type NewEmailEvent = typeof emailEvents.$inferInsert;
 export type BalanceUpdate = typeof balanceUpdates.$inferSelect;
 export type NewBalanceUpdate = typeof balanceUpdates.$inferInsert;
+export type LinkedOutlookAccount = typeof linkedOutlookAccounts.$inferSelect;
+export type NewLinkedOutlookAccount = typeof linkedOutlookAccounts.$inferInsert;
